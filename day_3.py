@@ -13,10 +13,23 @@ with open("input/3-1.txt") as f:
 # """
 
 rucksacks = input_file.splitlines()
-compartments = [(x[0 : len(x) // 2], x[len(x) // 2 :]) for x in rucksacks]
-matching_items = [
-    next(iter(set.intersection(set(x[0]), set(x[1])))) for x in compartments
-]
+
+groups = []
+chunk = []
+for i, rucksack in enumerate(rucksacks, start=1):
+    chunk.append(rucksack)
+    if i % 3 == 0:
+        groups.append(chunk)
+        chunk = []
+
+pprint(groups)
+
+common_items = []
+for [a, b, c] in groups:
+    common_item = next(iter(set.intersection(set(a), set(b), set(c))))
+    common_items.append(common_item)
+
+pprint(common_items)
 
 
 def priority(char):
@@ -26,9 +39,6 @@ def priority(char):
         return ord(char) - 97 + 1
 
 
-as_ints = [priority(x) for x in matching_items]
+priorities = [priority(x) for x in common_items]
 
-pprint(matching_items)
-pprint(as_ints)
-
-print(sum(as_ints))
+print(sum(priorities))
