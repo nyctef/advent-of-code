@@ -25,13 +25,10 @@ for [e1_low, e1_high, e2_low, e2_high] in inputs:
     e1_high = int(e1_high)
     e2_high = int(e2_high)
     print([e1_low, e1_high, e2_low, e2_high])
-    if e1_low <= e2_low and e1_high >= e2_high:
-        print("e1")
-        count += 1
-    elif e2_low <= e1_low and e2_high >= e1_high:
-        print("e2")
-        count += 1
-    else:
+    if e1_high < e2_low or e2_high < e1_low:
         print("nope")
+    else:
+        print("overlap")
+        count += 1
 
 print(count)
