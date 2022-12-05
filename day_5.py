@@ -45,9 +45,14 @@ for [count, from_, to] in steps:
     count = int(count)
     from_ -= 1
     to -= 1
-    for _ in range(count):
-        c = crates[from_].pop()
-        crates[to].append(c)
+    to_move = crates[from_][-count:]
+    del crates[from_][-count:]
+    crates[to].extend(to_move)
+    print((from_, to, count))
+    print(to_move)
+    # for _ in range(count):
+    #     c = crates[from_].pop()
+    #     crates[to].append(c)
 
 # pprint(crate_layout)
 pprint(crates)
