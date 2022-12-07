@@ -97,4 +97,13 @@ print(result)
 
 all_nums = re.findall(r"\d+", input_file)
 all_nums = [int(x) for x in all_nums]
-print(f"sanity check: {sum(all_nums)} ")
+total_size_sanity_check = sum(all_nums)
+print(f"sanity check: {total_size_sanity_check} ")
+
+total_space = 70000000
+space_required = 30000000
+overage = total_size_sanity_check - (total_space - space_required)
+print(f"{overage=}")
+candidate_dirs = [x[1] for x in dir_sizes.items() if x[1] > overage]
+pprint(candidate_dirs)
+print(min(candidate_dirs))
