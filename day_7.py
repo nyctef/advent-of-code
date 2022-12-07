@@ -1,4 +1,5 @@
 from pprint import pprint
+import re
 from typing import Iterator
 
 
@@ -41,7 +42,7 @@ def create_fs(folder: dict, line_iter: Iterator[str]):
     try:
         while True:
             line = next(line_iter)
-            print(f">{line}<")
+            # print(f">{line}<")
             if line == "$ ls":
                 continue
             elif line.startswith("dir "):
@@ -69,22 +70,31 @@ dir_sizes = dict()
 
 def list_dir_sizes(name: str, folder: dict):
     current_dir_size = 0
+    print(f"looking at dir {name}")
     for (k, v) in folder.items():
         if isinstance(v, int):
+            print(f"{k} is a file with size {v}")
             current_dir_size += v
         else:
-            current_dir_size += list_dir_sizes(k, v)
-    print(f"size of dir {name} is {current_dir_size}")
+            print(f"recursing into dir {k}")
+            current_dir_size += list_dir_sizes(f"{name}/{k}", v)
+    # print(f"size of dir {name} is {current_dir_size}")
+    print(f"dir {name} had total size {current_dir_size}")
     dir_sizes[name] = current_dir_size
     return current_dir_size
 
 
 list_dir_sizes("fs", fs)
-pprint(dir_sizes)
+# pprint(dir_sizes)
 
 result = 0
 for (dir, size) in dir_sizes.items():
     if size <= 100000:
+        # print((dir, size))
         result += size
 
 print(result)
+
+all_nums = re.findall(r"\d+", input_file)
+all_nums = [int(x) for x in all_nums]
+print(f"sanity check: {sum(all_nums)} ")
