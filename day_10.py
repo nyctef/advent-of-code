@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 input_file = """noop
 addx 3
 addx -5
@@ -18,56 +20,59 @@ def parse(line: str):
 
 instrs = input_file.splitlines()
 instrs = [parse(x) for x in instrs]
-# instrs = instrs[:15]
-
-clock = 0
-x = 1
 
 
-def asdf(*args, **kwargs):
+def nothing(*args, **kwargs):
     pass
 
 
-draw = asdf
-log = print
-
-result = ""
+log = print  # or `nothing` to disable logging
 
 
-def cycle():
-    global clock
-    global x
-    global result
-    clock += 1
-    log()
-    log(f"during cycle {clock=} {x=}")
-    if abs((clock % 40) - 1 - x) < 2:
-        result += "#"
-        log(f"CRT draws a #")
-    else:
-        result += "."
-        log(f"CRT draws a .")
-        pass
+@dataclass
+class Machine:
+    screen: str = ""
+    clock: int = 0
+    x: int = 1
 
-    if clock % 40 == 0:
-        result += "\n"
-        pass
+    def cycle(self):
+        self.clock += 1
+        log()
+        log(f"during cycle {self.clock=} {self.x=}")
+        if abs((self.clock % 40) - 1 - self.x) < 2:
+            self.screen += "#"
+            log(f"CRT draws a #")
+        else:
+            self.screen += "."
+            log(f"CRT draws a .")
+            pass
+
+        if self.clock % 40 == 0:
+            self.screen += "\n"
+            pass
+
+    def noop(self):
+        log(f"start of instr: noop")
+        self.cycle()
+        log(f"end of instr: noop")
+
+    def addx(self, value):
+        log(f"start of instr: addx {value}")
+        self.cycle()
+        self.cycle()
+        self.x += value
+        log(f"end of instr: addx {value} (x is now {self.x})")
+
+    def render_frame(self):
+        print(self.screen)
 
 
+machine = Machine()
 for (op, value) in instrs:
     if op == "noop":
-        log(f"start of instr: noop")
-        cycle()
-        log(f"end of instr: noop")
+        machine.noop()
     if op == "addx":
-        log(f"start of instr: addx {value}")
-        cycle()
-        cycle()
-        x += value
-        log(f"end of instr: addx {value} (x is now {x})")
-
-# print()
-# print(sum_strength)
+        machine.addx(value)
 
 print()
-print(result)
+machine.render_frame()
