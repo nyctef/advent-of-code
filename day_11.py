@@ -1,3 +1,4 @@
+import math
 from pprint import pprint
 import re
 
@@ -79,12 +80,16 @@ def apply_operation(op, value):
 
 inspection_counts = [0] * len(monkeys)
 
-for round in range(1, 21):
+divbys = [m[2] for m in monkeys]
+mod = math.prod(divbys)
+print(mod)
+
+for round in range(0, 10000):
     for (i, (items, op, div, ontrue, onfalse)) in enumerate(monkeys):
         for item in items:
             inspection_counts[i] += 1
             worry = apply_operation(op, item)
-            worry //= 3
+            worry = worry % mod
             if worry % div == 0:
                 monkeys[ontrue][0].append(worry)
             else:
@@ -92,4 +97,6 @@ for round in range(1, 21):
         items.clear()
 
 pprint(monkeys)
-pprint(inspection_counts)
+# pprint(inspection_counts)
+x = sorted(inspection_counts)
+print(x[-1] * x[-2])
