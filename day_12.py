@@ -58,7 +58,7 @@ for (coord, elevation) in enumerate_elevations():
         if target[0] < 0 or target[1] < 0 or target[0] >= height or target[1] >= width:
             continue
         target_elevation = elevations[target[0]][target[1]]
-        if target_elevation <= elevation + 1:
+        if target_elevation >= elevation - 1:
             valid_targets.append(target)
     can_move_from_to[coord] = valid_targets
 
