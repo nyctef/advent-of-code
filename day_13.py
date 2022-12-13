@@ -51,37 +51,37 @@ def compare(left: Foo, right: Foo):
     for (l, r) in zip_longest(left, right, fillvalue=None):
         if l is None:
             log("left side ran out of items, so correct")
-            return "CORRECT"
+            return -1
         elif r is None:
             log("right side ran out of items, so not in right order")
-            return "WRONG"
+            return +1
         elif isinstance(l, int) and isinstance(r, int):
             if r < l:
                 log(f"{r=} is less than {l=}, so wrong order")
-                return "WRONG"
+                return +1
             elif l < r:
                 log(f"{l=} < {r=}, so right order")
-                return "CORRECT"
+                return -1
             else:
                 log(f"{l=} = {r=}, so contining")
         elif isinstance(l, list) and isinstance(r, list):
             log(f"recursing into comparing {l=} and {r=}")
             r = compare(l, r)
-            if r is not "EQUAL":
+            if r is not 0:
                 return r
         elif isinstance(l, int) and isinstance(r, list):
             log(f"recursing into comparing {[l]=} and {r=}")
             r = compare([l], r)
-            if r is not "EQUAL":
+            if r is not 0:
                 return r
         elif isinstance(l, list) and isinstance(r, int):
             log(f"recursing into comparing {l=} and {[r]=}")
             r = compare(l, [r])
-            if r is not "EQUAL":
+            if r is not 0:
                 return r
         else:
             raise Exception((l, r))
-    return "EQUAL"
+    return 0
 
 
 pprint(inputs)
@@ -91,7 +91,7 @@ result = 0
 for (i, (l, r)) in enumerate(inputs, start=1):
     r = compare(l, r)
     print((i, r))
-    if r != "WRONG":
+    if r != +1:
         result += i
 
 
