@@ -23,7 +23,7 @@ def round_(x: complex):
 lines = input_file.splitlines()
 segments = [[parse_seg(y) for y in x.split(" -> ")] for x in lines]
 
-pprint(segments)
+# pprint(segments)
 
 
 area: Dict[complex, str] = defaultdict(lambda: ".")
@@ -48,15 +48,15 @@ print(f"{min(xs)=} {max(xs)=} {min(ys)=} {max(ys)=}")
 
 
 def print_area(area_):
-    for y in range(min(ys), max(ys) + 1):
-        for x in range(min(xs), max(xs) + 1):
+    for y in range(min(ys), max(ys) + 3):
+        for x in range(min(xs) - 5, max(xs) + 5):
             print(area_[x + 1j * y], end="")
         print()
 
 
 def try_move_down(area, loc):
-    if loc.imag > max(ys):
-        return ("falling", 0)
+    if loc.imag >= max(ys) + 1:
+        return ("stopped", loc)
     for candidate in [loc + 1j, loc + (-1 + 1j), loc + (+1 + 1j)]:
         if area[candidate] == ".":
             return ("drop", candidate)
@@ -64,10 +64,11 @@ def try_move_down(area, loc):
 
 
 def model_sand_unit(area):
-    loc = 500 + 0j
+    source = 500 + 0j
+    loc = source
     while True:
         (moved, loc) = try_move_down(area, loc)
-        if moved == "falling":
+        if loc == source:
             raise Exception("done!")
         if moved != "drop":
             break
@@ -81,5 +82,5 @@ while True:
         model_sand_unit(area)
     except:
         print_area(area)
-        print(f"{count-1=}")
+        print(f"{count=}")
         break
