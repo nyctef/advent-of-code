@@ -1,3 +1,4 @@
+from pathlib import Path
 from pprint import pprint
 import re
 
@@ -17,6 +18,7 @@ Sensor at x=16, y=7: closest beacon is at x=15, y=3
 Sensor at x=14, y=3: closest beacon is at x=15, y=3
 Sensor at x=20, y=1: closest beacon is at x=15, y=3
 """
+input_file = Path("input/15-1.txt").read_text()
 
 
 def numbers(s: str):
@@ -39,8 +41,11 @@ pprint(cleared_areas)
 pprint(beacons)
 
 result = 0
-y = 10
-for x in range(-10, 30):
+y = 2_000_000
+x_range = range(-3_000_000, 5_000_000)
+# y = 9
+# x_range = range(-10, 40)
+for x in x_range:
     covered = False
     if complex(x, y) in beacons:
         continue
