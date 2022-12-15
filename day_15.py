@@ -52,7 +52,7 @@ def range_intersect(a: Range, b: Range):
     return Range(min(a.min, b.min), max(a.max, b.max))
 
 
-def find_covered_points_in_row(y):
+def find_covered_range_in_row(y):
     ranges: List[Range] = []
     # x_range = range(-3_000_000, 5_000_000)
     # y = 10
@@ -81,16 +81,12 @@ def find_covered_points_in_row(y):
             merged_ranges.remove(tr)
         # print(merged_ranges)
 
-    result = 0
-    for mr in merged_ranges:
-        result += mr.max - mr.min + 1
-    for b in beacons:
-        for r in merged_ranges:
-            if b.imag == y and b.real >= r.min and b.real <= r.max:
-                # print(f"skipping beacon at {b=}")
-                result -= 1
-    return result
+    if len(merged_ranges) != 1:
+        raise Exception(f"found gap at {y=} {merged_ranges=}")
 
 
-print(find_covered_points_in_row(2_000_000))
+for y in range(0, 4_000_000):
+    if y % 10_000 == 0:
+        print(y)
+    find_covered_range_in_row(y)
 # pprint(mh_dist_abs(8 + 7j, 2 + 10j))
