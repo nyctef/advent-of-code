@@ -62,8 +62,10 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
 
-    #    input_file = """Valve AA has flow rate=0; tunnels lead to valves BB
-    # Valve BB has flow rate=1; tunnels lead to valves AA"""
+    return input_file
+
+    input_file = """Valve AA has flow rate=0; tunnels lead to valves BB
+Valve BB has flow rate=1; tunnels lead to valves AA"""
 
     # input_file = Path("input/16-1.txt").read_text()
     return input_file
@@ -103,36 +105,6 @@ def print_inputs_as_dot(inputs, extra):
 
     print("}")
 
-
-"""
-
-
-def bfs(inputs: List[Node], start_node: str):
-    steps_to_get_to: Dict[str, int] = defaultdict(lambda: 99999)
-    q: List[Tuple[int, str]] = []
-    q.append((0, start_node))
-    while q:
-        (dist, next_name) = q.pop()
-        next_input = next(x for x in inputs if x.name == next_name)
-        steps_to_get_to[next_name] = min(steps_to_get_to[next_name], dist)
-        for t in next_input.tunnels:
-            if steps_to_get_to[t] <= dist:
-                continue
-            q.append((dist + 1, t))
-
-    return steps_to_get_to
-
-
-def get_expected_values(inputs: List[Node], steps_to_get_to, time_remaining):
-    expected_values = {}
-    for input in inputs:
-        distance = steps_to_get_to[input.name]
-        time_remaining_after_travel = time_remaining - distance
-        time_remaining_after_opening = time_remaining_after_travel - 1
-        expected_values[input.name] = time_remaining_after_opening * input.rate
-    return expected_values
-
-"""
 
 HasAlreadyBeenOpened = Dict[str, bool]
 
@@ -206,7 +178,11 @@ def update_valve_state_if_opening_valve(
     return valve_state | (1 << valve_index)
 
 
-log = print
+def nothing(*args):
+    pass
+
+
+log = nothing
 
 
 def calculate_best_choices_at(
@@ -222,16 +198,22 @@ def calculate_best_choices_at(
                 bc[min][input.name].append(("OPEN", [(input.name, input.rate, 30)]))
     else:
         for input in inputs:
-            best_action = "OPEN"
-            best_action_score = -1
-            best_state = []
+            log()
+            log(f"now looking at valve {input.name}")
             bc[min][input.name] = [None] * num_valve_states
 
             for valve_state in range(num_valve_states):
+                best_action = "nothing?"
+                best_action_score = -1
+                best_state = []
 
+                log(f"considering valve state {valve_state}")
+                valve_b_set = is_valve_set_already(valve_state, valve_indexes, "BB")
+                log(f"valve BB is {valve_b_set}")
                 for tunnel in input.tunnels:
                     (_, resulting_state) = bc[min + 1][tunnel][valve_state]
                     resulting_score = score_state(resulting_state)
+                    log(f"considering moving to {tunnel=} {resulting_score=}")
                     if resulting_score > best_action_score:
                         best_action = tunnel
                         best_action_score = resulting_score
@@ -240,6 +222,7 @@ def calculate_best_choices_at(
                 if input.name in working_valves and not (
                     is_valve_set_already(valve_state, valve_indexes, input.name)
                 ):
+                    log(f"considering opening valve {input.name}")
                     updated_valve_state_from_opening = (
                         update_valve_state_if_opening_valve(
                             valve_state, valve_indexes, input.name
@@ -257,7 +240,12 @@ def calculate_best_choices_at(
                         best_action_score = score_from_opening
                         best_state = state_from_opening
 
+                log(
+                    f"best action for valve {input.name} in state {valve_state} is {best_action} with score {best_action_score}"
+                )
+
                 bc[min][input.name][valve_state] = (best_action, best_state)
+    log(f"min {min}: {bc[min]}")
 
 
 if __name__ == "__main__":
@@ -266,14 +254,16 @@ if __name__ == "__main__":
 
     working_valves = [i.name for i in inputs if i.rate > 0]
     valve_indexes = {n: i for (i, n) in enumerate(working_valves)}
-    print(len(inputs))
-    print(working_valves)
-    print(valve_indexes)
-    print(30 * len(inputs) * 2 ** len(working_valves))
+    # print(len(inputs))
+    # print(working_valves)
+    # print(valve_indexes)
+    # print(30 * len(inputs) * 2 ** len(working_valves))
 
     best_choices_at: BestChoices = [{} for _ in range(31)]
 
+    # for min in reversed(range(1, 31)):
     for min in reversed(range(1, 31)):
+        print("---------")
         print(min)
         calculate_best_choices_at(inputs, best_choices_at, min, working_valves)
         # pprint(best_choices_at[min], width=140)
