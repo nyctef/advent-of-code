@@ -147,14 +147,40 @@ def find_valve_named(inputs: List[Node], name: str):
     return next(x for x in inputs if x.name == name)
 
 
+# last_min = 26
+last_min = 4
+
+
+def nothing(*args):
+    pass
+
+
+log = print
+
+
 def score_state(s: State):
-    return sum(flow * (30 - turned_on_at) for (valve, flow, turned_on_at) in s)
+    return sum(flow * (last_min - turned_on_at) for (valve, flow, turned_on_at) in s)
 
 
 def open_valve(inputs: List[Node], old_state: State, valve: str, minute: int) -> State:
+    # print(f"opening {valve=} from {old_state=}")
     new_state = [x for x in old_state if x[0] != valve]
+    # print(f"with old values removed: {new_state}")
     v = find_valve_named(inputs, valve)
     return new_state + [(valve, v.rate, minute)]
+
+
+def merge_resulting_state(s1: State, s2: State, inputs, minute):
+    log(f"merging {s1=} and {s2=}")
+    result = s2.copy()
+    for to_merge in s1:
+        matching_in_s2 = next((x for x in s2 if x[0] == to_merge[0]), None)
+        if matching_in_s2 is not None and matching_in_s2[2] < to_merge[2]:
+            # this valve was turned on earlier in s2, so keep it
+            pass
+        else:
+            result = open_valve(inputs, s2, to_merge[0], minute)
+    return result
 
 
 def score_states(bcm: BestChoicesAtMin):
@@ -179,16 +205,6 @@ def update_valve_state_if_opening_valve(
     return valve_state | (1 << valve_index)
 
 
-def nothing(*args):
-    pass
-
-
-log = print
-
-# last_min = 26
-last_min = 4
-
-
 def calculate_best_choices_at(
     inputs: List[Node], bc: BestChoices, min: int, working_valves: List[str]
 ):
@@ -203,7 +219,10 @@ def calculate_best_choices_at(
                     bc[min][(me.name, ele.name)].append(
                         (
                             ("wait", "wait"),
-                            [(me.name, me.rate, 30), (ele.name, ele.rate, 30)],
+                            [
+                                # (me.name, me.rate, last_min),
+                                # (ele.name, ele.rate, last_min),
+                            ],
                         )
                     )
     else:
@@ -223,6 +242,7 @@ def calculate_best_choices_at(
                     # log(f"valve BB is {valve_b_set}")
                     for me_action in me.tunnels + ["OPEN"]:
                         for ele_action in ele.tunnels + ["OPEN"]:
+                            log(f"considering actions {(me_action, ele_action)=}")
                             me_destination = (
                                 me.name if me_action == "OPEN" else me_action
                             )
@@ -234,39 +254,68 @@ def calculate_best_choices_at(
 
                             (_, resulting_state) = bc[min + 1][
                                 (me_destination, ele_destination)
-                            ][valve_state]
+                            ][resulting_valve_state]
+
+                            if (
+                                me_destination == "BB"
+                                and ele_destination == "CC"
+                                and me_action == "OPEN"
+                                and ele_action == "OPEN"
+                            ):
+                                print("********************")
+                                print(f"initial resulting state: {resulting_state}")
 
                             if me.name in working_valves and not (
                                 is_valve_set_already(
                                     valve_state, valve_indexes, me.name
                                 )
                             ):
-                                log(f"considering opening valve {me.name}")
                                 resulting_valve_state = (
                                     update_valve_state_if_opening_valve(
-                                        valve_state, valve_indexes, me.name
+                                        resulting_valve_state, valve_indexes, me.name
                                     )
                                 )
                                 (_, resulting_state) = bc[min + 1][
                                     (me_destination, ele_destination)
                                 ][resulting_valve_state]
+                                resulting_state = open_valve(
+                                    inputs, resulting_state, me.name, min
+                                )
 
                             if ele.name in working_valves and not (
                                 is_valve_set_already(
                                     valve_state, valve_indexes, ele.name
                                 )
                             ):
-                                log(f"considering opening valve {ele.name}")
                                 resulting_valve_state = (
                                     update_valve_state_if_opening_valve(
-                                        valve_state, valve_indexes, ele.name
+                                        resulting_valve_state, valve_indexes, ele.name
                                     )
                                 )
-                                (_, resulting_state) = bc[min + 1][
+                                (_, next_resulting_state) = bc[min + 1][
                                     (me_destination, ele_destination)
                                 ][resulting_valve_state]
+                                next_resulting_state = open_valve(
+                                    inputs, next_resulting_state, ele.name, min
+                                )
+                                resulting_state = merge_resulting_state(
+                                    resulting_state, next_resulting_state, inputs, min
+                                )
+
+                            names_in_resulting_state = [x[0] for x in resulting_state]
+                            if len(names_in_resulting_state) != len(
+                                set(names_in_resulting_state)
+                            ):
+                                raise Exception(
+                                    f"duplicates in generated resulting state: {resulting_state}"
+                                )
 
                             resulting_score = score_state(resulting_state)
+                            if me_action == "OPEN" and ele_action == "OPEN":
+                                print(
+                                    f"score of {resulting_state} is {resulting_score}"
+                                )
+
                             log(
                                 f"considering moving to {(me_destination, ele_destination)=} and performing actions {(me_action, ele_action)=} {resulting_score=}"
                             )
