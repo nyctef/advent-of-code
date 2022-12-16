@@ -61,7 +61,7 @@ Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
-    # return input_file
+    return input_file
     input_file = """Valve AA has flow rate=0; tunnels lead to valves BB, CC
 Valve BB has flow rate=1; tunnels lead to valves AA
 Valve CC has flow rate=1; tunnels lead to valves AA"""
@@ -147,15 +147,15 @@ def find_valve_named(inputs: List[Node], name: str):
     return next(x for x in inputs if x.name == name)
 
 
-# last_min = 26
-last_min = 4
+last_min = 26
+# last_min = 4
 
 
 def nothing(*args):
     pass
 
 
-log = print
+log = nothing
 
 
 def score_state(s: State):
@@ -262,8 +262,8 @@ def calculate_best_choices_at(
                                 and me_action == "OPEN"
                                 and ele_action == "OPEN"
                             ):
-                                print("********************")
-                                print(f"initial resulting state: {resulting_state}")
+                                log("********************")
+                                log(f"initial resulting state: {resulting_state}")
 
                             if me.name in working_valves and not (
                                 is_valve_set_already(
@@ -302,19 +302,17 @@ def calculate_best_choices_at(
                                     resulting_state, next_resulting_state, inputs, min
                                 )
 
-                            names_in_resulting_state = [x[0] for x in resulting_state]
-                            if len(names_in_resulting_state) != len(
-                                set(names_in_resulting_state)
-                            ):
-                                raise Exception(
-                                    f"duplicates in generated resulting state: {resulting_state}"
-                                )
+                            # names_in_resulting_state = [x[0] for x in resulting_state]
+                            # if len(names_in_resulting_state) != len(
+                            #     set(names_in_resulting_state)
+                            # ):
+                            #     raise Exception(
+                            #         f"duplicates in generated resulting state: {resulting_state}"
+                            #     )
 
                             resulting_score = score_state(resulting_state)
                             if me_action == "OPEN" and ele_action == "OPEN":
-                                print(
-                                    f"score of {resulting_state} is {resulting_score}"
-                                )
+                                log(f"score of {resulting_state} is {resulting_score}")
 
                             log(
                                 f"considering moving to {(me_destination, ele_destination)=} and performing actions {(me_action, ele_action)=} {resulting_score=}"
