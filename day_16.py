@@ -4,6 +4,42 @@ from pathlib import Path
 import re
 from typing import Dict, List, Tuple
 
+"""
+
+started around 7am
+
+open DD at 2  -> (30-2=28) * 20 = 560
+open BB at 5  -> 25 * 13 = 325
+open JJ at 9  -> 21 * 21 = 441
+open HH at 17 -> 13 * 22 = 286
+open EE at 21 -> 9 * 3 = 27
+open CC at 24 -> 6 * 2 = 12
+total: 1651
+
+can we do dynamic programming to it?
+
+simplest question: what to do at minute 30
+it doesn't matter, since moving won't do anything, and opening a valve wont do anything until minute 31
+next simplest question: what to do at minute 29
+can either open a valve (gives extra 1*flow at minute 30) or move to another node (for which we've calculated the score previously)
+tricky bit: how do we handle only being able to open a valve once?
+probably can't just keep track of overall pressure released
+
+tracked state probably needs to be (valve, minute opened at) pairs
+so if we open the same valve earlier, we can increase the score appropriately
+
+also how do we track which nodes are reachable at a given minute?
+do we need to?
+for each minute we calculate scores for every node, but the only viable path is the one that starts on node=AA at minute 1
+
+does it matter that we think the score is 0 at min30, even though as we go back in time that'll increase?
+or is it fine to always pick the biggest min30 score at min29, even though it'll be lower than the min29 score
+
+how much space does this take?
+54 nodes * 30 minutes * 10ish states (any valve with nonzero flow: on or off?)
+should be fine1
+"""
+
 
 def read_input():
     input_file = """Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
@@ -57,6 +93,9 @@ def print_inputs_as_dot(inputs, extra):
     print("}")
 
 
+"""
+
+
 def bfs(inputs: List[Node], start_node: str):
     steps_to_get_to: Dict[str, int] = defaultdict(lambda: 99999)
     q: List[Tuple[int, str]] = []
@@ -82,11 +121,44 @@ def get_expected_values(inputs: List[Node], steps_to_get_to, time_remaining):
         expected_values[input.name] = time_remaining_after_opening * input.rate
     return expected_values
 
+"""
+
+# state: list of valves, flow rates and at what minute they were turned on
+State = List[Tuple[str, int, int]]
+
+
+def score_state(s: State):
+    return sum(flow * (30 - turned_on_at) for (valve, flow, turned_on_at) in s)
+
+
+# minute -> valve name -> (action, resulting_state)
+# action is either a valve name to move to or "OPEN"
+BestChoicesAtMin = Dict[str, Tuple[str, State]]
+BestChoices = Dict[int, BestChoicesAtMin]
+
+
+def score_states(bcm: BestChoicesAtMin):
+    result = {}
+    for v, (action, state) in bcm.items():
+        result[v] = score_state(state)
+    return result
+
+
+def calculate_best_choices_at(inputs: List[Node], bc: BestChoices, min: int):
+
+    bc[min] = {}
+    if min == 30:
+        for input in inputs:
+            # at minute 30, it doesn't matter what we do, so just pick a random action with zero value
+            bc[min][input.name] = ("OPEN", [(input.name, input.rate, 30)])
+
 
 if __name__ == "__main__":
     input_file = read_input()
     inputs = parse_input(input_file)
 
-    steps_to_get_to = bfs(inputs, "AA")
-    expected_values = get_expected_values(inputs, steps_to_get_to, 30)
-    print_inputs_as_dot(inputs, expected_values)
+    best_choices_at: BestChoices = {}
+
+    calculate_best_choices_at(inputs, best_choices_at, 30)
+    calculate_best_choices_at(inputs, best_choices_at, 29)
+    print_inputs_as_dot(inputs, score_states(best_choices_at[30]))
