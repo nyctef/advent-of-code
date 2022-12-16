@@ -2,7 +2,7 @@ from collections import defaultdict, namedtuple
 from pprint import pprint
 from pathlib import Path
 import re
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 
 def read_input():
@@ -57,8 +57,8 @@ def print_inputs_as_dot(inputs, extra):
     print("}")
 
 
-def bfs(inputs: List[Node], start_node):
-    steps_to_get_to = defaultdict(lambda: 99999)
+def bfs(inputs: List[Node], start_node: str):
+    steps_to_get_to: Dict[str, int] = defaultdict(lambda: 99999)
     q: List[Tuple[int, str]] = []
     q.append((0, start_node))
     while q:
@@ -73,9 +73,20 @@ def bfs(inputs: List[Node], start_node):
     return steps_to_get_to
 
 
+def get_expected_values(inputs: List[Node], steps_to_get_to, time_remaining):
+    expected_values = {}
+    for input in inputs:
+        distance = steps_to_get_to[input.name]
+        time_remaining_after_travel = time_remaining - distance
+        time_remaining_after_opening = time_remaining_after_travel - 1
+        expected_values[input.name] = time_remaining_after_opening * input.rate
+    return expected_values
+
+
 if __name__ == "__main__":
     input_file = read_input()
     inputs = parse_input(input_file)
 
     steps_to_get_to = bfs(inputs, "AA")
-    print_inputs_as_dot(inputs, steps_to_get_to)
+    expected_values = get_expected_values(inputs, steps_to_get_to, 30)
+    print_inputs_as_dot(inputs, expected_values)
