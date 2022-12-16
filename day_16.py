@@ -3,7 +3,7 @@ from itertools import chain, combinations
 from pprint import pprint
 from pathlib import Path
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, NamedTuple, Tuple
 
 """
 
@@ -61,20 +61,22 @@ Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
+    # return input_file
+    input_file = """Valve AA has flow rate=0; tunnels lead to valves BB, CC
+Valve BB has flow rate=1; tunnels lead to valves AA
+Valve CC has flow rate=1; tunnels lead to valves AA"""
     # input_file = Path("input/16-1.txt").read_text()
     return input_file
-
-    return input_file
-
-    input_file = """Valve AA has flow rate=0; tunnels lead to valves BB
-Valve BB has flow rate=1; tunnels lead to valves AA"""
 
 
 def splitc(s):
     return [x.strip() for x in s.split(",")]
 
 
-Node = namedtuple("Node", "name, rate, tunnels")
+class Node(NamedTuple):  # = namedtuple("Node", "name, rate, tunnels"):
+    name: str
+    rate: int
+    tunnels: List[str]
 
 
 def parse_input(input_file):
@@ -130,7 +132,7 @@ State = List[Tuple[str, int, int]]
 # minute -> valve name -> [(action, resulting_state)]
 # action is either a valve name to move to or "OPEN"
 # the list is indexed by every possible previous state of each valve (on, off)
-BestChoicesAtMin = Dict[str, List[Tuple[str, State]]]
+BestChoicesAtMin = Dict[Tuple[str, str], List[Tuple[Tuple[str, str], State]]]
 BestChoices = List[BestChoicesAtMin]
 
 
@@ -181,7 +183,10 @@ def nothing(*args):
     pass
 
 
-log = nothing
+log = print
+
+# last_min = 26
+last_min = 4
 
 
 def calculate_best_choices_at(
@@ -189,61 +194,95 @@ def calculate_best_choices_at(
 ):
     num_valve_states = 2 ** len(working_valves)
     bc[min] = {}
-    if min == 30:
-        for input in inputs:
-            bc[min][input.name] = []
-            for valve_state in range(num_valve_states):
-                # at minute 30, it doesn't matter what we do, so just pick a random action with zero value
-                bc[min][input.name].append(("OPEN", [(input.name, input.rate, 30)]))
-    else:
-        for input in inputs:
-            log()
-            log(f"now looking at valve {input.name}")
-            bc[min][input.name] = [None] * num_valve_states
-
-            for valve_state in range(num_valve_states):
-                best_action = "nothing?"
-                best_action_score = -1
-                best_state = []
-
-                log(f"considering valve state {valve_state}")
-                # valve_b_set = is_valve_set_already(valve_state, valve_indexes, "BB")
-                # log(f"valve BB is {valve_b_set}")
-                for tunnel in input.tunnels:
-                    (_, resulting_state) = bc[min + 1][tunnel][valve_state]
-                    resulting_score = score_state(resulting_state)
-                    log(f"considering moving to {tunnel=} {resulting_score=}")
-                    if resulting_score > best_action_score:
-                        best_action = tunnel
-                        best_action_score = resulting_score
-                        best_state = resulting_state
-
-                if input.name in working_valves and not (
-                    is_valve_set_already(valve_state, valve_indexes, input.name)
-                ):
-                    log(f"considering opening valve {input.name}")
-                    updated_valve_state_from_opening = (
-                        update_valve_state_if_opening_valve(
-                            valve_state, valve_indexes, input.name
+    if min == last_min:
+        for me in inputs:
+            for ele in inputs:
+                bc[min][(me.name, ele.name)] = []
+                for valve_state in range(num_valve_states):
+                    # at minute 30, it doesn't matter what we do, so just pick a random action with zero value
+                    bc[min][(me.name, ele.name)].append(
+                        (
+                            ("wait", "wait"),
+                            [(me.name, me.rate, 30), (ele.name, ele.rate, 30)],
                         )
                     )
-                    (_, next_min_state_at_this_node) = bc[min + 1][input.name][
-                        updated_valve_state_from_opening
-                    ]
-                    state_from_opening = open_valve(
-                        inputs, next_min_state_at_this_node, input.name, min
+    else:
+        for me in inputs:
+            for ele in inputs:
+                log()
+                log(f"now looking at valves {(me.name, ele.name)=}")
+                bc[min][(me.name, ele.name)] = [None] * num_valve_states
+
+                for valve_state in range(num_valve_states):
+                    best_action = ("nothing?", "nothing?")
+                    best_action_score = -1
+                    best_state = []
+
+                    log(f"considering valve state {valve_state}")
+                    # valve_b_set = is_valve_set_already(valve_state, valve_indexes, "BB")
+                    # log(f"valve BB is {valve_b_set}")
+                    for me_action in me.tunnels + ["OPEN"]:
+                        for ele_action in ele.tunnels + ["OPEN"]:
+                            me_destination = (
+                                me.name if me_action == "OPEN" else me_action
+                            )
+                            ele_destination = (
+                                ele.name if ele_action == "OPEN" else ele_action
+                            )
+
+                            resulting_valve_state = valve_state
+
+                            (_, resulting_state) = bc[min + 1][
+                                (me_destination, ele_destination)
+                            ][valve_state]
+
+                            if me.name in working_valves and not (
+                                is_valve_set_already(
+                                    valve_state, valve_indexes, me.name
+                                )
+                            ):
+                                log(f"considering opening valve {me.name}")
+                                resulting_valve_state = (
+                                    update_valve_state_if_opening_valve(
+                                        valve_state, valve_indexes, me.name
+                                    )
+                                )
+                                (_, resulting_state) = bc[min + 1][
+                                    (me_destination, ele_destination)
+                                ][resulting_valve_state]
+
+                            if ele.name in working_valves and not (
+                                is_valve_set_already(
+                                    valve_state, valve_indexes, ele.name
+                                )
+                            ):
+                                log(f"considering opening valve {ele.name}")
+                                resulting_valve_state = (
+                                    update_valve_state_if_opening_valve(
+                                        valve_state, valve_indexes, ele.name
+                                    )
+                                )
+                                (_, resulting_state) = bc[min + 1][
+                                    (me_destination, ele_destination)
+                                ][resulting_valve_state]
+
+                            resulting_score = score_state(resulting_state)
+                            log(
+                                f"considering moving to {(me_destination, ele_destination)=} and performing actions {(me_action, ele_action)=} {resulting_score=}"
+                            )
+                            if resulting_score > best_action_score:
+                                best_action = (me_action, ele_action)
+                                best_action_score = resulting_score
+                                best_state = resulting_state
+
+                    log(
+                        f"best action for valve {(me.name, ele.name)=} in state {valve_state} is {best_action} with score {best_action_score}"
                     )
-                    score_from_opening = score_state(state_from_opening)
-                    if score_from_opening > best_action_score:
-                        best_action = "OPEN"
-                        best_action_score = score_from_opening
-                        best_state = state_from_opening
 
-                log(
-                    f"best action for valve {input.name} in state {valve_state} is {best_action} with score {best_action_score}"
-                )
-
-                bc[min][input.name][valve_state] = (best_action, best_state)
+                    bc[min][(me.name, ele.name)][valve_state] = (
+                        best_action,
+                        best_state,
+                    )
     log(f"min {min}: {bc[min]}")
 
 
@@ -260,12 +299,11 @@ if __name__ == "__main__":
 
     best_choices_at: BestChoices = [{} for _ in range(31)]
 
-    # for min in reversed(range(1, 31)):
-    for min in reversed(range(1, 31)):
+    for min in reversed(range(1, last_min + 1)):
         print("---------")
         print(min)
         calculate_best_choices_at(inputs, best_choices_at, min, working_valves)
         # pprint(best_choices_at[min], width=140)
     scores = score_states(best_choices_at[1])
     # print_inputs_as_dot(inputs, scores)
-    print(f"AA -> {scores['AA']}")
+    print(f"AA -> {scores[('AA', 'AA')]}")
