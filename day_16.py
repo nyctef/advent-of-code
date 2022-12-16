@@ -127,8 +127,18 @@ def get_expected_values(inputs: List[Node], steps_to_get_to, time_remaining):
 State = List[Tuple[str, int, int]]
 
 
+def find_valve_named(inputs: List[Node], name: str):
+    return next(x for x in inputs if x.name == name)
+
+
 def score_state(s: State):
     return sum(flow * (30 - turned_on_at) for (valve, flow, turned_on_at) in s)
+
+
+def open_valve(inputs: List[Node], old_state: State, valve: str, minute: int) -> State:
+    new_state = [x for x in old_state if x[0] != valve]
+    v = find_valve_named(inputs, valve)
+    return new_state + [(valve, v.rate, minute)]
 
 
 # minute -> valve name -> (action, resulting_state)
@@ -145,12 +155,36 @@ def score_states(bcm: BestChoicesAtMin):
 
 
 def calculate_best_choices_at(inputs: List[Node], bc: BestChoices, min: int):
-
     bc[min] = {}
     if min == 30:
         for input in inputs:
             # at minute 30, it doesn't matter what we do, so just pick a random action with zero value
             bc[min][input.name] = ("OPEN", [(input.name, input.rate, 30)])
+    else:
+        for input in inputs:
+            best_action = "OPEN"
+            best_action_score = -1
+            best_state = []
+
+            for tunnel in input.tunnels:
+                (_, resulting_state) = bc[min + 1][tunnel]
+                resulting_score = score_state(resulting_state)
+                if resulting_score > best_action_score:
+                    best_action = tunnel
+                    best_action_score = resulting_score
+                    best_state = resulting_state
+
+            next_min_state_at_this_node = bc[min + 1][input.name][1]
+            state_from_opening = open_valve(
+                inputs, next_min_state_at_this_node, input.name, min
+            )
+            score_from_opening = score_state(state_from_opening)
+            if score_from_opening > best_action_score:
+                best_action = "OPEN"
+                best_action_score = score_from_opening
+                best_state = state_from_opening
+
+            bc[min][input.name] = (best_action, best_state)
 
 
 if __name__ == "__main__":
@@ -161,4 +195,5 @@ if __name__ == "__main__":
 
     calculate_best_choices_at(inputs, best_choices_at, 30)
     calculate_best_choices_at(inputs, best_choices_at, 29)
-    print_inputs_as_dot(inputs, score_states(best_choices_at[30]))
+    calculate_best_choices_at(inputs, best_choices_at, 28)
+    print_inputs_as_dot(inputs, score_states(best_choices_at[28]))
