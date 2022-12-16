@@ -36,8 +36,10 @@ does it matter that we think the score is 0 at min30, even though as we go back 
 or is it fine to always pick the biggest min30 score at min29, even though it'll be lower than the min29 score
 
 how much space does this take?
-54 nodes * 30 minutes * 10ish states (any valve with nonzero flow: on or off?)
-should be fine1
+54 nodes * 100ish previous states * 30 minutes * 10ish states (any valve with nonzero flow: on or off?)
+~should be fine~
+
+think the next problem is: maybe we need to calculate the next best move at min n, assuming any possible combination of states at min n - 1?
 """
 
 
@@ -193,7 +195,8 @@ if __name__ == "__main__":
 
     best_choices_at: BestChoices = {}
 
-    calculate_best_choices_at(inputs, best_choices_at, 30)
-    calculate_best_choices_at(inputs, best_choices_at, 29)
-    calculate_best_choices_at(inputs, best_choices_at, 28)
-    print_inputs_as_dot(inputs, score_states(best_choices_at[28]))
+    for min in reversed(range(1, 31)):
+        print(min)
+        calculate_best_choices_at(inputs, best_choices_at, min)
+        pprint(best_choices_at[min], width=140)
+    print_inputs_as_dot(inputs, score_states(best_choices_at[1]))
