@@ -46,6 +46,27 @@ think the next problem is: maybe we need to calculate the next best move at min 
 AA(0) -> BB(1)
 so eg at min 29
 
+
+part 1 complete
+
+now onto part 2
+
+two problems:
+- bugs! not producing the right answer on the example input. How are we overestimating the result?
+- performance! runs out of memory on the initial day, and subsequent days are too slow to count.
+  doing the optimisation to inline rooms without a working valve and create a weighted graph is
+  probably necessary at this point, since that cuts out something like 4/5 of the number of nodes.
+
+
+while there are still bugs, it's probably worth addressing the performance first? since otherwise
+significant parts of the code will need to be rewritten anyway.
+
+plan for now:
+- focus on converting to a weighted graph - disable other logic, and just create some test cases for that
+- convert existing logic to walk the weighted graph instead
+- then get back to investigating bugs on part 2 example input
+
+
 """
 
 
@@ -65,7 +86,7 @@ Valve JJ has flow rate=21; tunnel leads to valve II
     input_file = """Valve AA has flow rate=0; tunnels lead to valves BB, CC
 Valve BB has flow rate=1; tunnels lead to valves AA
 Valve CC has flow rate=1; tunnels lead to valves AA"""
-    # input_file = Path("input/16-1.txt").read_text()
+    input_file = Path("input/16-1.txt").read_text()
     return input_file
 
 
@@ -351,10 +372,10 @@ if __name__ == "__main__":
 
     working_valves = [i.name for i in inputs if i.rate > 0]
     valve_indexes = {n: i for (i, n) in enumerate(working_valves)}
-    # print(len(inputs))
-    # print(working_valves)
-    # print(valve_indexes)
-    # print(30 * len(inputs) * 2 ** len(working_valves))
+    print(f"{len(inputs)=}")
+    print(f"{working_valves=}")
+    print(f"{valve_indexes=}")
+    print(f"{30 * (len(inputs)**2) * (2 ** len(working_valves))=}")
 
     best_choices_at: BestChoices = [{} for _ in range(31)]
 
