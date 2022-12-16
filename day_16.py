@@ -65,7 +65,10 @@ plan for now:
 - focus on converting to a weighted graph - disable other logic, and just create some test cases for that
 - convert existing logic to walk the weighted graph instead
 - then get back to investigating bugs on part 2 example input
-
+- try actually figuring out what the calculated best path is?
+  - start at min 1
+  - move or open as appropriate
+  - update valve_state 
 
 """
 
@@ -383,9 +386,28 @@ if __name__ == "__main__":
         print("---------")
         print(min)
         calculate_best_choices_at(inputs, best_choices_at, min, working_valves)
+        # print(best_choices_at[min][("AA", "AA")][0])
+        scores = score_states(best_choices_at[min])
+        # print(f"AA -> {scores[('AA', 'AA')]}")
         # pprint(best_choices_at[min], width=140)
+
+    vs = 0
+    me = "AA"
+    ele = "AA"
+    for min in range(1, last_min + 1):
+        ((me_action, ele_action), state) = best_choices_at[min][(me, ele)][vs]
+        print(f"{min=} {vs=} {me=} {ele=} || {me_action=} {ele_action=}")
+        print(f"expected score of {score_state(state)} with state: {state}")
+        print()
+
+        if me_action == "OPEN":
+            vs = update_valve_state_if_opening_valve(vs, valve_indexes, me)
+        else:
+            me = me_action
+        if ele_action == "OPEN":
+            vs = update_valve_state_if_opening_valve(vs, valve_indexes, ele)
+        else:
+            ele = ele_action
+
     # print_inputs_as_dot(inputs, scores)
-    print(best_choices_at[1][("AA", "AA")][0])
     # print(best_choices_at[2][("II", "DD")][0])
-    scores = score_states(best_choices_at[1])
-    print(f"AA -> {scores[('AA', 'AA')]}")
