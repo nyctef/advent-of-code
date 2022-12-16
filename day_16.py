@@ -61,14 +61,13 @@ Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
+    # input_file = Path("input/16-1.txt").read_text()
+    return input_file
 
     return input_file
 
     input_file = """Valve AA has flow rate=0; tunnels lead to valves BB
 Valve BB has flow rate=1; tunnels lead to valves AA"""
-
-    # input_file = Path("input/16-1.txt").read_text()
-    return input_file
 
 
 def splitc(s):
@@ -208,8 +207,8 @@ def calculate_best_choices_at(
                 best_state = []
 
                 log(f"considering valve state {valve_state}")
-                valve_b_set = is_valve_set_already(valve_state, valve_indexes, "BB")
-                log(f"valve BB is {valve_b_set}")
+                # valve_b_set = is_valve_set_already(valve_state, valve_indexes, "BB")
+                # log(f"valve BB is {valve_b_set}")
                 for tunnel in input.tunnels:
                     (_, resulting_state) = bc[min + 1][tunnel][valve_state]
                     resulting_score = score_state(resulting_state)
@@ -267,4 +266,6 @@ if __name__ == "__main__":
         print(min)
         calculate_best_choices_at(inputs, best_choices_at, min, working_valves)
         # pprint(best_choices_at[min], width=140)
-    print_inputs_as_dot(inputs, score_states(best_choices_at[1]))
+    scores = score_states(best_choices_at[1])
+    # print_inputs_as_dot(inputs, scores)
+    print(f"AA -> {scores['AA']}")
