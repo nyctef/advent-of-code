@@ -276,6 +276,8 @@ if __name__ == "__main__":
     my_score = scores["AA"]
     my_valves = [v[0] for v in best_choices_at[1]["AA"][0][1]]
 
+    # cheat: apparently in the puzzle input, the best solution involves me and the elephant going in divergent paths
+    # so I end up going in the best original path, and the elephant ends up going in a second-best path which doesn't overlap
     working_valves = [v for v in working_valves if v not in my_valves]
     valve_indexes = {n: i for (i, n) in enumerate(working_valves)}
     best_choices_at: BestChoices = [{} for _ in range(last_min + 1)]

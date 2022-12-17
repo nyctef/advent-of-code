@@ -272,32 +272,34 @@ class QueueState(NamedTuple):
     score: ScorableWorldState
 
 
-def get_possible_next_states(world: World, prev_state: QueueState):
+def get_possible_next_states(
+    world: World, prev_state: QueueState, best_score_per_valve_state: List[int]
+):
     result: List[QueueState] = []
+    aa = len(world.locations) - 1
     # range -1 to exclude AA, which we know is last in the list of locations
     for possible_me_target in range(len(world.locations) - 1):
-        if is_valve_open(prev_state.visited_locations, possible_me_target):
-            # no point me revisiting an open valve
-            continue
+        me_can_open = not is_valve_open(
+            prev_state.visited_locations, possible_me_target
+        )
+        # even if we don't have a good thing to do, waiting might still allow the other person to finish off something
 
         # +1 to include the time it would take to open the valve
         me_time_taken = (
             world.distances[prev_state.current_me_location][possible_me_target] + 1
         )
-        if (
-            me_time_taken >= prev_state.me_time_remaining
-            and prev_state.ele_time_remaining <= 0
-        ):
-            # we've both run out of time, so this path isn't viable
-            continue
 
         for possible_ele_target in range(len(world.locations) - 1):
-            # no point us both going to the same valve
-            if possible_me_target == possible_ele_target:
+            ele_can_open = not is_valve_open(
+                prev_state.visited_locations, possible_ele_target
+            )
+
+            if not me_can_open and not ele_can_open:
+                # we've both run out of things to do
                 continue
 
-            if is_valve_open(prev_state.visited_locations, possible_ele_target):
-                # no point ele revisiting an open valve either
+            if possible_me_target == possible_ele_target:
+                # we can't both follow the same path
                 continue
 
             ele_time_taken = (
@@ -319,18 +321,27 @@ def get_possible_next_states(world: World, prev_state: QueueState):
             ele_time_remaining = prev_state.ele_time_remaining - ele_time_taken
 
             next_score = prev_state.score
-            next_score = open_valve(
-                world,
-                next_score,
-                possible_me_target,
-                world.last_minute - me_time_remaining,
-            )
-            next_score = open_valve(
-                world,
-                next_score,
-                possible_ele_target,
-                world.last_minute - ele_time_remaining,
-            )
+            if me_can_open:
+                next_score = open_valve(
+                    world,
+                    next_score,
+                    possible_me_target,
+                    world.last_minute - me_time_remaining,
+                )
+            if ele_can_open:
+                next_score = open_valve(
+                    world,
+                    next_score,
+                    possible_ele_target,
+                    world.last_minute - ele_time_remaining,
+                )
+            new_score_value = score_state(world, next_score)
+            if best_score_per_valve_state[new_visited_locations] >= new_score_value:
+                # we've already found a better or equivalent way of opening this set of valves
+                continue
+            else:
+                best_score_per_valve_state[new_visited_locations] = new_score_value
+
             result.append(
                 QueueState(
                     me_time_remaining,
@@ -357,6 +368,7 @@ def search_for_best_ordering(world: World):
     aa = next(l for l in world.locations if l.name == "AA")
     assert aa.index == len(world.locations) - 1
 
+    best_score_per_valve_state = [0] * world.num_valve_states
     count = 0
     initial_state = QueueState(
         world.last_minute, world.last_minute, aa.index, aa.index, 0, tuple()
@@ -368,9 +380,11 @@ def search_for_best_ordering(world: World):
         count += 1
         if count % 1_000_000 == 0:
             print(count)
-        next_next_states = get_possible_next_states(world, next_state)
+        next_next_states = get_possible_next_states(
+            world, next_state, best_score_per_valve_state
+        )
         if next_next_states:
-            next_states.extend(set(next_next_states))
+            next_states.extend(next_next_states)
         else:
             final_states.append(next_state)
 
