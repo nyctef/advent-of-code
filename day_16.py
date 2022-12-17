@@ -289,6 +289,10 @@ def calculate_best_choices_at(
                                 ele.name if ele_action == "OPEN" else ele_action
                             )
 
+                            resulting_state = (
+                                resulting_valve_state
+                            ) = next_resulting_state = None
+
                             resulting_valve_state = valve_state
 
                             (_, resulting_state) = bc[min + 1][
@@ -344,8 +348,8 @@ def calculate_best_choices_at(
                             #     )
 
                             resulting_score = score_state(resulting_state)
-                            if me_action == "OPEN" and ele_action == "OPEN":
-                                log(f"score of {resulting_state} is {resulting_score}")
+                            # if me_action == "OPEN" and ele_action == "OPEN":
+                            #     log(f"score of {resulting_state} is {resulting_score}")
 
                             log(
                                 f"considering moving to {(me_destination, ele_destination)=} and performing actions {(me_action, ele_action)=} {resulting_score=}"
