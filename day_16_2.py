@@ -83,6 +83,9 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
         case "test-1":
+            """
+            BB(1) - AA - CC(1)
+            """
             return """Valve AA has flow rate=0; tunnels lead to valves BB, CC
 Valve BB has flow rate=1; tunnels lead to valves AA
 Valve CC has flow rate=1; tunnels lead to valves AA
@@ -98,6 +101,38 @@ Valve BA has flow rate=0; tunnels lead to valves AA, BB
 Valve CA has flow rate=0; tunnels lead to valves AA, CB
 Valve BB has flow rate=1; tunnels lead to valves BA
 Valve CB has flow rate=1; tunnels lead to valves CA
+"""
+        case "test-3":
+            """
+            AA - BA - BB - BC(1)
+             |
+             > - CA - CB - CC(1)
+            """
+            return """Valve AA has flow rate=0; tunnels lead to valves BA, CA
+Valve BA has flow rate=0; tunnels lead to valves AA, BB
+Valve BB has flow rate=0; tunnels lead to valves BA, BC
+Valve BC has flow rate=1; tunnels lead to valves BB
+Valve CA has flow rate=0; tunnels lead to valves AA, CB
+Valve CB has flow rate=0; tunnels lead to valves CA, CC
+Valve CC has flow rate=1; tunnels lead to valves CB
+"""
+        case "reddit-test-1":
+            return """Valve AA has flow rate=0; tunnels lead to valves BA
+Valve BA has flow rate=2; tunnels lead to valves AA, CA
+Valve CA has flow rate=4; tunnels lead to valves BA, DA
+Valve DA has flow rate=6; tunnels lead to valves CA, EA
+Valve EA has flow rate=8; tunnels lead to valves DA, FA
+Valve FA has flow rate=10; tunnels lead to valves EA, GA
+Valve GA has flow rate=12; tunnels lead to valves FA, HA
+Valve HA has flow rate=14; tunnels lead to valves GA, IA
+Valve IA has flow rate=16; tunnels lead to valves HA, JA
+Valve JA has flow rate=18; tunnels lead to valves IA, KA
+Valve KA has flow rate=20; tunnels lead to valves JA, LA
+Valve LA has flow rate=22; tunnels lead to valves KA, MA
+Valve MA has flow rate=24; tunnels lead to valves LA, NA
+Valve NA has flow rate=26; tunnels lead to valves MA, OA
+Valve OA has flow rate=28; tunnels lead to valves NA, PA
+Valve PA has flow rate=30; tunnels lead to valves OA
 """
         case "puzzle":
             return Path("input/16-1.txt").read_text()
@@ -281,10 +316,16 @@ def get_possible_next_states(world: World, prev_state: QueueState):
 
             next_score = prev_state.score
             next_score = open_valve(
-                world, next_score, possible_me_target, me_time_remaining
+                world,
+                next_score,
+                possible_me_target,
+                world.last_minute - me_time_remaining,
             )
             next_score = open_valve(
-                world, next_score, possible_ele_target, ele_time_remaining
+                world,
+                next_score,
+                possible_ele_target,
+                world.last_minute - ele_time_remaining,
             )
             result.append(
                 QueueState(
@@ -338,10 +379,12 @@ def search_for_best_ordering(world: World):
 
 
 def main():
-    input_file = read_input("puzzle")
+    (input_file, max_time) = (read_input("puzzle"), 26)
+    # (input_file, max_time) = (read_input("test-2"), 4)
+    # (input_file, max_time) = (read_input("test-3"), 5)
+    # (input_file, max_time) = (read_input("reddit-test-1"), 26)
     parsed_caves = parse_input(input_file)
-    world = build_world(parsed_caves, 26)
-    # print("UPDATE TIME REMAINING!")
+    world = build_world(parsed_caves, max_time)
     pprint(world.locations)
     pprint(world.distances)
     aa_index = next(x.index for x in world.locations if x.name == "AA")
