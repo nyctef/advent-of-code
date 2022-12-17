@@ -88,9 +88,9 @@ Valve CC has flow rate=1; tunnels lead to valves AA
 """
         case "test-2":
             """
-            AA + BA - BB(1)
-               |
-               > CA - CB(1)
+            AA - BA - BB(1)
+             |
+             > - CA - CB(1)
             """
             return """Valve AA has flow rate=0; tunnels lead to valves BA, CA
 Valve BA has flow rate=0; tunnels lead to valves AA, BB
@@ -123,6 +123,22 @@ def parse_input(input_file: str):
     return inputs
 
 
+def search_distances(inputs: List[ParsedCave], start_node: str):
+    steps_to_get_to: Dict[str, int] = defaultdict(lambda: 99999)
+    q: List[Tuple[int, str]] = []
+    q.append((0, start_node))
+    while q:
+        (dist, next_name) = q.pop()
+        next_input = next(x for x in inputs if x.name == next_name)
+        steps_to_get_to[next_name] = min(steps_to_get_to[next_name], dist)
+        for t in next_input.tunnels:
+            if steps_to_get_to[t] <= dist:
+                continue
+            q.append((dist + 1, t))
+
+    return steps_to_get_to
+
+
 def build_world(caves: List[ParsedCave], time_limit: int) -> World:
     working_valves = [c for c in caves if c.rate > 0]
     target_caves = working_valves + [next(c for c in caves if c.name == "AA")]
@@ -130,6 +146,13 @@ def build_world(caves: List[ParsedCave], time_limit: int) -> World:
     locations = [
         TargetLocation(c.name, i, c.rate, 1 << 1) for (i, c) in enumerate(target_caves)
     ]
+
+    distances = [[999] * len(locations) for _ in range(len(locations))]
+
+    for source in locations:
+        distances_from_source = search_distances(caves, source.name)
+        for target in locations:
+            distances[source.index][target.index] = distances_from_source[target.name]
 
     num_valve_states = 2 ** len(target_caves)
     return World(time_limit, locations, distances, num_valve_states)
@@ -142,9 +165,11 @@ def build_world(caves: List[ParsedCave], time_limit: int) -> World:
 
 
 def main():
-    input_file = read_input("test-2")
+    input_file = read_input("example")
     parsed_caves = parse_input(input_file)
-    pprint(parsed_caves)
+    world = build_world(parsed_caves, 5)
+    pprint(world.locations)
+    pprint(world.distances)
 
 
 if __name__ == "__main__":
