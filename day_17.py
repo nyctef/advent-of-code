@@ -92,7 +92,6 @@ def try_move(shape: Shape, pos: complex, chamber: Chamber):
         if chamber.rows[round(translated_pos.imag)][round(translated_pos.real)] != " ":
             # print("hit another shape")
             return None
-        # todo: check for intersection with other shapes in chamber
     return pos
 
 
@@ -110,8 +109,9 @@ def main():
         pos = 2 + chamber.next_rock_row * 1j
 
         while True:
+            # print(f"jet {jet_index} is {jets[jet_index]=}")
             pos_from_jet = pos + jets[jet_index]
-            jet_index = jet_index % len(jets)
+            jet_index = (jet_index + 1) % len(jets)
             # print(f"trying to apply jet {pos=} {pos_from_jet=}")
             jet_pos = try_move(next_shape, pos_from_jet, chamber)
             jet_pos = jet_pos if jet_pos is not None else pos
@@ -132,6 +132,8 @@ def main():
         while chamber.rows[chamber.next_rock_row - 3] != [" "] * 7:
             # print("bumping up next rock row")
             chamber.next_rock_row += 1
+
+        print(chamber.next_rock_row - 3)
 
         next_shape_index = (next_shape_index + 1) % len(shapes)
         dropped_shapes_counter += 1
