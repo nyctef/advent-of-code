@@ -144,7 +144,7 @@ def build_world(caves: List[ParsedCave], time_limit: int) -> World:
     target_caves = working_valves + [next(c for c in caves if c.name == "AA")]
 
     locations = [
-        TargetLocation(c.name, i, c.rate, 1 << 1) for (i, c) in enumerate(target_caves)
+        TargetLocation(c.name, i, c.rate, 1 << i) for (i, c) in enumerate(target_caves)
     ]
 
     distances = [[999] * len(locations) for _ in range(len(locations))]
@@ -161,15 +161,77 @@ def build_world(caves: List[ParsedCave], time_limit: int) -> World:
 ############ Part 2: dynamic programming on the weighted graph
 
 
+def is_valve_set(valve_state: int, loc_index: int):
+    return valve_state & (1 << loc_index)
+
+
+def calculate_best_choices_at(world: World, min: int, bc: BestChoices):
+    aa = next(l for l in world.locations if l.name == "AA")
+    if min == world.last_minute:
+        # at minute 30, it doesn't matter what we do, so just pick a random action with zero value
+        do_nothing = Choice("wait", "wait", [])
+        for me_location in range(len(world.locations)):
+            for ele_location in range(len(world.locations)):
+                for valve_state in range(world.num_valve_states):
+                    bc[min][
+                        WorldState(me_location, ele_location, valve_state)
+                    ] = do_nothing
+    else:
+        count = 0
+        possible_me_locations = list(range(len(world.locations)))
+        possible_ele_locations = list(range(len(world.locations)))
+        if min != 1:
+            # if it's not minute 1, we have no reason to be at AA any more
+            possible_me_locations.remove(aa.index)
+            possible_ele_locations.remove(aa.index)
+        for me_location in range(len(world.locations)):
+            for ele_location in range(len(world.locations)):
+                for valve_state in range(world.num_valve_states):
+                    # -1 because no reason to head to AA
+                    possible_me_targets = (
+                        t
+                        for t in range(len(world.locations))
+                        if t != aa.index and not is_valve_set(valve_state, t)
+                    )
+                    possible_ele_targets = (
+                        t
+                        for t in range(len(world.locations))
+                        if t != aa.index and not is_valve_set(valve_state, t)
+                    )
+                    for me_target in possible_me_targets:
+                        for ele_target in possible_ele_targets:
+                            count += 1
+                            if count % 100_000 == 0:
+                                print(count)
+                            if ele_target == me_target:
+                                continue
+                            do_nothing = Choice("wait", "wait", [])
+                            bc[min][
+                                WorldState(me_location, ele_location, valve_state)
+                            ] = do_nothing
+
+
+def run_back_in_time(world: World):
+    best_choices_per_min: BestChoices = [{} for _ in range(world.last_minute + 1)]
+    for min in reversed(range(1, world.last_minute + 1)):
+        print("------")
+        print(min)
+        calculate_best_choices_at(world, min, best_choices_per_min)
+    return best_choices_per_min
+
+
 ############ Part 3: main
 
 
 def main():
-    input_file = read_input("example")
+    input_file = read_input("puzzle")
     parsed_caves = parse_input(input_file)
-    world = build_world(parsed_caves, 5)
+    world = build_world(parsed_caves, 26)
     pprint(world.locations)
     pprint(world.distances)
+    aa_index = next(x.index for x in world.locations if x.name == "AA")
+    bc = run_back_in_time(world)
+    print(bc[1][WorldState(aa_index, aa_index, 0)].resulting_state)
 
 
 if __name__ == "__main__":
