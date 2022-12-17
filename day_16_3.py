@@ -48,6 +48,8 @@ so eg at min 29
 
 """
 
+last_min = 26
+
 
 def read_input():
     input_file = """Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
@@ -61,7 +63,7 @@ Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
-    # input_file = Path("input/16-1.txt").read_text()
+    input_file = Path("input/16-1.txt").read_text()
     return input_file
 
     return input_file
@@ -146,7 +148,7 @@ def find_valve_named(inputs: List[Node], name: str):
 
 
 def score_state(s: State):
-    return sum(flow * (30 - turned_on_at) for (valve, flow, turned_on_at) in s)
+    return sum(flow * (last_min - turned_on_at) for (valve, flow, turned_on_at) in s)
 
 
 def open_valve(inputs: List[Node], old_state: State, valve: str, minute: int) -> State:
@@ -189,12 +191,14 @@ def calculate_best_choices_at(
 ):
     num_valve_states = 2 ** len(working_valves)
     bc[min] = {}
-    if min == 30:
+    if min == last_min:
         for input in inputs:
             bc[min][input.name] = []
             for valve_state in range(num_valve_states):
-                # at minute 30, it doesn't matter what we do, so just pick a random action with zero value
-                bc[min][input.name].append(("OPEN", [(input.name, input.rate, 30)]))
+                # at minute last_min, it doesn't matter what we do, so just pick a random action with zero value
+                bc[min][input.name].append(
+                    ("OPEN", [(input.name, input.rate, last_min)])
+                )
     else:
         for input in inputs:
             log()
@@ -256,16 +260,35 @@ if __name__ == "__main__":
     # print(len(inputs))
     # print(working_valves)
     # print(valve_indexes)
-    # print(30 * len(inputs) * 2 ** len(working_valves))
+    # print(last_min * len(inputs) * 2 ** len(working_valves))
 
-    best_choices_at: BestChoices = [{} for _ in range(31)]
+    best_choices_at: BestChoices = [{} for _ in range(last_min + 1)]
 
-    # for min in reversed(range(1, 31)):
-    for min in reversed(range(1, 31)):
+    # for min in reversed(range(1, last_min + 1)):
+    for min in reversed(range(1, last_min + 1)):
         print("---------")
         print(min)
         calculate_best_choices_at(inputs, best_choices_at, min, working_valves)
         # pprint(best_choices_at[min], width=140)
     scores = score_states(best_choices_at[1])
     # print_inputs_as_dot(inputs, scores)
-    print(f"AA -> {scores['AA']}")
+    print(f"my_score: AA -> {scores['AA']}")
+    my_score = scores["AA"]
+    my_valves = [v[0] for v in best_choices_at[1]["AA"][0][1]]
+
+    working_valves = [v for v in working_valves if v not in my_valves]
+    valve_indexes = {n: i for (i, n) in enumerate(working_valves)}
+    best_choices_at: BestChoices = [{} for _ in range(last_min + 1)]
+    for min in reversed(range(1, last_min + 1)):
+        print("---------")
+        print(min)
+        calculate_best_choices_at(inputs, best_choices_at, min, working_valves)
+
+    scores = score_states(best_choices_at[1])
+    # print_inputs_as_dot(inputs, scores)
+    print(f"ele_score: AA -> {scores['AA']}")
+    ele_score = scores["AA"]
+    ele_valves = [v[0] for v in best_choices_at[1]["AA"][0][1]]
+
+    print(f"{my_score=} {my_valves=} {ele_score=} {ele_valves=}")
+    print(my_score + ele_score)
