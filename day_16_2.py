@@ -162,7 +162,7 @@ def build_world(caves: List[ParsedCave], time_limit: int) -> World:
 ############ Part 2: dynamic programming on the weighted graph
 
 
-def is_valve_set(valve_state: int, loc_index: int):
+def is_valve_open(valve_state: int, loc_index: int):
     return valve_state & (1 << loc_index)
 
 
@@ -192,12 +192,12 @@ def calculate_best_choices_at(world: World, min: int, bc: BestChoices):
                     possible_me_targets = (
                         t
                         for t in range(len(world.locations))
-                        if t != aa.index and not is_valve_set(valve_state, t)
+                        if t != aa.index and not is_valve_open(valve_state, t)
                     )
                     possible_ele_targets = (
                         t
                         for t in range(len(world.locations))
-                        if t != aa.index and not is_valve_set(valve_state, t)
+                        if t != aa.index and not is_valve_open(valve_state, t)
                     )
                     for me_target in possible_me_targets:
                         for ele_target in possible_ele_targets:
@@ -221,6 +221,75 @@ def run_back_in_time(world: World):
     return best_choices_per_min
 
 
+class QueueState(NamedTuple):
+    me_time_remaining: int
+    ele_time_remaining: int
+    current_me_location: int
+    current_ele_location: int
+    visited_locations: int
+
+
+def get_possible_next_states(world: World, prev_state: QueueState):
+    result: List[QueueState] = []
+    for possible_me_target in range(len(world.locations) - 1):
+        if is_valve_open(prev_state.visited_locations, possible_me_target):
+            continue
+
+        me_time_taken = (
+            world.distances[prev_state.current_me_location][possible_me_target] + 1
+        )
+        if me_time_taken > prev_state.me_time_remaining:
+            continue
+
+        for possible_ele_target in range(len(world.locations) - 1):
+            if possible_me_target == possible_ele_target:
+                continue
+
+            if is_valve_open(prev_state.visited_locations, possible_ele_target):
+                continue
+
+            ele_time_taken = (
+                world.distances[prev_state.current_ele_location][possible_ele_target]
+                + 1
+            )
+            if ele_time_taken > prev_state.ele_time_remaining:
+                continue
+
+            new_visited_locations = prev_state.visited_locations
+            new_visited_locations |= world.locations[possible_me_target].flag
+            new_visited_locations |= world.locations[possible_ele_target].flag
+            result.append(
+                QueueState(
+                    prev_state.me_time_remaining - me_time_taken,
+                    prev_state.ele_time_remaining - ele_time_taken,
+                    possible_me_target,
+                    possible_ele_target,
+                    new_visited_locations,
+                )
+            )
+    return result
+
+
+def search_for_best_ordering(world: World):
+    """
+
+    want to be able to generate all (me, ele) sequences which don't last longer than last_min
+    first problem: how many of these sequences are there?
+
+    - start at AA (state=(visited:AA, loc_remaining: BB,CC,DD..., me_time_remaining:30, ele_time_remaining: 30))
+      - each sub-sequence will pick a me action and/or an ele action, until both are out of time
+
+    """
+    aa = next(l for l in world.locations if l.name == "AA")
+    assert aa.index == len(world.locations) - 1
+
+    initial_state = QueueState(
+        world.last_minute, world.last_minute, aa.index, aa.index, 0
+    )
+    next_states = get_possible_next_states(world, initial_state)
+    pprint(next_states)
+
+
 ############ Part 3: main
 
 
@@ -234,6 +303,7 @@ def main():
     # bc = run_back_in_time(world)
     # print(bc[1][WorldState(aa_index, aa_index, 0)].resulting_state)
     print(statistics.fmean([statistics.fmean(x) for x in world.distances]))
+    search_for_best_ordering(world)
 
 
 if __name__ == "__main__":
