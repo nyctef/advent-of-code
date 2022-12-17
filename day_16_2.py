@@ -225,10 +225,10 @@ def open_valve(
     world: World, old_state: ScorableWorldState, valve: int, minute: int
 ) -> ScorableWorldState:
     # print(f"opening {valve=} from {old_state=}")
-    new_state = [x for x in old_state if x.valve_index != valve]
+    # new_state = [x for x in old_state if x.valve_index != valve]
     # print(f"with old values removed: {new_state}")
     v = world.locations[valve]
-    return new_state + [ScorableValveState(valve, v.rate, minute)]
+    return old_state + [ScorableValveState(valve, v.rate, minute)]
 
 
 def score_state(world: World, s: ScorableWorldState):
@@ -338,7 +338,7 @@ def search_for_best_ordering(world: World):
 
 
 def main():
-    input_file = read_input("example")
+    input_file = read_input("puzzle")
     parsed_caves = parse_input(input_file)
     world = build_world(parsed_caves, 26)
     # print("UPDATE TIME REMAINING!")
