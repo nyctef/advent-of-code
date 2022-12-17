@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from pprint import pprint
 from typing import NamedTuple
@@ -40,12 +41,16 @@ shapes: list[Shape] = [
     Shape([0 + 0j, 0 + 1j, 1 + 0j, 1 + 1j]),
 ]
 
-Chamber = dict[int, str]
+
+class Chamber:
+    rows: dict[int, list[str]] = defaultdict(lambda: [" "] * 7)
+    next_rock_row = 3
 
 
 def draw_chamber(chamber: Chamber, max_height: int):
     for i in reversed(range(max_height + 1)):
-        print(f"|{chamber[i]}|")
+        r = "".join(chamber.rows[i])
+        print(f"|{r}|")
     print("+-------+")
 
 
@@ -59,13 +64,32 @@ def read_input(name: str):
             raise Exception(other)
 
 
+def write_shape_to_chamber(chamber: Chamber, shape: Shape, position: complex):
+    for point in shape.points:
+        line = round((point + position).imag)
+        col = round((point + position).real)
+        chamber.rows[line][col] = "#"
+
+
 def main():
     input_file = read_input("example")
     jets = [1 if c == ">" else -1 for c in input_file]
-    print(jets)
+    # print(jets)
 
-    chamber = defaultdict(lambda: " " * 7)
-    draw_chamber(chamber, 7)
+    chamber = Chamber()
+    next_shape_index = 0
+    dropped_shapes_counter = 0
+    while dropped_shapes_counter < 1:
+        next_shape = shapes[next_shape_index]
+
+        shape_position = 2 + chamber.next_rock_row * 1j
+
+        # chamber.next_rock_row += 1
+
+        write_shape_to_chamber(chamber, next_shape, shape_position)
+        draw_chamber(chamber, 7)
+        next_shape_index = (next_shape_index + 1) % len(shapes)
+        dropped_shapes_counter += 1
 
 
 if __name__ == "__main__":
