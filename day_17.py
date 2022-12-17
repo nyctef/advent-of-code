@@ -1,5 +1,6 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pprint
 from typing import NamedTuple
@@ -46,8 +47,11 @@ shapes: list[Shape] = [
 ]
 
 
+@dataclass
 class Chamber:
-    rows: dict[int, list[str]] = defaultdict(lambda: [" "] * 7)
+    rows: dict[int, list[str]] = field(
+        default_factory=lambda: defaultdict(lambda: [" "] * 7)
+    )
     next_rock_row = 3
 
 
@@ -68,13 +72,15 @@ def read_input(name: str):
             raise Exception(other)
 
 
-def write_shape_to_chamber(chamber: Chamber, shape: Shape, position: complex):
+def write_shape_to_chamber(
+    chamber: Chamber, shape: Shape, position: complex, char: str
+):
     # print(f"writing shape to chamber at {position=}")
     for point in shape.points:
         line = round((point + position).imag)
         col = round((point + position).real)
         # print(f"setting chamber {line=} {col=}")
-        chamber.rows[line][col] = "#"
+        chamber.rows[line][col] = char
 
 
 def try_move(shape: Shape, pos: complex, chamber: Chamber):
@@ -95,15 +101,24 @@ def try_move(shape: Shape, pos: complex, chamber: Chamber):
     return pos
 
 
+def draw_chamber_with_extra_shape(c: Chamber, shape: Shape, pos: complex):
+    chamber = deepcopy(c)
+    print(f"{id(c)=} {id(c.rows[0])=} {id(chamber)=} {id(chamber.rows[0])=}")
+    write_shape_to_chamber(chamber, shape, pos, "@")
+    draw_chamber(chamber, chamber.next_rock_row)
+
+
 def main():
-    input_file = read_input("example")
+    # input_file, limit = (read_input("example"), 10)
+    input_file, limit = (read_input("example"), 2022)
+    # input_file, limit = (read_input("puzzle"), 10)
     jet_index = 0
     jets = [1 if c == ">" else -1 for c in input_file]
 
     chamber = Chamber()
     next_shape_index = 0
     dropped_shapes_counter = 0
-    while dropped_shapes_counter < 10:
+    while dropped_shapes_counter < limit:
         next_shape = shapes[next_shape_index]
 
         pos = 2 + chamber.next_rock_row * 1j
@@ -116,18 +131,21 @@ def main():
             jet_pos = try_move(next_shape, pos_from_jet, chamber)
             jet_pos = jet_pos if jet_pos is not None else pos
 
+            # draw_chamber_with_extra_shape(chamber, next_shape, jet_pos)
             # print(f"trying to apply gravity {jet_pos=} {jet_pos - 1j=}")
             down_pos = try_move(next_shape, jet_pos - 1j, chamber)
             if down_pos is None:
                 # hit something after trying to move down - shape comes to a rest
+                # print("and stopped")
                 pos = jet_pos
                 break
             else:
+                # draw_chamber_with_extra_shape(chamber, next_shape, down_pos)
                 # otherwise loop
                 pos = down_pos
 
-        write_shape_to_chamber(chamber, next_shape, pos)
-        draw_chamber(chamber, chamber.next_rock_row)
+        write_shape_to_chamber(chamber, next_shape, pos, "#")
+        # draw_chamber(chamber, chamber.next_rock_row)
 
         while chamber.rows[chamber.next_rock_row - 3] != [" "] * 7:
             # print("bumping up next rock row")
@@ -137,6 +155,8 @@ def main():
 
         next_shape_index = (next_shape_index + 1) % len(shapes)
         dropped_shapes_counter += 1
+
+    # draw_chamber(chamber, chamber.next_rock_row)
 
 
 if __name__ == "__main__":
