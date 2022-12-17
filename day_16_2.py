@@ -51,7 +51,7 @@ class ScorableValveState(NamedTuple):
     on_at_min: int
 
 
-ScorableWorldState = List[ScorableValveState]
+ScorableWorldState = Tuple[ScorableValveState, ...]
 
 
 class Choice(NamedTuple):
@@ -104,35 +104,26 @@ Valve CB has flow rate=1; tunnels lead to valves CA
 """
         case "test-3":
             """
-            AA - BA - BB - BC(1)
+            AA - BA - BB(1) - BC(5)
              |
-             > - CA - CB - CC(1)
+             > - CA - CB(1) - CC(1)
             """
             return """Valve AA has flow rate=0; tunnels lead to valves BA, CA
 Valve BA has flow rate=0; tunnels lead to valves AA, BB
-Valve BB has flow rate=0; tunnels lead to valves BA, BC
-Valve BC has flow rate=1; tunnels lead to valves BB
+Valve BB has flow rate=1; tunnels lead to valves BA, BC
+Valve BC has flow rate=5; tunnels lead to valves BB
 Valve CA has flow rate=0; tunnels lead to valves AA, CB
-Valve CB has flow rate=0; tunnels lead to valves CA, CC
+Valve CB has flow rate=1; tunnels lead to valves CA, CC
 Valve CC has flow rate=1; tunnels lead to valves CB
 """
-        case "reddit-test-1":
+        case "reddit-test-1-b":
             return """Valve AA has flow rate=0; tunnels lead to valves BA
 Valve BA has flow rate=2; tunnels lead to valves AA, CA
 Valve CA has flow rate=4; tunnels lead to valves BA, DA
 Valve DA has flow rate=6; tunnels lead to valves CA, EA
 Valve EA has flow rate=8; tunnels lead to valves DA, FA
 Valve FA has flow rate=10; tunnels lead to valves EA, GA
-Valve GA has flow rate=12; tunnels lead to valves FA, HA
-Valve HA has flow rate=14; tunnels lead to valves GA, IA
-Valve IA has flow rate=16; tunnels lead to valves HA, JA
-Valve JA has flow rate=18; tunnels lead to valves IA, KA
-Valve KA has flow rate=20; tunnels lead to valves JA, LA
-Valve LA has flow rate=22; tunnels lead to valves KA, MA
-Valve MA has flow rate=24; tunnels lead to valves LA, NA
-Valve NA has flow rate=26; tunnels lead to valves MA, OA
-Valve OA has flow rate=28; tunnels lead to valves NA, PA
-Valve PA has flow rate=30; tunnels lead to valves OA
+Valve GA has flow rate=12; tunnels lead to valves FA
 """
         case "puzzle":
             return Path("input/16-1.txt").read_text()
@@ -205,7 +196,7 @@ def calculate_best_choices_at(world: World, min: int, bc: BestChoices):
     aa = next(l for l in world.locations if l.name == "AA")
     if min == world.last_minute:
         # at minute 30, it doesn't matter what we do, so just pick a random action with zero value
-        do_nothing = Choice("wait", "wait", [])
+        do_nothing = Choice("wait", "wait", tuple())
         for me_location in range(len(world.locations)):
             for ele_location in range(len(world.locations)):
                 for valve_state in range(world.num_valve_states):
@@ -241,7 +232,7 @@ def calculate_best_choices_at(world: World, min: int, bc: BestChoices):
                                 print(count)
                             if ele_target == me_target:
                                 continue
-                            do_nothing = Choice("wait", "wait", [])
+                            do_nothing = Choice("wait", "wait", tuple())
                             bc[min][
                                 WorldState(me_location, ele_location, valve_state)
                             ] = do_nothing
@@ -263,7 +254,7 @@ def open_valve(
     # new_state = [x for x in old_state if x.valve_index != valve]
     # print(f"with old values removed: {new_state}")
     v = world.locations[valve]
-    return old_state + [ScorableValveState(valve, v.rate, minute)]
+    return (*old_state, ScorableValveState(valve, v.rate, minute))
 
 
 def score_state(world: World, s: ScorableWorldState):
@@ -283,28 +274,41 @@ class QueueState(NamedTuple):
 
 def get_possible_next_states(world: World, prev_state: QueueState):
     result: List[QueueState] = []
+    # range -1 to exclude AA, which we know is last in the list of locations
     for possible_me_target in range(len(world.locations) - 1):
         if is_valve_open(prev_state.visited_locations, possible_me_target):
+            # no point me revisiting an open valve
             continue
 
+        # +1 to include the time it would take to open the valve
         me_time_taken = (
             world.distances[prev_state.current_me_location][possible_me_target] + 1
         )
-        if me_time_taken >= prev_state.me_time_remaining:
+        if (
+            me_time_taken >= prev_state.me_time_remaining
+            and prev_state.ele_time_remaining <= 0
+        ):
+            # we've both run out of time, so this path isn't viable
             continue
 
         for possible_ele_target in range(len(world.locations) - 1):
+            # no point us both going to the same valve
             if possible_me_target == possible_ele_target:
                 continue
 
             if is_valve_open(prev_state.visited_locations, possible_ele_target):
+                # no point ele revisiting an open valve either
                 continue
 
             ele_time_taken = (
                 world.distances[prev_state.current_ele_location][possible_ele_target]
                 + 1
             )
-            if ele_time_taken >= prev_state.ele_time_remaining:
+            if (
+                me_time_taken >= prev_state.me_time_remaining
+                and ele_time_taken >= prev_state.ele_time_remaining
+            ):
+                # we've both run out of time, so this path isn't viable
                 continue
 
             new_visited_locations = prev_state.visited_locations
@@ -355,7 +359,7 @@ def search_for_best_ordering(world: World):
 
     count = 0
     initial_state = QueueState(
-        world.last_minute, world.last_minute, aa.index, aa.index, 0, []
+        world.last_minute, world.last_minute, aa.index, aa.index, 0, tuple()
     )
     next_states: List[QueueState] = [initial_state]
     final_states: List[QueueState] = []
@@ -366,13 +370,16 @@ def search_for_best_ordering(world: World):
             print(count)
         next_next_states = get_possible_next_states(world, next_state)
         if next_next_states:
-            next_states.extend(next_next_states)
+            next_states.extend(set(next_next_states))
         else:
             final_states.append(next_state)
 
     print(len(final_states))
-    scores = [(score_state(world, x.score), x.score) for x in final_states]
-    print(max(scores))
+    scores = [
+        (score_state(world, x.score), sorted(x.score, key=lambda s: s.on_at_min))
+        for x in final_states
+    ]
+    pprint(max(scores))
 
 
 ############ Part 3: main
@@ -382,7 +389,7 @@ def main():
     (input_file, max_time) = (read_input("puzzle"), 26)
     # (input_file, max_time) = (read_input("test-2"), 4)
     # (input_file, max_time) = (read_input("test-3"), 5)
-    # (input_file, max_time) = (read_input("reddit-test-1"), 26)
+    # (input_file, max_time) = (read_input("reddit-test-1-b"), 26)
     parsed_caves = parse_input(input_file)
     world = build_world(parsed_caves, max_time)
     pprint(world.locations)
