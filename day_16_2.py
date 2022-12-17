@@ -221,12 +221,29 @@ def run_back_in_time(world: World):
     return best_choices_per_min
 
 
+def open_valve(
+    world: World, old_state: ScorableWorldState, valve: int, minute: int
+) -> ScorableWorldState:
+    # print(f"opening {valve=} from {old_state=}")
+    new_state = [x for x in old_state if x.valve_index != valve]
+    # print(f"with old values removed: {new_state}")
+    v = world.locations[valve]
+    return new_state + [ScorableValveState(valve, v.rate, minute)]
+
+
+def score_state(world: World, s: ScorableWorldState):
+    return sum(
+        flow * (world.last_minute - turned_on_at) for (valve, flow, turned_on_at) in s
+    )
+
+
 class QueueState(NamedTuple):
     me_time_remaining: int
     ele_time_remaining: int
     current_me_location: int
     current_ele_location: int
     visited_locations: int
+    score: ScorableWorldState
 
 
 def get_possible_next_states(world: World, prev_state: QueueState):
@@ -238,7 +255,7 @@ def get_possible_next_states(world: World, prev_state: QueueState):
         me_time_taken = (
             world.distances[prev_state.current_me_location][possible_me_target] + 1
         )
-        if me_time_taken > prev_state.me_time_remaining:
+        if me_time_taken >= prev_state.me_time_remaining:
             continue
 
         for possible_ele_target in range(len(world.locations) - 1):
@@ -252,19 +269,31 @@ def get_possible_next_states(world: World, prev_state: QueueState):
                 world.distances[prev_state.current_ele_location][possible_ele_target]
                 + 1
             )
-            if ele_time_taken > prev_state.ele_time_remaining:
+            if ele_time_taken >= prev_state.ele_time_remaining:
                 continue
 
             new_visited_locations = prev_state.visited_locations
             new_visited_locations |= world.locations[possible_me_target].flag
             new_visited_locations |= world.locations[possible_ele_target].flag
+
+            me_time_remaining = prev_state.me_time_remaining - me_time_taken
+            ele_time_remaining = prev_state.ele_time_remaining - ele_time_taken
+
+            next_score = prev_state.score
+            next_score = open_valve(
+                world, next_score, possible_me_target, me_time_remaining
+            )
+            next_score = open_valve(
+                world, next_score, possible_ele_target, ele_time_remaining
+            )
             result.append(
                 QueueState(
-                    prev_state.me_time_remaining - me_time_taken,
-                    prev_state.ele_time_remaining - ele_time_taken,
+                    me_time_remaining,
+                    ele_time_remaining,
                     possible_me_target,
                     possible_ele_target,
                     new_visited_locations,
+                    next_score,
                 )
             )
     return result
@@ -283,11 +312,26 @@ def search_for_best_ordering(world: World):
     aa = next(l for l in world.locations if l.name == "AA")
     assert aa.index == len(world.locations) - 1
 
+    count = 0
     initial_state = QueueState(
-        world.last_minute, world.last_minute, aa.index, aa.index, 0
+        world.last_minute, world.last_minute, aa.index, aa.index, 0, []
     )
-    next_states = get_possible_next_states(world, initial_state)
-    pprint(next_states)
+    next_states: List[QueueState] = [initial_state]
+    final_states: List[QueueState] = []
+    while next_states:
+        next_state = next_states.pop()
+        count += 1
+        if count % 1_000_000 == 0:
+            print(count)
+        next_next_states = get_possible_next_states(world, next_state)
+        if next_next_states:
+            next_states.extend(next_next_states)
+        else:
+            final_states.append(next_state)
+
+    print(len(final_states))
+    scores = [(score_state(world, x.score), x.score) for x in final_states]
+    print(max(scores))
 
 
 ############ Part 3: main
@@ -297,6 +341,7 @@ def main():
     input_file = read_input("example")
     parsed_caves = parse_input(input_file)
     world = build_world(parsed_caves, 26)
+    # print("UPDATE TIME REMAINING!")
     pprint(world.locations)
     pprint(world.distances)
     aa_index = next(x.index for x in world.locations if x.name == "AA")
