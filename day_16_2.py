@@ -3,6 +3,7 @@ from itertools import chain, combinations
 from pprint import pprint
 from pathlib import Path
 import re
+import statistics
 from typing import Dict, List, Literal, NamedTuple, Tuple
 
 
@@ -201,7 +202,7 @@ def calculate_best_choices_at(world: World, min: int, bc: BestChoices):
                     for me_target in possible_me_targets:
                         for ele_target in possible_ele_targets:
                             count += 1
-                            if count % 100_000 == 0:
+                            if count % 1_000_000 == 0:
                                 print(count)
                             if ele_target == me_target:
                                 continue
@@ -224,14 +225,15 @@ def run_back_in_time(world: World):
 
 
 def main():
-    input_file = read_input("puzzle")
+    input_file = read_input("example")
     parsed_caves = parse_input(input_file)
     world = build_world(parsed_caves, 26)
     pprint(world.locations)
     pprint(world.distances)
     aa_index = next(x.index for x in world.locations if x.name == "AA")
-    bc = run_back_in_time(world)
-    print(bc[1][WorldState(aa_index, aa_index, 0)].resulting_state)
+    # bc = run_back_in_time(world)
+    # print(bc[1][WorldState(aa_index, aa_index, 0)].resulting_state)
+    print(statistics.fmean([statistics.fmean(x) for x in world.distances]))
 
 
 if __name__ == "__main__":
