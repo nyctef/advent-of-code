@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pprint
 from typing import NamedTuple
+import sys
+
+sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
 
 
 class Shape(NamedTuple):
@@ -108,16 +111,11 @@ def draw_chamber_with_extra_shape(c: Chamber, shape: Shape, pos: complex):
     draw_chamber(chamber, chamber.next_rock_row)
 
 
-def main():
-    # input_file, limit = (read_input("example"), 10)
-    input_file, limit = (read_input("example"), 2022)
-    # input_file, limit = (read_input("puzzle"), 10)
-    jet_index = 0
-    jets = [1 if c == ">" else -1 for c in input_file]
-
+def simulate(jets: list[int], limit: int):
     chamber = Chamber()
     next_shape_index = 0
     dropped_shapes_counter = 0
+    jet_index = 0
     while dropped_shapes_counter < limit:
         next_shape = shapes[next_shape_index]
 
@@ -151,12 +149,45 @@ def main():
             # print("bumping up next rock row")
             chamber.next_rock_row += 1
 
-        print(chamber.next_rock_row - 3)
+        # print(
+        #     f"shape {next_shape_index=} landed at {pos=} so checking {round(pos.imag -  next_shape.height + 1)=}"
+        # )
+        floor = round(pos.imag - next_shape.height + 1)
+        if chamber.rows[floor] == (["#"] * 7):
+            print(
+                f"found new floor at {dropped_shapes_counter=} {floor=} {next_shape_index=} {jet_index=}"
+            )
+
+        # print(chamber.next_rock_row - 3)
 
         next_shape_index = (next_shape_index + 1) % len(shapes)
         dropped_shapes_counter += 1
 
+        if dropped_shapes_counter % 50_000 == 0:
+            print(dropped_shapes_counter)
+        if (jet_index == 0) and (next_shape_index == 0):
+            print(dropped_shapes_counter)
+            if chamber.rows[chamber.next_rock_row - 4] == (["#"] * 7):
+                raise Exception(f"found a loop at {dropped_shapes_counter}!!!")
+    print(chamber.next_rock_row - 3)
+    print(chamber.rows[chamber.next_rock_row - 4])
+    return chamber
+
+
+def main():
+    # input_file, limit = (read_input("example"), 10)
+    input_file, limit = (read_input("puzzle"), 750)
+    # input_file, limit = (read_input("puzzle"), 10)
+    jets = [1 if c == ">" else -1 for c in input_file]
+
+    # print(len(jets * 5))
+    chamber = simulate(jets, limit)
     # draw_chamber(chamber, chamber.next_rock_row)
+
+    # running_total = 0
+    # for (i, jet) in enumerate(jets):
+    #     running_total += jet
+    #     print(f"{i}\t{running_total}")
 
 
 if __name__ == "__main__":
