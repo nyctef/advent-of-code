@@ -78,13 +78,10 @@ def main():
 
     steam_points: set[Tuple[int, int, int]] = set()
 
+    bumps = 0
     while queue:
         next = queue.pop()
-        seen.add(next)
-        if next in droplet_points:
-            continue
-        else:
-            steam_points.add(next)
+        steam_points.add(next)
 
         for direction in [
             (1, 0, 0),
@@ -99,8 +96,12 @@ def main():
                 continue
             if c[0] > bounds[0] or c[1] > bounds[1] or c[2] > bounds[2]:
                 continue
+            if c in droplet_points:
+                bumps += 1
+                continue
             if c in seen:
                 continue
+            seen.add(c)
             queue.append(c)
 
     print(f"{len(droplet_points)=}")
@@ -113,7 +114,7 @@ def main():
                 # air/rock boundary, so count it
                 outside_surface += 1
 
-    print(f"{outside_surface=}")
+    print(f"{outside_surface=} {bumps=}")
 
 
 if __name__ == "__main__":
