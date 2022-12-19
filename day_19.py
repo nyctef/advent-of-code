@@ -1,7 +1,8 @@
+from collections import deque
 from pathlib import Path
 from pprint import pprint
 import re
-from typing import Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, List, NamedTuple, Tuple
 
 
 def read_input(name: str):
@@ -149,26 +150,48 @@ class SearchStep(NamedTuple):
         )
 
 
-def simulate(blueprint: Blueprint, total_time: int):
+def simulate(blueprint: Blueprint, total_time: int, log: Any):
     min1 = SearchStep(1, 1, 0, 0, 0, 1, 0, 0, 0)
-    best_after_each_min = [min1] * (total_time + 1)
+    lower_bound_per_min = [min1] * (total_time + 1)
+    best_geodes_per_min = [min1] * (total_time + 1)
 
-    q: List[SearchStep] = []
+    progress = 0
+
+    q: deque[SearchStep] = deque()
     q.append(min1)
     while q:
         n = q.pop()
-        pprint(n)
-        if n.all_greater(best_after_each_min[n.after_minute]):
-            print(f"found a new best for min {n}")
-            best_after_each_min[n.after_minute] = n
+        progress += 1
+        if progress % 500_000 == 0:
+            print(
+                f"progress: {progress} {len(q)=} {best_geodes_per_min[total_time].geode_count=}"
+            )
+        log(n)
+        if n.all_greater(lower_bound_per_min[n.after_minute]):
+            log(f"found a new lower bound for min {n}")
+            lower_bound_per_min[n.after_minute] = n
 
-        if best_after_each_min[n.after_minute].all_greater(n):
+        if (
+            lower_bound_per_min[n.after_minute].all_greater(n)
+            and n != lower_bound_per_min[n.after_minute]
+        ):
             # we're in a strictly worse state, so this branch isn't worth considering
-            print("halting early")
+            log("halting early")
             continue
 
+        if n.geode_count > best_geodes_per_min[n.after_minute].geode_count:
+            best_geodes_per_min[n.after_minute] = n
+
+        time_remaining = total_time - n.after_minute
+        geode_deficiency = (
+            best_geodes_per_min[n.after_minute].geode_count - n.geode_count
+        )
+        # if geode_deficiency > time_remaining:
+        #     # RECHECK: it might not be possible to catch up at this point?
+        #     continue
+
         if n.after_minute == total_time:
-            print("done")
+            log("done")
             continue
 
         # one option is always to do nothing
@@ -176,18 +199,29 @@ def simulate(blueprint: Blueprint, total_time: int):
         q.append(n2)
 
         # note checking whether we can buy at the start of the minute, but actually buying after the minute
+        if n.can_buy_ore_robot(blueprint) and n.ore_robot_count < 2:
+            q.append(n2.buy_ore_robot(blueprint))
         if n.can_buy_clay_robot(blueprint):
             q.append(n2.buy_clay_robot(blueprint))
+        if n.can_buy_obsidian_robot(blueprint):
+            q.append(n2.buy_obsidian_robot(blueprint))
+        if n.can_buy_geode_robot(blueprint):
+            q.append(n2.buy_geode_robot(blueprint))
 
-    return best_after_each_min
+    return (lower_bound_per_min, best_geodes_per_min)
+
+
+def nothing(*args):
+    pass
 
 
 def main():
     input = read_input("example")
     parsed = parse_input(input)
-    bp0 = parsed[0]
-    scores = simulate(bp0, 5)
-    pprint(scores)
+
+    for bp in parsed:
+        (bounds, scores) = simulate(bp, 24, nothing)
+        pprint((bp.id, scores[24].geode_count))
 
 
 if __name__ == "__main__":
