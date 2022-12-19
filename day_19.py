@@ -85,14 +85,14 @@ class SearchStep(NamedTuple):
 
     def all_greater(self, other: "SearchStep"):
         return (
-            self.ore_count > other.ore_count
-            and self.clay_count > other.clay_count
-            and self.obsidian_count > other.obsidian_count
-            and self.geode_count > other.geode_count
-            and self.ore_robot_count > other.ore_robot_count
-            and self.clay_robot_count > other.clay_robot_count
-            and self.obsidian_robot_count > other.obsidian_robot_count
-            and self.geode_robot_count > other.geode_robot_count
+            self.ore_count >= other.ore_count
+            and self.clay_count >= other.clay_count
+            and self.obsidian_count >= other.obsidian_count
+            and self.geode_count >= other.geode_count
+            and self.ore_robot_count >= other.ore_robot_count
+            and self.clay_robot_count >= other.clay_robot_count
+            and self.obsidian_robot_count >= other.obsidian_robot_count
+            and self.geode_robot_count >= other.geode_robot_count
         )
 
     def simulate_minute(self):
