@@ -1,4 +1,5 @@
 from collections import deque
+import math
 from multiprocessing import Pool
 from pathlib import Path
 from pprint import pprint
@@ -165,7 +166,8 @@ def simulate_fantasy(
         n2 = n.simulate_minute()
         if n.can_buy_ore_robot(blueprint):
             n2 = n2.buy_ore_robot(blueprint)
-            # but we need to cheat and refund that ore since we might need to buy something else with that ore too?
+            # but on the first step  (or later?) we need to cheat and refund that ore since we might need to buy something else with that ore too?
+            # if n.after_minute == current_step_to_analyze.after_minute:
             n2 = n2._replace(ore_count=n2.ore_count + blueprint.ore_robot_ore_cost)
         n = ideal_future[n2.after_minute] = n2
 
@@ -214,15 +216,16 @@ def simulate_fantasy(
     return ideal_future[total_time].geode_count
 
 
-def simulate(blueprint: Blueprint, total_time: int, log: Any):
+def simulate(blueprint: Blueprint, total_time: int, log: Any, target_geode_count: int):
     min1 = SearchStep(1, 1, 0, 0, 0, 1, 0, 0, 0)
     lower_bound_per_min = [min1] * (total_time + 1)
     best_geodes_per_min = [min1] * (total_time + 1)
+    best_geodes_per_min[total_time] = min1._replace(geode_count=target_geode_count)
 
     total_steps_considered = 0
     steps_eliminated_due_to_lower_bound = 0
     steps_eliminated_due_to_fantasy_check = 0
-    fantasy_elims_at_minute = [0] * 25
+    fantasy_elims_at_minute = [0] * (total_time + 1)
     paths_completed = 0
 
     q: deque[SearchStep] = deque()
@@ -232,7 +235,7 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         total_steps_considered += 1
         if total_steps_considered % 10_000 == 0:
             print(
-                f"progress: id{blueprint.id} tsc={total_steps_considered} {len(q)=} best_g_at_24={best_geodes_per_min[total_time].geode_count} lowbound_elims={steps_eliminated_due_to_lower_bound} pc={paths_completed} fantasy_elims={steps_eliminated_due_to_fantasy_check}"
+                f"progress: id{blueprint.id} tsc={total_steps_considered} {len(q)=} best_g_at_24={best_geodes_per_min[total_time].geode_count} lowbound_elims={steps_eliminated_due_to_lower_bound} pc={paths_completed} fantasy_elims={steps_eliminated_due_to_fantasy_check} elim%={(steps_eliminated_due_to_fantasy_check + steps_eliminated_due_to_lower_bound) / total_steps_considered}"
             )
             print(fantasy_elims_at_minute)
         log(n)
@@ -269,7 +272,7 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
             log("done")
             continue
 
-        if n.after_minute > total_time / 2:
+        if n.after_minute >= 20 and n.after_minute <= 28:
             fantasy_geode_amounts = simulate_fantasy(blueprint, n, total_time)
             if fantasy_geode_amounts <= best_geodes_per_min[total_time].geode_count:
                 steps_eliminated_due_to_fantasy_check += 1
@@ -294,14 +297,14 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         )
 
         # note checking whether we can buy at the start of the minute, but actually buying after the minute
-        if not enough_ore_robots and n.can_buy_ore_robot(blueprint):
-            q.append(n2.buy_ore_robot(blueprint))
-        if not enough_clay_robots and n.can_buy_clay_robot(blueprint):
-            q.append(n2.buy_clay_robot(blueprint))
-        if not enough_obsidian_robots and n.can_buy_obsidian_robot(blueprint):
-            q.append(n2.buy_obsidian_robot(blueprint))
         if n.can_buy_geode_robot(blueprint):
             q.append(n2.buy_geode_robot(blueprint))
+        if not enough_obsidian_robots and n.can_buy_obsidian_robot(blueprint):
+            q.append(n2.buy_obsidian_robot(blueprint))
+        if not enough_clay_robots and n.can_buy_clay_robot(blueprint):
+            q.append(n2.buy_clay_robot(blueprint))
+        if not enough_ore_robots and n.can_buy_ore_robot(blueprint):
+            q.append(n2.buy_ore_robot(blueprint))
 
     return (lower_bound_per_min, best_geodes_per_min)
 
@@ -313,6 +316,7 @@ def nothing(*args):
 def main():
     input = read_input("puzzle")
     parsed = parse_input(input)
+    parsed = parsed[:3]
 
     # with Pool() as p:
     #     results = p.map(simulate_pooled, parsed)
@@ -320,13 +324,13 @@ def main():
     results: List[Tuple[int, int]] = []
     for bp in parsed:
         print(f"simulating {bp.id=}")
-        bounds, records = simulate(bp, 24, nothing)
-        results.append((bp.id, records[24].geode_count))
+        bounds, records = simulate(bp, 32, nothing, 100)
+        results.append((bp.id, records[32].geode_count))
 
     # results = simulate_fantasy(parsed[0], SearchStep(1, 1, 0, 0, 0, 1, 0, 0, 0), 24)
 
     pprint(results)
-    pprint(sum(id * score for id, score in results))
+    pprint(math.prod(score for id, score in results))
 
 
 if __name__ == "__main__":
