@@ -164,7 +164,7 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         progress += 1
         if progress % 500_000 == 0:
             print(
-                f"progress: {progress} {len(q)=} {best_geodes_per_min[total_time].geode_count=}"
+                f"progress: id{blueprint.id} {progress} {len(q)=} {best_geodes_per_min[total_time].geode_count=}"
             )
         log(n)
         if n.all_greater(lower_bound_per_min[n.after_minute]):
