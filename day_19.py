@@ -1,4 +1,5 @@
 from collections import deque
+from multiprocessing import Pool
 from pathlib import Path
 from pprint import pprint
 import re
@@ -182,6 +183,10 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         if n.geode_count > best_geodes_per_min[n.after_minute].geode_count:
             best_geodes_per_min[n.after_minute] = n
 
+        if n.geode_count < best_geodes_per_min[n.after_minute].geode_count:
+            # RECHECK: what happens if we're greedy for geodes?
+            continue
+
         time_remaining = total_time - n.after_minute
         geode_deficiency = (
             best_geodes_per_min[n.after_minute].geode_count - n.geode_count
@@ -199,7 +204,7 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         q.append(n2)
 
         # note checking whether we can buy at the start of the minute, but actually buying after the minute
-        if n.can_buy_ore_robot(blueprint) and n.ore_robot_count < 2:
+        if n.can_buy_ore_robot(blueprint):
             q.append(n2.buy_ore_robot(blueprint))
         if n.can_buy_clay_robot(blueprint):
             q.append(n2.buy_clay_robot(blueprint))
@@ -215,13 +220,20 @@ def nothing(*args):
     pass
 
 
+def simulate_pooled(bp: Blueprint):
+    (bounds, scores) = simulate(bp, 24, nothing)
+    return (bp.id, scores[24].geode_count)
+
+
 def main():
-    input = read_input("example")
+    input = read_input("puzzle")
     parsed = parse_input(input)
 
-    for bp in parsed:
-        (bounds, scores) = simulate(bp, 24, nothing)
-        pprint((bp.id, scores[24].geode_count))
+    with Pool() as p:
+        results = p.map(simulate_pooled, parsed)
+
+    pprint(results)
+    pprint(sum(id * score for id, score in results))
 
 
 if __name__ == "__main__":
