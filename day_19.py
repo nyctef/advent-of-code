@@ -151,22 +151,88 @@ class SearchStep(NamedTuple):
         )
 
 
+def simulate_fantasy(
+    blueprint: Blueprint, current_step_to_analyze: SearchStep, total_time: int
+):
+    ideal_future = [current_step_to_analyze] * (total_time + 1)
+
+    # we're analyzing current_step_to_analyze to see what an upper bound on the best possible future from this step is
+    # any choices we make involve calling
+
+    # imagine we invested everything we could into ore robots
+    n = current_step_to_analyze
+    while n.after_minute != total_time:
+        n2 = n.simulate_minute()
+        if n.can_buy_ore_robot(blueprint):
+            n2 = n2.buy_ore_robot(blueprint)
+        n = ideal_future[n2.after_minute] = n2
+
+    # and then we rewound time and invested all the ore we could into clay robots
+    n = ideal_future[current_step_to_analyze.after_minute]
+    while n.after_minute != total_time:
+        prev_n2 = ideal_future[n.after_minute + 1]
+        n2 = n.simulate_minute()
+        if n.can_buy_clay_robot(blueprint):
+            n2 = n2.buy_clay_robot(blueprint)
+        n2 = n2._replace(
+            ore_count=prev_n2.ore_count, ore_robot_count=prev_n2.ore_robot_count
+        )
+        n = ideal_future[n2.after_minute] = n2
+
+    n = ideal_future[current_step_to_analyze.after_minute]
+    while n.after_minute != total_time:
+        prev_n2 = ideal_future[n.after_minute + 1]
+        n2 = n.simulate_minute()
+        if n.can_buy_obsidian_robot(blueprint):
+            n2 = n2.buy_obsidian_robot(blueprint)
+        n2 = n2._replace(
+            ore_count=prev_n2.ore_count,
+            ore_robot_count=prev_n2.ore_robot_count,
+            clay_count=prev_n2.clay_count,
+            clay_robot_count=prev_n2.clay_robot_count,
+        )
+        n = ideal_future[n2.after_minute] = n2
+
+    n = ideal_future[current_step_to_analyze.after_minute]
+    while n.after_minute != total_time:
+        prev_n2 = ideal_future[n.after_minute + 1]
+        n2 = n.simulate_minute()
+        if n.can_buy_geode_robot(blueprint):
+            n2 = n2.buy_geode_robot(blueprint)
+        n2 = n2._replace(
+            ore_count=prev_n2.ore_count,
+            ore_robot_count=prev_n2.ore_robot_count,
+            clay_count=prev_n2.clay_count,
+            clay_robot_count=prev_n2.clay_robot_count,
+            obsidian_count=prev_n2.obsidian_count,
+            obsidian_robot_count=prev_n2.obsidian_robot_count,
+        )
+        n = ideal_future[n2.after_minute] = n2
+
+    return ideal_future[total_time].geode_count
+
+
 def simulate(blueprint: Blueprint, total_time: int, log: Any):
     min1 = SearchStep(1, 1, 0, 0, 0, 1, 0, 0, 0)
     lower_bound_per_min = [min1] * (total_time + 1)
     best_geodes_per_min = [min1] * (total_time + 1)
 
-    progress = 0
+    total_steps_considered = 0
+    steps_eliminated_due_to_lower_bound = 0
+    steps_eliminated_due_to_fantasy_check = 0
+    fantasy_elims_at_minute = [0] * 25
+    paths_completed = 0
 
     q: deque[SearchStep] = deque()
     q.append(min1)
     while q:
         n = q.pop()
-        progress += 1
-        if progress % 500_000 == 0:
+        total_steps_considered += 1
+        if total_steps_considered % 10_000 == 0:
             print(
-                f"progress: id{blueprint.id} {progress} {len(q)=} {best_geodes_per_min[total_time].geode_count=}"
+                f"progress: id{blueprint.id} tsc={total_steps_considered} {len(q)=} best_g_at_24={best_geodes_per_min[total_time].geode_count} lowbound_elims={steps_eliminated_due_to_lower_bound} pc={paths_completed} fantasy_elims={steps_eliminated_due_to_fantasy_check}"
             )
+            print(fantasy_elims_at_minute)
         log(n)
         if n.all_greater(lower_bound_per_min[n.after_minute]):
             log(f"found a new lower bound for min {n}")
@@ -178,6 +244,7 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         ):
             # we're in a strictly worse state, so this branch isn't worth considering
             log("halting early")
+            steps_eliminated_due_to_lower_bound += 1
             continue
 
         if n.geode_count > best_geodes_per_min[n.after_minute].geode_count:
@@ -196,8 +263,16 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         #     continue
 
         if n.after_minute == total_time:
+            paths_completed += 1
             log("done")
             continue
+
+        if n.after_minute > total_time / 2:
+            fantasy_geode_amounts = simulate_fantasy(blueprint, n, total_time)
+            if fantasy_geode_amounts <= best_geodes_per_min[total_time].geode_count:
+                steps_eliminated_due_to_fantasy_check += 1
+                fantasy_elims_at_minute[n.after_minute] += 1
+                continue
 
         # one option is always to do nothing
         n2 = n.simulate_minute()
@@ -233,19 +308,20 @@ def nothing(*args):
     pass
 
 
-def simulate_pooled(bp: Blueprint):
-    (bounds, scores) = simulate(bp, 24, nothing)
-    return (bp.id, scores[24].geode_count)
-
-
 def main():
-    input = read_input("example")
+    input = read_input("puzzle")
     parsed = parse_input(input)
 
     # with Pool() as p:
     #     results = p.map(simulate_pooled, parsed)
 
-    results = [simulate_pooled(parsed[0])]
+    results: List[Tuple[int, int]] = []
+    for bp in parsed:
+        print(f"simulating {bp.id=}")
+        bounds, records = simulate(bp, 24, nothing)
+        results.append((bp.id, records[24].geode_count))
+
+    # results = simulate_fantasy(parsed[0], SearchStep(1, 1, 0, 0, 0, 1, 0, 0, 0), 24)
 
     pprint(results)
     pprint(sum(id * score for id, score in results))
