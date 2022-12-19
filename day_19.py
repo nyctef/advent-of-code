@@ -183,9 +183,9 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         if n.geode_count > best_geodes_per_min[n.after_minute].geode_count:
             best_geodes_per_min[n.after_minute] = n
 
-        if n.geode_count < best_geodes_per_min[n.after_minute].geode_count:
-            # RECHECK: what happens if we're greedy for geodes?
-            continue
+        # if n.geode_count < best_geodes_per_min[n.after_minute].geode_count:
+        #     # RECHECK: what happens if we're greedy for geodes?
+        #     continue
 
         time_remaining = total_time - n.after_minute
         geode_deficiency = (
@@ -203,12 +203,25 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any):
         n2 = n.simulate_minute()
         q.append(n2)
 
+        # since we can only build one thing each minute
+        max_ore_consumed_per_min = max(
+            blueprint.ore_robot_ore_cost,
+            blueprint.clay_robot_ore_cost,
+            blueprint.obsidian_robot_ore_cost,
+            blueprint.geode_robot_ore_cost,
+        )
+        enough_ore_robots = n.ore_robot_count >= max_ore_consumed_per_min
+        enough_clay_robots = n.clay_robot_count >= blueprint.obsidian_robot_clay_cost
+        enough_obsidian_robots = (
+            n.obsidian_robot_count >= blueprint.geode_robot_obsidian_cost
+        )
+
         # note checking whether we can buy at the start of the minute, but actually buying after the minute
-        if n.can_buy_ore_robot(blueprint):
+        if not enough_ore_robots and n.can_buy_ore_robot(blueprint):
             q.append(n2.buy_ore_robot(blueprint))
-        if n.can_buy_clay_robot(blueprint):
+        if not enough_clay_robots and n.can_buy_clay_robot(blueprint):
             q.append(n2.buy_clay_robot(blueprint))
-        if n.can_buy_obsidian_robot(blueprint):
+        if not enough_obsidian_robots and n.can_buy_obsidian_robot(blueprint):
             q.append(n2.buy_obsidian_robot(blueprint))
         if n.can_buy_geode_robot(blueprint):
             q.append(n2.buy_geode_robot(blueprint))
@@ -226,11 +239,13 @@ def simulate_pooled(bp: Blueprint):
 
 
 def main():
-    input = read_input("puzzle")
+    input = read_input("example")
     parsed = parse_input(input)
 
-    with Pool() as p:
-        results = p.map(simulate_pooled, parsed)
+    # with Pool() as p:
+    #     results = p.map(simulate_pooled, parsed)
+
+    results = [simulate_pooled(parsed[0])]
 
     pprint(results)
     pprint(sum(id * score for id, score in results))
