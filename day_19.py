@@ -224,8 +224,11 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any, target_geode_count
     total_steps_considered = 0
     steps_eliminated_due_to_lower_bound = 0
     steps_eliminated_due_to_fantasy_check = 0
+    seen_elims = 0
     fantasy_elims_at_minute = [0] * (total_time + 1)
     paths_completed = 0
+
+    seen: set[SearchStep] = set()
 
     q: deque[SearchStep] = deque()
     q.append(min1)
@@ -234,10 +237,16 @@ def simulate(blueprint: Blueprint, total_time: int, log: Any, target_geode_count
         total_steps_considered += 1
         if total_steps_considered % 10_000 == 0:
             print(
-                f"progress: id{blueprint.id} tsc={total_steps_considered} {len(q)=} t={target_geode_count} best_g={best_geodes_per_min[total_time].geode_count} lowbound_elims={steps_eliminated_due_to_lower_bound} pc={paths_completed} fantasy_elims={steps_eliminated_due_to_fantasy_check} elim%={(steps_eliminated_due_to_fantasy_check + steps_eliminated_due_to_lower_bound) / total_steps_considered}"
+                f"progress: id{blueprint.id} tsc={total_steps_considered} {len(q)=} t={target_geode_count} best_g={best_geodes_per_min[total_time].geode_count} lowbound_elims={steps_eliminated_due_to_lower_bound} pc={paths_completed} fantasy_elims={steps_eliminated_due_to_fantasy_check} seen_elims={seen_elims} elim%={(steps_eliminated_due_to_fantasy_check + steps_eliminated_due_to_lower_bound + seen_elims) / total_steps_considered}"
             )
             print(fantasy_elims_at_minute)
         log(n)
+
+        if n in seen:
+            seen_elims += 1
+            continue
+        seen.add(n)
+
         if n.all_greater(lower_bound_per_min[n.after_minute]):
             log(f"found a new lower bound for min {n}")
             lower_bound_per_min[n.after_minute] = n
@@ -327,10 +336,10 @@ def main():
 
     results: List[Tuple[int, int]] = []
     for bp in parsed:
-        for target in reversed(range(0, 60, 5)):
-            print(f"simulating {bp.id=} with {target=}")
-            bounds, records = simulate(bp, 32, nothing, target)
-            results.append((bp.id, records[32].geode_count))
+        target = 0
+        print(f"simulating {bp.id=} with {target=}")
+        bounds, records = simulate(bp, 32, nothing, target)
+        results.append((bp.id, records[32].geode_count))
 
     # results = simulate_fantasy(parsed[0], SearchStep(1, 1, 0, 0, 0, 1, 0, 0, 0), 24)
 
