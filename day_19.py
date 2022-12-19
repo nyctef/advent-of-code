@@ -165,6 +165,8 @@ def simulate_fantasy(
         n2 = n.simulate_minute()
         if n.can_buy_ore_robot(blueprint):
             n2 = n2.buy_ore_robot(blueprint)
+            # but we need to cheat and refund that ore since we might need to buy something else with that ore too?
+            n2 = n2._replace(ore_count=n2.ore_count + blueprint.ore_robot_ore_cost)
         n = ideal_future[n2.after_minute] = n2
 
     # and then we rewound time and invested all the ore we could into clay robots
