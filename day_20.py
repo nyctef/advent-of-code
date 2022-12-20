@@ -41,15 +41,10 @@ def do_mix_step(step: int, parsed: list, log: Any):
     if abs(move_distance) % (len(parsed) - 1) == 0:
         log(f"moving n-1 positions seems to be a loop")
         return
-    if abs(move_distance) >= len(parsed):
-        # ????
-        move_distance += sign(move_distance)
-    if abs(move_distance) >= len(parsed) * 2:
-        # ????
-        move_distance += sign(move_distance)
-    bound_i1 = (current_i + move_distance) % len(parsed)
-    bound_i2 = (current_i + move_distance + sign(move_distance)) % len(parsed)
+    bound_i1 = (current_i + move_distance) % (len(parsed))
+    bound_i2 = (current_i + move_distance + sign(move_distance)) % (len(parsed))
     bound_i1, bound_i2 = min(bound_i1, bound_i2), max(bound_i1, bound_i2)
+    log(f"{current_i=} {move_distance=} {len(parsed) - 1=} {bound_i1=} {bound_i2=}")
     if bound_i1 == current_i:
         bound_i1 = (bound_i1 - 1) % len(parsed)
     if bound_i2 == current_i:
@@ -78,18 +73,23 @@ def do_mix_step(step: int, parsed: list, log: Any):
     del parsed[current_i]
 
 
-def main(input_name, log):
+def main(input_name, log, multiplier, rounds):
     input_file = read_input(input_name)
     just_nums = [int(x) for x in input_file.splitlines()]
+    just_nums = [x * multiplier for x in just_nums]
     parsed = list(enumerate(just_nums))
     # assert len(just_nums) == len(set(just_nums))
     log([x[1] for x in parsed])
     print(len(parsed))
 
-    for step in range(len(parsed)):
-        do_mix_step(step, parsed, log)
-        if len(parsed) < 20:
-            log([x[1] for x in parsed])
+    for round in range(rounds):
+        print()
+        print(f"round {round+1}")
+        print("-----------------------------------------")
+        for step in range(len(parsed)):
+            do_mix_step(step, parsed, log)
+            if len(parsed) < 20:
+                log([x[1] for x in parsed])
 
     if len(parsed) < 20:
         print([x[1] for x in parsed])
@@ -129,7 +129,8 @@ def test_2():
 
 
 if __name__ == "__main__":
-    main("example", print)
-    main("puzzle", nothing)
+    main("example", print, 1, 1)
+    main("example", print, 811589153, 10)
+    # main("puzzle", nothing)
     # test_1()
     # test_2()
