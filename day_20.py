@@ -25,7 +25,7 @@ def sign(x: int):
 
 
 def main():
-    input_file = read_input("puzzle")
+    input_file = read_input("example")
     parsed = [int(x) for x in input_file.splitlines()]
     parsed = list(enumerate(parsed))
 
@@ -35,7 +35,7 @@ def main():
         # print(f"moving {to_move[1]} from index {i}")
         where_to_move = to_move[1]
         # off-by-one hacks
-        if where_to_move < 0:
+        if i + where_to_move <= 0:
             where_to_move -= 1
         if i + where_to_move >= len(parsed):
             where_to_move += 1
@@ -51,6 +51,7 @@ def main():
         # pprint([x[1] for x in parsed])
         # print()
 
+    print([x[1] for x in parsed])
     zero_index, zero = next((i, x) for i, x in enumerate(parsed) if x[1] == 0)
     x = parsed[(zero_index + 1000) % len(parsed)][1]
     y = parsed[(zero_index + 2000) % len(parsed)][1]
