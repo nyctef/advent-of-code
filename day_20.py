@@ -54,10 +54,7 @@ def main():
         target_item = parsed[to_move_to]
         log(f"{to_move[1]=} wants to end up where {target_item[1]} currently is")
         direction = sign(where_to_move)
-        # log(f"moving {to_move[1]} {where_to_move=} {direction=}")
-        current_i = i
 
-        # del parsed[current_i]
         log(f"we remove the item we're moving first")
         parsed.remove(to_move)
         log(f"then find where our target item has ended up")
@@ -66,12 +63,19 @@ def main():
         except StopIteration:
             print(f"{step=} failed to find {target_item} in list")
             raise
-        log(f"our new item ended up at index {new_i}")
+        log(f"our target item ended up at index {new_i}")
         direction = 1 if direction > 0 else 0
         log(f"so we're going to be at {direction=} -> {new_i + direction=}")
         updated_loc = new_i + direction
         if updated_loc == 0:
+            # if we're trying to replace the item at index zero, that item stays where it is:
+            # we end up on the end of the list
             updated_loc = len(parsed)
+
+        if abs(where_to_move) >= len(parsed):
+            print(
+                f"{step=} moving {to_move=} from current index {i} to {to_move_to=} replacing {target_item=} {direction=} {updated_loc=}"
+            )
         parsed.insert(updated_loc, to_move)
 
         # print(parsed)
