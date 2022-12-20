@@ -64,18 +64,25 @@ def main():
             print(f"{step=} failed to find {target_item} in list")
             raise
         log(f"our target item ended up at index {new_i}")
+        # list.insert takes the index of the item to be ahead of,
+        # so since positive moves want to go after their target item
+        # we need to add one here to be inserted before the next element
         direction = 1 if direction > 0 else 0
         log(f"so we're going to be at {direction=} -> {new_i + direction=}")
         updated_loc = new_i + direction
         if updated_loc == 0:
             # if we're trying to replace the item at index zero, that item stays where it is:
-            # we end up on the end of the list
+            # we end up looping to the end of the list
             updated_loc = len(parsed)
+        if updated_loc == len(parsed):
+            # guess: maybe the opposite is true as well?
+            # TODO: this one hasn't been proven
+            updated_loc = 0
 
-        if abs(where_to_move) >= len(parsed):
-            print(
-                f"{step=} moving {to_move=} from current index {i} to {to_move_to=} replacing {target_item=} {direction=} {updated_loc=}"
-            )
+        # if abs(where_to_move) >= len(parsed):
+        #     print(
+        #         f"{step=} moving {to_move=} from current index {i} to {to_move_to=} replacing {target_item=} {direction=} {updated_loc=}"
+        #     )
         parsed.insert(updated_loc, to_move)
 
         # print(parsed)
