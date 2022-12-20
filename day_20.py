@@ -36,6 +36,7 @@ def main():
     parsed = [int(x) for x in input_file.splitlines()]
     parsed = list(enumerate(parsed))
     log([x[1] for x in parsed])
+    print(len(parsed))
 
     for step in range(len(parsed)):
         log(f"step {step+1}")
@@ -44,7 +45,10 @@ def main():
         where_to_move = to_move[1]
 
         if where_to_move == 0:
-            log(f"ignoring zero")
+            print(f"{step=} {to_move=} ignoring zero")
+            continue
+        if where_to_move % len(parsed) == 0:
+            print(f"{step=} {to_move=} ignoring loop?")
             continue
         to_move_to = (i + where_to_move) % len(parsed)
         target_item = parsed[to_move_to]
