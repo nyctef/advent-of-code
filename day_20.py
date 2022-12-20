@@ -31,72 +31,62 @@ def nothing(*args):
 
 def do_mix_step(step: int, parsed: list, log: Any):
     log(f"step {step+1}")
-    i, to_move = next(((i, x) for i, x in enumerate(parsed) if x[0] == step))
-    log(f"moving {to_move[1]} from index {i}")
-    where_to_move = to_move[1]
-
-    if where_to_move == 0:
-        log(f"{step=} {to_move=} ignoring zero")
+    current_i, to_move = next(((i, x) for i, x in enumerate(parsed) if x[0] == step))
+    log(f"moving {to_move[1]} from index {current_i}")
+    move_distance = to_move[1]
+    s = sign(move_distance)
+    if move_distance == 0:
+        log(f"zero doesn't move")
         return
-    if where_to_move % len(parsed) == 0:
-        log(f"{step=} {to_move=} ignoring loop?")
+    if abs(move_distance) % (len(parsed) - 1) == 0:
+        log(f"moving n-1 positions seems to be a loop")
         return
-    to_move_to = (i + where_to_move) % len(parsed)
-    if abs(to_move_to) < 5:
-        log(f"{step=} near-boundary condition moving {to_move} at {i} to {to_move_to}")
-    target_item = parsed[to_move_to]
-    log(f"{to_move[1]=} wants to end up where {target_item[1]} currently is")
-
-    log(f"we remove the item we're moving first")
+    if abs(move_distance) >= len(parsed):
+        # ????
+        move_distance += sign(move_distance)
+    if abs(move_distance) >= len(parsed) * 2:
+        # ????
+        move_distance += sign(move_distance)
+    bound_i1 = (current_i + move_distance) % len(parsed)
+    bound_i2 = (current_i + move_distance + sign(move_distance)) % len(parsed)
+    bound_i1, bound_i2 = min(bound_i1, bound_i2), max(bound_i1, bound_i2)
+    if bound_i1 == current_i:
+        bound_i1 = (bound_i1 - 1) % len(parsed)
+    if bound_i2 == current_i:
+        bound_i2 = (bound_i2 + 1) % len(parsed)
+    bound_1 = parsed[bound_i1][1]
+    bound_2 = parsed[bound_i2][1]
+    log(f"{to_move[1]} moves between {bound_1} and {bound_2}")
+    log("removing to_move")
     parsed.remove(to_move)
-    log(f"then find where our target item has ended up")
-    try:
-        new_i = next(i for i, e in enumerate(parsed) if e == target_item)
-    except StopIteration:
-        print(f"{step=} failed to find {target_item} in list")
-        raise
-    log(f"our target item ended up at index {new_i}")
-    # list.insert takes the index of the item to be ahead of,
-    # so since positive moves want to go after their target item
-    # we need to add one here to be inserted before the next element
-    insert_fixup = 0
-    if where_to_move > 0 and new_i >= i:
-        insert_fixup = 1
-    if where_to_move < 0 and new_i >= i:
-        insert_fixup = 1
-    log(f"so we're going to be at {insert_fixup=} -> {new_i + insert_fixup=}")
-    updated_loc = new_i + insert_fixup
-    if where_to_move < 0 and updated_loc == 0:
-        # if we're trying to replace the item at index zero, that item stays where it is:
-        # we end up looping to the end of the list
-        # realised this doesn't really matter in the end (it just makes the output look more like the examples)
-        # since we should be treating the list as a ring anyway
-        updated_loc = len(parsed)
-    # if updated_loc == len(parsed):
-    #     # guess: maybe the opposite is true as well?
-    #     # TODO: this one hasn't been proven
-    #     updated_loc = 0
+    log("finding where our bounds ended up")
+    bound_i1, _ = next((i, e) for i, e in enumerate(parsed) if e[1] == bound_1)
+    bound_i2, _ = next((i, e) for i, e in enumerate(parsed) if e[1] == bound_2)
 
-    # if abs(where_to_move) >= len(parsed):
-    #     print(
-    #         f"{step=} moving {to_move=} from current index {i} to {to_move_to=} replacing {target_item=} {direction=} {updated_loc=}"
-    #     )
-    parsed.insert(updated_loc, to_move)
+    min_index = min(bound_i1, bound_i2)
+    max_index = max(bound_i1, bound_i2)
+    log(f"{bound_i1=} {bound_i2=} {min_index=} {max_index=}")
+    if min_index == 0 and max_index == len(parsed) - 1:
+        log(f"sticking it at the end of the list")
+        insert_location = len(parsed)
+    else:
+        insert_location = max_index
 
-    # print(parsed)
-    # log([x[1] for x in parsed])
-    # log()
+    parsed.insert(insert_location, to_move)
 
 
-def main(input_name):
+def main(input_name, log):
     input_file = read_input(input_name)
     parsed = [int(x) for x in input_file.splitlines()]
     parsed = list(enumerate(parsed))
-    nothing([x[1] for x in parsed])
+    assert len(parsed) == len(set(parsed))
+    log([x[1] for x in parsed])
     print(len(parsed))
 
     for step in range(len(parsed)):
-        do_mix_step(step, parsed, nothing)
+        do_mix_step(step, parsed, log)
+        if len(parsed) < 20:
+            log([x[1] for x in parsed])
 
     if len(parsed) < 20:
         print([x[1] for x in parsed])
@@ -111,12 +101,13 @@ def main(input_name):
 def test_1():
     print(f"test 1 ----------------")
     l1 = [0, 1, 2, 3, "x", 5, 6, 7, 8, 9]
-    for x in range(12):
+    for x in range(24):
         # for x in [2, 6]:
-        l = list(enumerate([x if a == "x" else a for a in l1]))
+        l = list(enumerate([x if a == "x" else a for a in l1 if a != x]))
         print(f" testing with {x=}")
         print([x[1] for x in l])
-        do_mix_step(4, l, nothing)
+        step_index = next(i for i, e in enumerate(l) if e[1] == x)
+        do_mix_step(step_index, l, print if x in (5,) else nothing)
         print([x[1] for x in l])
         print()
 
@@ -124,18 +115,18 @@ def test_1():
 def test_2():
     print(f"test 2 ----------------")
     l1 = [0, 1, 2, 3, "x", 5, 6, 7, 8, 9]
-    for x in range(-12, 0):
+    for x in range(-24, 0):
         # for x in [-9, -2]:
-        l = list(enumerate([x if a == "x" else a for a in l1]))
+        l = list(enumerate([x if a == "x" else a for a in l1 if a != x]))
         print(f" testing with {x=}")
         print([x[1] for x in l])
-        do_mix_step(4, l, print if x in () else nothing)
+        do_mix_step(4, l, print if x in (-10,) else nothing)
         print([x[1] for x in l])
         print()
 
 
 if __name__ == "__main__":
-    main("example")
-    # main("puzzle")
+    # main("example", print)
+    main("puzzle", nothing)
     test_1()
     test_2()
