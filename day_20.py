@@ -44,9 +44,12 @@ def do_mix_step(step: int, parsed: list):
         print(f"{step=} {to_move=} ignoring loop?")
         return
     to_move_to = (i + where_to_move) % len(parsed)
+    if abs(to_move_to) < 5:
+        print(
+            f"{step=} near-boundary condition moving {to_move} at {i} to {to_move_to}"
+        )
     target_item = parsed[to_move_to]
     log(f"{to_move[1]=} wants to end up where {target_item[1]} currently is")
-    direction = sign(where_to_move)
 
     log(f"we remove the item we're moving first")
     parsed.remove(to_move)
@@ -60,17 +63,17 @@ def do_mix_step(step: int, parsed: list):
     # list.insert takes the index of the item to be ahead of,
     # so since positive moves want to go after their target item
     # we need to add one here to be inserted before the next element
-    direction = 1 if direction > 0 else 0
-    log(f"so we're going to be at {direction=} -> {new_i + direction=}")
-    updated_loc = new_i + direction
-    if updated_loc == 0:
+    insert_fixup = 1 if where_to_move > 0 else 0
+    log(f"so we're going to be at {insert_fixup=} -> {new_i + insert_fixup=}")
+    updated_loc = new_i + insert_fixup
+    if where_to_move < 0 and updated_loc == 0:
         # if we're trying to replace the item at index zero, that item stays where it is:
         # we end up looping to the end of the list
         updated_loc = len(parsed)
-    if updated_loc == len(parsed):
-        # guess: maybe the opposite is true as well?
-        # TODO: this one hasn't been proven
-        updated_loc = 0
+    # if updated_loc == len(parsed):
+    #     # guess: maybe the opposite is true as well?
+    #     # TODO: this one hasn't been proven
+    #     updated_loc = 0
 
     # if abs(where_to_move) >= len(parsed):
     #     print(
@@ -83,8 +86,8 @@ def do_mix_step(step: int, parsed: list):
     log()
 
 
-def main():
-    input_file = read_input("example")
+def main(input_name):
+    input_file = read_input(input_name)
     parsed = [int(x) for x in input_file.splitlines()]
     parsed = list(enumerate(parsed))
     log([x[1] for x in parsed])
@@ -93,7 +96,8 @@ def main():
     for step in range(len(parsed)):
         do_mix_step(step, parsed)
 
-    log([x[1] for x in parsed])
+    if len(parsed) < 20:
+        print([x[1] for x in parsed])
     zero_index, zero = next((i, x) for i, x in enumerate(parsed) if x[1] == 0)
     x = parsed[(zero_index + 1000) % len(parsed)][1]
     y = parsed[(zero_index + 2000) % len(parsed)][1]
@@ -102,5 +106,19 @@ def main():
     print(x + y + z)
 
 
+def tests():
+    print(f"test 1")
+    l1 = [0, 1, 2, 3, "x", 5, 6, 7, 8, 9]
+    for x in range(12):
+        l = list(enumerate([x if a == "x" else a for a in l1]))
+        print(f" testing with {x=}")
+        print([x[1] for x in l])
+        do_mix_step(4, l)
+        print([x[1] for x in l])
+        print()
+
+
 if __name__ == "__main__":
-    main()
+    main("example")
+    # main("puzzle")
+    tests()
