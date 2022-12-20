@@ -58,10 +58,9 @@ def do_mix_step(step: int, parsed: list, log: Any):
     bound_2 = parsed[bound_i2][1]
     log(f"{to_move[1]} moves between {bound_1} and {bound_2}")
     log("removing to_move")
-    parsed.remove(to_move)
-    log("finding where our bounds ended up")
-    bound_i1, _ = next((i, e) for i, e in enumerate(parsed) if e[1] == bound_1)
-    bound_i2, _ = next((i, e) for i, e in enumerate(parsed) if e[1] == bound_2)
+    # log("finding where our bounds ended up")
+    # bound_i1, _ = next((i, e) for i, e in enumerate(parsed) if e[1] == bound_1)
+    # bound_i2, _ = next((i, e) for i, e in enumerate(parsed) if e[1] == bound_2)
 
     min_index = min(bound_i1, bound_i2)
     max_index = max(bound_i1, bound_i2)
@@ -73,13 +72,17 @@ def do_mix_step(step: int, parsed: list, log: Any):
         insert_location = max_index
 
     parsed.insert(insert_location, to_move)
+    log(f"after inserting: {parsed}")
+    if insert_location <= current_i:
+        current_i += 1
+    del parsed[current_i]
 
 
 def main(input_name, log):
     input_file = read_input(input_name)
-    parsed = [int(x) for x in input_file.splitlines()]
-    parsed = list(enumerate(parsed))
-    assert len(parsed) == len(set(parsed))
+    just_nums = [int(x) for x in input_file.splitlines()]
+    parsed = list(enumerate(just_nums))
+    # assert len(just_nums) == len(set(just_nums))
     log([x[1] for x in parsed])
     print(len(parsed))
 
@@ -126,7 +129,7 @@ def test_2():
 
 
 if __name__ == "__main__":
-    # main("example", print)
+    main("example", print)
     main("puzzle", nothing)
-    test_1()
-    test_2()
+    # test_1()
+    # test_2()
