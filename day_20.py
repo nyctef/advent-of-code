@@ -24,30 +24,39 @@ def sign(x: int):
     return (x > 0) - (x < 0)
 
 
-def swap(l: list, i1: int, i2: int):
-    l[i2], l[i1] = l[i1], l[i2]
-
-
 def main():
-    input_file = read_input("example")
+    input_file = read_input("puzzle")
     parsed = [int(x) for x in input_file.splitlines()]
     parsed = list(enumerate(parsed))
 
     for step in range(len(parsed)):
-        print(f"{step=}")
+        # print(f"{step=}")
         i, to_move = next(((i, x) for i, x in enumerate(parsed) if x[0] == step))
-        print(f"moving {to_move[1]} from index {i}")
+        # print(f"moving {to_move[1]} from index {i}")
         where_to_move = to_move[1]
+        # off-by-one hacks
+        if where_to_move < 0:
+            where_to_move -= 1
+        if i + where_to_move >= len(parsed):
+            where_to_move += 1
         direction = sign(where_to_move)
-        print(f"moving {to_move[1]} {where_to_move=} {direction=}")
-        current = i
-        n = (i + direction) % len(parsed)
-        for m in range(abs(where_to_move)):
-            print(f"swapping {current=} and {n=}")
-            swap(parsed, current, n)
-            current = n
-            n = (n + direction) % len(parsed)
-        pprint(parsed)
+        # print(f"moving {to_move[1]} {where_to_move=} {direction=}")
+        current_i = i
+        to_move_to = (i + where_to_move) % len(parsed)
+
+        del parsed[current_i]
+        parsed.insert(to_move_to, to_move)
+
+        # pprint(parsed)
+        # pprint([x[1] for x in parsed])
+        # print()
+
+    zero_index, zero = next((i, x) for i, x in enumerate(parsed) if x[1] == 0)
+    x = parsed[(zero_index + 1000) % len(parsed)][1]
+    y = parsed[(zero_index + 2000) % len(parsed)][1]
+    z = parsed[(zero_index + 3000) % len(parsed)][1]
+    print(f"{zero_index=} {x=} {y=} {z=}")
+    print(x + y + z)
 
 
 if __name__ == "__main__":
