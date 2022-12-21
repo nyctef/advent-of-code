@@ -50,7 +50,7 @@ def main():
     vars = {}
 
     def get_var(name: str):
-        return vars.get(name, z3.Int(name))
+        return vars.get(name, z3.Real(name))
 
     humn = get_var("humn")
     root = get_var("root")
