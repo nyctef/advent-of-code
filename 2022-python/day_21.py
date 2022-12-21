@@ -50,7 +50,7 @@ def main():
     vars = {}
 
     def get_var(name: str):
-        return vars.get(name, z3.Real(name))
+        return vars.get(name, z3.Int(name))
 
     humn = get_var("humn")
     root = get_var("root")
@@ -86,6 +86,9 @@ def main():
                     s.add(target_var == lvar * rvar)
                 case "/":
                     s.add(target_var == lvar / rvar)
+                    # the above line will try to do integer/floor division
+                    # so this next line is required to make sure the division has a unique result:
+                    s.add(lvar % rvar == 0)
                 case other:
                     raise Exception(f"unknown op {other}")
 
