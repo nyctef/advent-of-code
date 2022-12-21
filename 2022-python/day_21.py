@@ -98,28 +98,5 @@ def main():
     print(f"{m[humn]=} {m[root]=}")
 
 
-"""
-    q = []
-    q.append("root")
-    while q:
-        n = q.pop()
-        if is_digits(n):
-            continue
-        m = re.match(r"^(\w{4}).(.).(\w{4})$", n)
-        left, op, right = 
-"""
-
-
-# input = input_file.splitlines()
-# lefts = [x.split(":")[0] for x in input]
-# lefts = [x for x in lefts if x != "root"]
-
-# print(f"{len(lefts)=}")
-# rights = [x.split(":")[1] for x in input]
-# rights = [re.match(r"(\w{4})...(\w{4})", x.strip()) for x in rights]
-# rights = [(x.group(1), x.group(2)) for x in rights if x is not None]
-# rights = list(chain.from_iterable(rights))
-# print(f"{rights[0: 10]=}")
-# print(len(rights))
-
-main()
+if __name__ == "__main__":
+    main()
