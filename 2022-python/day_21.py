@@ -92,7 +92,7 @@ def main():
                 case other:
                     raise Exception(f"unknown op {other}")
 
-    print(s.assertions())
+    print(s.sexpr())
     print(s.check())
     m = s.model()
     print(f"{m[humn]=}")
