@@ -43,22 +43,17 @@ def is_digits(s: str):
     return re.match(r"^\d+$", s)
 
 
-varnum = 1
-
-
-def new_var():
-    global varnum
-    res = z3.Int(f"{varnum}")
-    varnum += 1
-    return res
-
-
 def main():
     input = read_input_file("puzzle")
     lookup = parse_input(input)
 
-    vars = defaultdict(new_var)
-    humn = vars["humn"]
+    vars = {}
+
+    def get_var(name: str):
+        return vars.get(name, z3.Int(name))
+
+    humn = get_var("humn")
+    root = get_var("root")
 
     s = z3.Solver()
 
@@ -67,35 +62,37 @@ def main():
         if l == "humn":
             # we're told to ignore this one for part 2
             continue
-        var = vars[l]
+        target_var = get_var(l)
         if is_digits(r):
             val = int(r)
-            s.add(var == z3.IntVal(val))
+            s.add(target_var == z3.IntVal(val))
         else:
             m = re.match(r"^(\w{4}).(.).(\w{4})$", r)
             assert m is not None
             left, op, right = m.group(1), m.group(2), m.group(3)
-            lvar = vars[left]
-            rvar = vars[right]
+            lvar = get_var(left)
+            rvar = get_var(right)
             if l == "root":
+                s.add(target_var == lvar)
+                s.add(target_var == rvar)
                 s.add(lvar == rvar)
                 continue
             match op:
                 case "+":
-                    s.add(var == lvar + rvar)
+                    s.add(target_var == lvar + rvar)
                 case "-":
-                    s.add(var == lvar - rvar)
+                    s.add(target_var == lvar - rvar)
                 case "*":
-                    s.add(var == lvar * rvar)
+                    s.add(target_var == lvar * rvar)
                 case "/":
-                    s.add(var == lvar / rvar)
+                    s.add(target_var == lvar / rvar)
                 case other:
                     raise Exception(f"unknown op {other}")
 
     print(s.sexpr())
     print(s.check())
     m = s.model()
-    print(f"{m[humn]=}")
+    print(f"{m[humn]=} {m[root]=}")
 
 
 """
