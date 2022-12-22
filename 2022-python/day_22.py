@@ -55,9 +55,9 @@ def get_map(name: str):
             return [
                 MapEntry(1, 6, LEFT, 4, DOWN, 3, DOWN, 2, DOWN),
                 MapEntry(2, 3, RIGHT, 5, UP, 6, UP, 1, DOWN),
-                MapEntry(3, 4, RIGHT, 5, RIGHT, 2, LEFT, 1, DOWN),
+                MapEntry(3, 4, RIGHT, 5, RIGHT, 2, LEFT, 1, RIGHT),
                 MapEntry(4, 6, DOWN, 5, DOWN, 3, LEFT, 1, UP),
-                MapEntry(5, 6, RIGHT, 2, LEFT, 3, UP, 4, UP),
+                MapEntry(5, 6, RIGHT, 2, UP, 3, UP, 4, UP),
                 MapEntry(6, 1, LEFT, 2, RIGHT, 5, LEFT, 4, LEFT),
             ]
         case other:
@@ -131,11 +131,11 @@ def get_point_on_new_face(
     if old_direction == RIGHT and new_direction == DOWN:
         # starting from the rhs of one side, ending up on the top row of the next
         # closest corner is the bottom right of the original side which maps to the top left of the next
-        return Point(0, side_length - old_row)
+        return Point(0, side_length - old_row - 1)
     if old_direction == DOWN and new_direction == LEFT:
         return Point(old_column, side_length - 1)
     if old_direction == LEFT and new_direction == UP:
-        return Point(side_length - 1, side_length - old_row)
+        return Point(side_length - 1, side_length - old_row - 1)
     if old_direction == UP and new_direction == RIGHT:
         return Point(old_column, 0)
 
@@ -143,11 +143,11 @@ def get_point_on_new_face(
     if old_direction == RIGHT and new_direction == UP:
         return Point(side_length - 1, old_row)
     if old_direction == UP and new_direction == LEFT:
-        return Point(side_length - old_column, side_length - 1)
+        return Point(side_length - old_column - 1, side_length - 1)
     if old_direction == LEFT and new_direction == DOWN:
         return Point(0, old_row)
     if old_direction == DOWN and new_direction == RIGHT:
-        return Point(side_length - old_column, 0)
+        return Point(side_length - old_column - 1, 0)
 
     # flips
     if (old_direction == RIGHT and new_direction == LEFT) or (
@@ -191,7 +191,9 @@ def run_path(grid: list[CubeSide], instructions: list[str], map: list[MapEntry])
     # row, column (0-offset, but final result will need to be 1-offset so remember that)
     current_position = Point(0, 0)
     for instr in instructions:
-        print(f"next {instr=} {current_position=} {current_grid.id=}")
+        print(
+            f"currently on grid {current_grid.id} at {current_position} facing {current_dir}: next {instr=}"
+        )
         if instr == "L":
             turn_left()
         elif instr == "R":
@@ -229,6 +231,9 @@ def run_path(grid: list[CubeSide], instructions: list[str], map: list[MapEntry])
                             next_dir,
                             current_grid.side_width,
                         )
+                        print(
+                            f"switched sides from side {current_grid.id} {current_position} to {next_grid.id} {next_position} {current_dir=} {next_dir=}"
+                        )
                     except Exception as e:
                         raise Exception(
                             f"{current_position=} {next_position=} {current_dir=} {next_dir=} {current_grid.id=} {next_grid.id=}"
@@ -245,8 +250,11 @@ def run_path(grid: list[CubeSide], instructions: list[str], map: list[MapEntry])
                 else:
                     raise Exception(next_position)
     print(
-        (1000 * (current_position[0] + 1))
-        + (4 * (current_position[1] + 1))
+        f"final position on side {current_grid.id} {current_grid.original_coords=} {current_position=} {current_dir=}"
+    )
+    print(
+        (1000 * (current_grid.original_coords.r + current_position.r + 1))
+        + (4 * (current_grid.original_coords.c + current_position.c + 1))
         + current_dir
     )
 
