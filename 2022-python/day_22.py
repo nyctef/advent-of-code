@@ -79,8 +79,13 @@ Point = Tuple[int, int]
 def get_point_on_new_face(
     old_point: Point, old_direction: int, new_direction: int, side_length: int
 ):
-    assert old_point[0] < side_length
-    assert old_point[1] < side_length
+    if not (
+        (old_point[0] in (0, side_length - 1))
+        and (old_point[1] in (0, side_length - 1))
+    ):
+        raise Exception(
+            f"bad point {old_point=} {old_direction=} {new_direction=} {side_length=}"
+        )
 
     old_row, old_column = old_point
 
@@ -109,6 +114,30 @@ def get_point_on_new_face(
         return (side_length - 1, side_length - old_row)
     if old_direction == UP and new_direction == RIGHT:
         return (old_column, 0)
+
+    # left turns
+    if old_direction == RIGHT and new_direction == UP:
+        return (side_length - 1, old_row)
+    if old_direction == UP and new_direction == LEFT:
+        return (side_length - old_column, side_length - 1)
+    if old_direction == LEFT and new_direction == DOWN:
+        return (0, old_row)
+    if old_direction == DOWN and new_direction == RIGHT:
+        return (side_length - old_column, 0)
+
+    # flips
+    if (old_direction == RIGHT and new_direction == LEFT) or (
+        old_direction == LEFT and new_direction == RIGHT
+    ):
+        return (side_length - old_row - 1, old_column)
+    if (old_direction == DOWN and new_direction == UP) or (
+        old_direction == UP and new_direction == DOWN
+    ):
+        return (old_row, side_length - old_column - 1)
+
+    raise Exception(
+        f"unhandled directions {old_point=} {old_direction=} {new_direction=} {side_length=}"
+    )
 
 
 def add(a: Point, b: Point):
