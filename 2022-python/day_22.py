@@ -73,7 +73,9 @@ def parse_input(inf: str, side_width: int):
     return (grid, instructions)
 
 
-Point = Tuple[int, int]
+class Point(NamedTuple):
+    r: int
+    c: int
 
 
 def get_point_on_new_face(
@@ -141,14 +143,14 @@ def get_point_on_new_face(
 
 
 def add(a: Point, b: Point):
-    return (a[0] + b[0], a[1] + b[1])
+    return Point(a[0] + b[0], a[1] + b[1])
 
 
 def run_path(parsed):
     grid, instructions = parsed
     # right, down, left, up
     # remember row, column
-    dirs: list[Point] = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    dirs: list[Point] = [Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0)]
     # initially facing right
     current_dir = 0
 
@@ -160,7 +162,7 @@ def run_path(parsed):
         nonlocal current_dir
         current_dir = (current_dir - 1) % len(dirs)
 
-    def wrap(pos: Tuple[int, int]):
+    def wrap(pos: Point):
         r, c = pos
         if r < 0:
             r = len(grid) - 1
@@ -170,7 +172,7 @@ def run_path(parsed):
             c = len(grid[0]) - 1
         if c >= len(grid[0]):
             c = 0
-        return (r, c)
+        return Point(r, c)
 
     def char_at(p: Point):
         return grid[p[0]][p[1]]
@@ -190,7 +192,7 @@ def run_path(parsed):
     print(f"{initial_column=}")
 
     # row, column (0-offset, but final result will need to be 1-offset so remember that)
-    current_position = (0, initial_column)
+    current_position = Point(0, initial_column)
     for instr in instructions:
         print(f"next {instr=} {current_position=}")
         if instr == "L":
