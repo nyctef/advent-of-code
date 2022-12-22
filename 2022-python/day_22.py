@@ -64,18 +64,41 @@ def get_map(name: str):
             raise Exception(other)
 
 
-def parse_input(inf: str, side_width: int):
-    grid, instructions = inf.split("\n\n")
-    grid = grid.splitlines()
-    maxlen = max(len(g) for g in grid)
-    grid = [g.ljust(maxlen) for g in grid]
-    instructions = re.split(r"([LR])", instructions.strip())
-    return (grid, instructions)
-
-
 class Point(NamedTuple):
     r: int
     c: int
+
+
+class CubeSide(NamedTuple):
+    id: int
+    chars: list[str]
+    side_width: int
+    original_coords: Point
+
+
+def parse_input(inf: str, side_width: int):
+    grid_lines, instructions = inf.split("\n\n")
+    grid_lines = grid_lines.splitlines()
+    maxlen = max(len(g) for g in grid_lines)
+    grid_lines = [g.ljust(maxlen) for g in grid_lines]
+    instructions = re.split(r"([LR])", instructions.strip())
+
+    grid: list[CubeSide] = []
+    side_id = 1
+    for big_row in range(0, len(grid_lines), side_width):
+        for big_col in range(0, len(grid_lines[0]), side_width):
+            if grid_lines[big_row][big_col] == " ":
+                continue
+            relevant_lines = grid_lines[big_row : big_row + side_width]
+            relevant_substrs = [
+                l[big_col : big_col + side_width] for l in relevant_lines
+            ]
+
+            grid.append(
+                CubeSide(side_id, relevant_substrs, side_width, Point(big_row, big_col))
+            )
+            side_id += 1
+    return (grid, instructions)
 
 
 def get_point_on_new_face(
@@ -226,8 +249,8 @@ def run_path(parsed):
 def main():
     input_file, side_width = read_input("example")
     parsed = parse_input(input_file, side_width)
-    # pprint(parsed)
-    run_path(parsed)
+    pprint(parsed)
+    # run_path(parsed)
 
 
 main()
