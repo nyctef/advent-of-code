@@ -1,4 +1,5 @@
 from collections import defaultdict
+from enum import Enum
 from pathlib import Path
 from pprint import pprint
 import re
@@ -37,6 +38,13 @@ DOWN = 1
 LEFT = 2
 UP = 3
 
+# TODO: try using named enum instead
+class Direction(Enum):
+    right = 0
+    down = 1
+    left = 2
+    up = 3
+
 
 class MapEntry(NamedTuple):
     id: int
@@ -63,7 +71,7 @@ def get_map(name: str):
             ]
         case "puzzle":
             return [
-                MapEntry(1, 2, RIGHT, 3, DOWN, 4, RIGHT, 6, LEFT),
+                MapEntry(1, 2, RIGHT, 3, DOWN, 4, RIGHT, 6, RIGHT),
                 MapEntry(2, 5, LEFT, 3, LEFT, 1, LEFT, 6, UP),
                 MapEntry(3, 2, UP, 5, DOWN, 4, DOWN, 1, UP),
                 MapEntry(4, 5, RIGHT, 6, DOWN, 1, RIGHT, 3, RIGHT),
@@ -279,14 +287,64 @@ def sanity_check_map(map: list[MapEntry]):
     assert len(set(incoming_counts.values())) == 1
 
 
+def print_grid(grid: list[CubeSide]):
+    for side in grid:
+        print(f"------ cube side {side.id}")
+        for line in side.chars:
+            print(line)
+
+
+def sanity_check_get_new_point():
+    for old_r in range(4):
+        for old_c in range(4):
+            for old_dir in range(4):
+                if old_dir == RIGHT and old_c != 3:
+                    continue
+                if old_dir == DOWN and old_r != 3:
+                    continue
+                if old_dir == LEFT and old_c != 0:
+                    continue
+                if old_dir == UP and old_r != 0:
+                    continue
+                for new_dir in range(4):
+                    try:
+                        new_r, new_c = get_point_on_new_face(
+                            Point(old_r, old_c), old_dir, new_dir, 4
+                        )
+                        if new_dir == RIGHT:
+                            assert new_c == 0
+                        if new_dir == DOWN:
+                            assert new_r == 0
+                        if new_dir == LEFT:
+                            assert new_c == 3
+                        if new_dir == UP:
+                            assert new_r == 3
+
+                        # switching between the top and left axis
+                        # or the bottom and right axis
+                        # preserves one of the numbers
+                        if (
+                            (old_dir == DOWN and new_dir == LEFT)
+                            or (old_dir == RIGHT and new_dir == UP)
+                            or (old_dir == LEFT and new_dir == DOWN)
+                            or (old_dir == UP and new_dir == RIGHT)
+                        ):
+                            assert new_r == old_c or new_c == old_r
+                    except AssertionError as e:
+                        raise Exception(locals()) from e
+
+
 def main():
     input_name = "puzzle"
     input_file, side_width = read_input(input_name)
     grid, instructions = parse_input(input_file, side_width)
     map = get_map(input_name)
     sanity_check_map(map)
+    sanity_check_get_new_point()
+    ## print_grid(grid)
+    pprint(map)
     # pprint(parsed)
-    # run_path(grid, instructions, map)
+    run_path(grid, instructions, map)
 
 
 main()
