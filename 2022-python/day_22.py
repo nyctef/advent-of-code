@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 from pprint import pprint
 import re
@@ -268,13 +269,24 @@ def run_path(grid: list[CubeSide], instructions: list[str], map: list[MapEntry])
     )
 
 
+def sanity_check_map(map: list[MapEntry]):
+    incoming_counts = defaultdict(int)
+    for page in map:
+        incoming_counts[page.right_page] += 1
+        incoming_counts[page.down_page] += 1
+        incoming_counts[page.left_page] += 1
+        incoming_counts[page.up_page] += 1
+    assert len(set(incoming_counts.values())) == 1
+
+
 def main():
     input_name = "puzzle"
     input_file, side_width = read_input(input_name)
     grid, instructions = parse_input(input_file, side_width)
     map = get_map(input_name)
+    sanity_check_map(map)
     # pprint(parsed)
-    run_path(grid, instructions, map)
+    # run_path(grid, instructions, map)
 
 
 main()
