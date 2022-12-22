@@ -1,13 +1,14 @@
 from pathlib import Path
 from pprint import pprint
 import re
-from typing import Tuple
+from typing import NamedTuple, Tuple
 
 
 def read_input(name: str):
     match name:
         case "example":
-            return """        ...#
+            return (
+                """        ...#
         .#..
         #...
         ....
@@ -21,14 +22,49 @@ def read_input(name: str):
         ......#.
 
 10R5L5R10L4R5L5
-"""
+""",
+                4,
+            )
         case "puzzle":
-            return Path("input/22-1.txt").read_text()
+            return (Path("input/22-1.txt").read_text(), 50)
         case other:
             raise Exception(other)
 
 
-def parse_input(inf: str):
+RIGHT = 0
+DOWN = 1
+LEFT = 2
+UP = 3
+
+
+class MapEntry(NamedTuple):
+    id: int
+    right_page: int
+    dir_after_right: int
+    down_page: int
+    dir_after_down: int
+    left_page: int
+    dir_after_left: int
+    up_page: int
+    dir_after_up: int
+
+
+def get_map(name: str):
+    match name:
+        case "example":
+            return [
+                MapEntry(1, 6, LEFT, 4, DOWN, 3, DOWN, 2, DOWN),
+                MapEntry(2, 3, RIGHT, 5, UP, 6, UP, 1, DOWN),
+                MapEntry(3, 4, RIGHT, 5, RIGHT, 2, LEFT, 1, DOWN),
+                MapEntry(4, 6, DOWN, 5, DOWN, 3, LEFT, 1, UP),
+                MapEntry(5, 6, RIGHT, 2, LEFT, 3, UP, 4, UP),
+                MapEntry(6, 1, LEFT, 2, RIGHT, 5, LEFT, 4, LEFT),
+            ]
+        case other:
+            raise Exception(other)
+
+
+def parse_input(inf: str, side_width: int):
     grid, instructions = inf.split("\n\n")
     grid = grid.splitlines()
     maxlen = max(len(g) for g in grid)
@@ -38,6 +74,41 @@ def parse_input(inf: str):
 
 
 Point = Tuple[int, int]
+
+
+def get_point_on_new_face(
+    old_point: Point, old_direction: int, new_direction: int, side_length: int
+):
+    assert old_point[0] < side_length
+    assert old_point[1] < side_length
+
+    old_row, old_column = old_point
+
+    # straight lines
+    if old_direction == DOWN and new_direction == DOWN:
+        # appear at the top of the next face
+        return (0, old_column)
+    if old_direction == UP and new_direction == UP:
+        # appear at the bottom of the next face
+        return (side_length - 1, old_column)
+    if old_direction == RIGHT and new_direction == RIGHT:
+        # appear at the left (first column) of the next face
+        return (old_row, 0)
+    if old_direction == LEFT and new_direction == LEFT:
+        # appear at the right (last column) of the next face
+        return (old_row, side_length - 1)
+
+    # right turns
+    if old_direction == RIGHT and new_direction == DOWN:
+        # starting from the rhs of one side, ending up on the top row of the next
+        # closest corner is the bottom right of the original side which maps to the top left of the next
+        return (0, side_length - old_row)
+    if old_direction == DOWN and new_direction == LEFT:
+        return (old_column, side_length - 1)
+    if old_direction == LEFT and new_direction == UP:
+        return (side_length - 1, side_length - old_row)
+    if old_direction == UP and new_direction == RIGHT:
+        return (old_column, 0)
 
 
 def add(a: Point, b: Point):
@@ -122,8 +193,8 @@ def run_path(parsed):
 
 
 def main():
-    input_file = read_input("example")
-    parsed = parse_input(input_file)
+    input_file, side_width = read_input("example")
+    parsed = parse_input(input_file, side_width)
     # pprint(parsed)
     run_path(parsed)
 
