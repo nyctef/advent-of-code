@@ -60,6 +60,15 @@ def get_map(name: str):
                 MapEntry(5, 6, RIGHT, 2, UP, 3, UP, 4, UP),
                 MapEntry(6, 1, LEFT, 2, RIGHT, 5, LEFT, 4, LEFT),
             ]
+        case "puzzle":
+            return [
+                MapEntry(1, 2, RIGHT, 3, DOWN, 4, RIGHT, 6, LEFT),
+                MapEntry(2, 5, LEFT, 3, LEFT, 1, LEFT, 6, UP),
+                MapEntry(3, 2, UP, 5, DOWN, 4, DOWN, 1, UP),
+                MapEntry(4, 5, RIGHT, 6, DOWN, 1, RIGHT, 3, RIGHT),
+                MapEntry(5, 2, LEFT, 6, LEFT, 4, LEFT, 3, UP),
+                MapEntry(6, 5, UP, 2, DOWN, 1, DOWN, 4, UP),
+            ]
         case other:
             raise Exception(other)
 
@@ -260,7 +269,7 @@ def run_path(grid: list[CubeSide], instructions: list[str], map: list[MapEntry])
 
 
 def main():
-    input_name = "example"
+    input_name = "puzzle"
     input_file, side_width = read_input(input_name)
     grid, instructions = parse_input(input_file, side_width)
     map = get_map(input_name)
