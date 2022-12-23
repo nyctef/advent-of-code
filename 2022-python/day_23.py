@@ -26,7 +26,7 @@ def read_input(name: str):
 .#..#..
 """
         case "puzzle":
-            return Path("input/32-1.txt").read_text()
+            return Path("input/23-1.txt").read_text()
 
         case other:
             raise Exception(other)
@@ -73,7 +73,7 @@ def run_puzzle(points: list[complex], num_rounds=1):
     ]
     assert set(chain.from_iterable(directions_to_check)) == set(eight_directions)
     round_num = 0
-    for _ in range(10):
+    while True:
         current_elf_locations = set(e.current for e in elfs)
         proposed: dict[complex, int] = defaultdict(int)
 
@@ -119,7 +119,7 @@ def run_puzzle(points: list[complex], num_rounds=1):
             else:
                 # conflict, can't move
                 elf.proposed = elf.current
-        print([e.current for e in elfs])
+        # print([e.current for e in elfs])
         round_num += 1
 
     bounding_top = min(e.current.imag for e in elfs)
@@ -132,6 +132,7 @@ def run_puzzle(points: list[complex], num_rounds=1):
     free_space = bounding_area - len(elfs)
     pprint([x for x in locals().items() if x[0].startswith("bounding_")])
     print(free_space)
+    print(f"round: {round_num + 1}")
 
 
 def main(name: str):
@@ -140,4 +141,4 @@ def main(name: str):
 
 
 if __name__ == "__main__":
-    main("big-example")
+    main("puzzle")
