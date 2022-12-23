@@ -89,7 +89,7 @@ def run_puzzle(points: list[complex], num_rounds=1):
         def move_in_direction(my_pos: complex, direction: int):
             return my_pos + directions_to_move[direction]
 
-        # print(f"round {round_num}: {starting_direction=} {four_directions=}")
+        print(f"round {round_num}: {starting_direction=} {four_directions=}")
         any_elf_needs_to_move = False
         for elf in elfs:
             elf.proposed = elf.current
@@ -119,8 +119,19 @@ def run_puzzle(points: list[complex], num_rounds=1):
             else:
                 # conflict, can't move
                 elf.proposed = elf.current
-        pprint([e.current for e in elfs])
+        print([e.current for e in elfs])
         round_num += 1
+
+    bounding_top = min(e.current.imag for e in elfs)
+    bounding_left = min(e.current.real for e in elfs)
+    bounding_bot = max(e.current.imag for e in elfs)
+    bounding_right = max(e.current.real for e in elfs)
+    bounding_width = bounding_right - bounding_left + 1
+    bounding_height = bounding_bot - bounding_top + 1
+    bounding_area = bounding_width * bounding_height
+    free_space = bounding_area - len(elfs)
+    pprint([x for x in locals().items() if x[0].startswith("bounding_")])
+    print(free_space)
 
 
 def main(name: str):
@@ -129,4 +140,4 @@ def main(name: str):
 
 
 if __name__ == "__main__":
-    main("small-example")
+    main("big-example")
