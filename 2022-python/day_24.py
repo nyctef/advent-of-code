@@ -131,6 +131,9 @@ class SearchStep(NamedTuple):
     current_min: int
     prev: "SearchStep | None"
 
+    def __str__(self) -> str:
+        return f"min={self.current_min} r={self.position.r} c={self.position.c}"
+
 
 def print_path(s: SearchStep | None):
     if s is not None:
@@ -140,7 +143,20 @@ def print_path(s: SearchStep | None):
         print("end.")
 
 
-def search_path(field: Field):
+def nothing(*args):
+    pass
+
+
+log = nothing
+
+
+def search_path(
+    field: Field,
+    starting_minute: int,
+    starting_position: Point,
+    goal: Point,
+    reverse: bool,
+):
     # cache from t cycle to field
     blizz_cache: Dict[int, Set[Point]] = {}
     field_cycle_time = math.lcm(field.width, field.height)
@@ -156,7 +172,7 @@ def search_path(field: Field):
     best_score = 9999999999999999
     best_path = None
 
-    q: List[SearchStep] = [SearchStep(field.start, 0, None)]
+    q: List[SearchStep] = [SearchStep(starting_position, starting_minute, None)]
     count = 0
     state_skips = 0
     give_up_skips = 0
@@ -171,31 +187,29 @@ def search_path(field: Field):
         count += 1
         if (count % 100_000) == 0:
             print_progress()
-        dupe_of = SearchStep(n.position, n.current_min % field_cycle_time, None)
+        log()
+        log(f" considering state {n}")
+        dupe_of = SearchStep(n.position, n.current_min, None)
         if dupe_of in seen_steps:
             # auto-skip if we've considered this state before
-            print(
-                f">>> rejecting min={n.current_min} r={n.position.r} c={n.position.c}: already seen {dupe_of=}"
-            )
+            log(f">>> rejecting {n}: already seen {dupe_of=}")
             state_skips += 1
             continue
         seen_steps.add(dupe_of)
 
-        if n.position == field.end:
+        if n.position == goal:
             # complete!
             if n.current_min < best_score:
                 # with a new PB!
                 best_score = n.current_min
                 best_path = n
-            # print(f"found a path! {n}")
+            # log(f"found a path! {n}")
             continue
 
-        remaining_distance = n.position.mdist(field.end)
+        remaining_distance = n.position.mdist(goal)
         if n.current_min + remaining_distance >= best_score:
             # skip if we can't possibly make it to the goal better than our PB
-            print(
-                f">>> rejecting {n.position} at {n.current_min}: {best_score=} {remaining_distance=}"
-            )
+            log(f">>> rejecting {n}: {best_score=} {remaining_distance=}")
             give_up_skips += 1
             continue
 
@@ -204,41 +218,45 @@ def search_path(field: Field):
             # or we could just wait
             q.append(SearchStep(n.position, n.current_min + 1, n))
 
-        print(f"min={n.current_min} r={n.position.r} c={n.position.c}")
+        log(f"min={n.current_min} r={n.position.r} c={n.position.c}")
         if n.current_min == 16 and n.position == Point(2, 5):
-            print("****************")
+            log("****************")
         if n.current_min == 17 and n.position == Point(3, 5):
-            print("################")
-        for candidate in n.position.dir4():
+            log("################")
+        prioritised_directions = n.position.dir4()
+        if reverse:
+            prioritised_directions = reversed(prioritised_directions)
+        for candidate in prioritised_directions:
             n2 = SearchStep(candidate, n.current_min + 1, n)
-            if candidate == field.end:
+            if candidate == goal:
                 q.append(n2)
             elif candidate.r < 0 or candidate.r >= field.height:
-                print(f"rejecting {candidate=} {field.width=} {field.height=}")
+                log(f"rejecting {candidate=} {field.width=} {field.height=}")
                 pass
             elif candidate.c < 0 or candidate.c >= field.width:
-                print(f"rejecting {candidate=} {field.width=} {field.height=}")
+                log(f"rejecting {candidate=} {field.width=} {field.height=}")
                 pass
             elif candidate in next_occupied_points:
-                print(f"rejecting {candidate=} due to being in a blizz")
+                log(f"rejecting {n2} due to being in a blizz")
             else:
-                print(
-                    f"queuing up min={n2.current_min} r={candidate.r} c={candidate.c}"
-                )
+                log(f"queuing up {n2}")
                 q.append(n2)
-        # print(f"{q=}")
+        # log(f"{q=}")
         # if count > 10:
         #     break
     print_progress()
     print(f"{best_score=} {count=}")
-    print_path(best_path)
+    # print_path(best_path)
     return best_score
 
 
 def main(name: str):
     input_file = read_input(name)
     field = parse_input(input_file)
-    time = search_path(field)
+    time1 = search_path(field, 0, field.start, field.end, False)
+    time2 = search_path(field, time1, field.end, field.start, True)
+    time3 = search_path(field, time2, field.start, field.end, False)
+    print(f"{time1=} {time2=} {time3=}")
     # print_field(field)
     # pprint(field)
     # for t in range(19):
@@ -257,4 +275,4 @@ def main(name: str):
 
 
 if __name__ == "__main__":
-    main("big")
+    main("puzzle")
