@@ -1,3 +1,5 @@
+mod day1;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let usage = "Usage: [exe] [day] [puzzle|example|input-name]";
     let _day: u8 = std::env::args()
