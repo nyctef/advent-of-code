@@ -1,6 +1,7 @@
+import math
 from pathlib import Path
 from pprint import pprint
-from typing import NamedTuple
+from typing import Dict, List, NamedTuple, Set, Tuple
 
 
 def read_input(name: str):
@@ -39,7 +40,21 @@ class Point(NamedTuple):
         return Point(self.r * other, self.c * other)
 
     def mod(self, rmod, cmod):
+        """Wrap the point within some bounding box"""
         return Point(self.r % rmod, self.c % cmod)
+
+    def mdist(self, other: "Point"):
+        """Manhattan distance"""
+        return abs(self.r - other.r) + abs(self.c - other.c)
+
+    def dir4(self):
+        # right, down, left, up
+        return [
+            self + Point(0, 1),
+            self + Point(1, 0),
+            self + Point(0, -1),
+            self + Point(-1, 0),
+        ]
 
 
 class Blizzard(NamedTuple):
@@ -111,12 +126,69 @@ def print_field(f: Field):
     print("-" * f.width)
 
 
+class SearchStep(NamedTuple):
+    position: Point
+    current_min: int
+
+
+def search_path(field: Field):
+    # cache from t cycle to field
+    blizz_cache: Dict[int, Set[Point]] = {}
+    field_cycle_time = math.lcm(field.width, field.height)
+
+    def get_occupied_points_at(t: int):
+        r = blizz_cache.get(t, None)
+        if r is None:
+            r = set(b.loc for b in field.after_time(t).blizz)
+            blizz_cache[t] = r
+        return r
+
+    seen_steps: Set[SearchStep] = set()
+    best_score = 9999999999999999
+
+    q: List[SearchStep] = [SearchStep(field.start, 0)]
+    count = 0
+    while q:
+        n = q.pop()
+        count += 1
+        # if (count % 10_000) == 0:
+        print(f"{count=} {len(q)=} {best_score=} {n.current_min=} {n.position=}")
+        if n in seen_steps:
+            # auto-skip if we've considered this state before
+            continue
+        seen_steps.add(n)
+
+        if n.position == field.end:
+            # complete!
+            if n.current_min < best_score:
+                # with a new PB!
+                best_score = n.current_min
+            continue
+
+        if n.current_min + n.position.mdist(field.end) >= best_score:
+            # skip if we can't possibly make it to the goal better than our PB
+            continue
+        next_occupied_points = get_occupied_points_at(n.current_min + 1)
+        for candidate in n.position.dir4():
+            n2 = SearchStep(candidate, n.current_min + 1)
+            if candidate == field.end:
+                q.append(n2)
+            elif candidate.r < 0 or candidate.r >= field.height:
+                continue
+            elif candidate.c < 0 or candidate.c >= field.width:
+                continue
+            elif candidate not in next_occupied_points:
+                q.append(n2)
+        # or we could just wait
+        q.append(SearchStep(n.position, n.current_min + 1))
+    print(f"{best_score=}")
+    return best_score
+
+
 def main(name: str):
     input_file = read_input(name)
     field = parse_input(input_file)
-    pprint(field)
-    for t in range(0, 6):
-        print_field(field.after_time(t))
+    time = search_path(field)
 
 
 if __name__ == "__main__":
