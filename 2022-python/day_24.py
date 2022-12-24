@@ -129,6 +129,15 @@ def print_field(f: Field):
 class SearchStep(NamedTuple):
     position: Point
     current_min: int
+    prev: "SearchStep | None"
+
+
+def print_path(s: SearchStep | None):
+    if s is not None:
+        print(f"At min {s.current_min}: r={s.position.r} c={s.position.c}")
+        print_path(s.prev)
+    else:
+        print("end.")
 
 
 def search_path(field: Field):
@@ -145,8 +154,9 @@ def search_path(field: Field):
 
     seen_steps: Set[SearchStep] = set()
     best_score = 9999999999999999
+    best_path = None
 
-    q: List[SearchStep] = [SearchStep(field.start, 0)]
+    q: List[SearchStep] = [SearchStep(field.start, 0, None)]
     count = 0
     state_skips = 0
     give_up_skips = 0
@@ -157,7 +167,7 @@ def search_path(field: Field):
             print(
                 f"{count=} {len(q)=} best={best_score} min={n.current_min} pos={n.position} dedupes={state_skips} best_skips={give_up_skips} seen={len(seen_steps)}"
             )
-        dupe_of = SearchStep(n.position, n.current_min % field_cycle_time)
+        dupe_of = SearchStep(n.position, n.current_min % field_cycle_time, None)
         if dupe_of in seen_steps:
             # auto-skip if we've considered this state before
             state_skips += 1
@@ -169,7 +179,8 @@ def search_path(field: Field):
             if n.current_min < best_score:
                 # with a new PB!
                 best_score = n.current_min
-            print(f"found a path! {n}")
+                best_path = n
+            # print(f"found a path! {n}")
             continue
 
         if n.current_min + n.position.mdist(field.end) >= best_score:
@@ -177,13 +188,14 @@ def search_path(field: Field):
             give_up_skips = 0
             continue
 
-        # or we could just wait
-        q.append(SearchStep(n.position, n.current_min + 1))
-
         next_occupied_points = get_occupied_points_at(n.current_min + 1)
+        if n.position not in next_occupied_points:
+            # or we could just wait
+            q.append(SearchStep(n.position, n.current_min + 1, n))
+
         for candidate in n.position.dir4():
             # print(f"{candidate=}")
-            n2 = SearchStep(candidate, n.current_min + 1)
+            n2 = SearchStep(candidate, n.current_min + 1, n)
             if candidate == field.end:
                 q.append(n2)
             elif candidate.r < 0 or candidate.r >= field.height:
@@ -196,6 +208,7 @@ def search_path(field: Field):
         # if count > 10:
         #     break
     print(f"{best_score=} {count=}")
+    print_path(best_path)
     return best_score
 
 
@@ -221,4 +234,4 @@ def main(name: str):
 
 
 if __name__ == "__main__":
-    main("puzzle")
+    main("big")
