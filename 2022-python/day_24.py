@@ -1,3 +1,4 @@
+import heapq
 import math
 from pathlib import Path
 from pprint import pformat, pprint
@@ -127,6 +128,7 @@ def print_field(f: Field):
 
 
 class SearchStep(NamedTuple):
+    distance: int
     position: Point
     current_min: int
     prev: "SearchStep | None"
@@ -155,7 +157,6 @@ def search_path(
     starting_minute: int,
     starting_position: Point,
     goal: Point,
-    reverse: bool,
     blizz_cache: Dict[int, Set[Point]] = {},
 ):
     # cache from t cycle to field
@@ -172,7 +173,11 @@ def search_path(
     best_score = 9999999999999999
     best_path = None
 
-    q: List[SearchStep] = [SearchStep(starting_position, starting_minute, None)]
+    q: List[SearchStep] = [
+        SearchStep(
+            starting_position.mdist(goal), starting_position, starting_minute, None
+        )
+    ]
     count = 0
     state_skips = 0
     give_up_skips = 0
@@ -183,13 +188,16 @@ def search_path(
         )
 
     while q:
-        n = q.pop()
+        n = heapq.heappop(q)
         count += 1
         if (count % 100_000) == 0:
             print_progress()
         log()
         log(f" considering state {n}")
-        dupe_of = SearchStep(n.position, n.current_min % field_cycle_time, None)
+        remaining_distance = n.position.mdist(goal)
+        dupe_of = SearchStep(
+            remaining_distance, n.position, n.current_min % field_cycle_time, None
+        )
         seen_at_time = seen_steps.get(dupe_of, None)
         if seen_at_time is not None and seen_at_time <= n.current_min:
             # auto-skip if we've considered this state before, and we considered it at an earlier time
@@ -211,7 +219,6 @@ def search_path(
             # log(f"found a path! {n}")
             continue
 
-        remaining_distance = n.position.mdist(goal)
         if n.current_min + remaining_distance >= best_score:
             # skip if we can't possibly make it to the goal better than our PB
             log(f">>> rejecting {n}: {best_score=} {remaining_distance=}")
@@ -221,20 +228,21 @@ def search_path(
         next_occupied_points = get_occupied_points_at(n.current_min + 1)
         if n.position not in next_occupied_points:
             # or we could just wait
-            q.append(SearchStep(n.position, n.current_min + 1, n))
+            heapq.heappush(
+                q, SearchStep(remaining_distance, n.position, n.current_min + 1, n)
+            )
 
         log(f"min={n.current_min} r={n.position.r} c={n.position.c}")
         if n.current_min == 16 and n.position == Point(2, 5):
             log("****************")
         if n.current_min == 17 and n.position == Point(3, 5):
             log("################")
-        prioritised_directions = n.position.dir4()
-        if reverse:
-            prioritised_directions = reversed(prioritised_directions)
-        for candidate in prioritised_directions:
-            n2 = SearchStep(candidate, n.current_min + 1, n)
+        directions = n.position.dir4()
+        for candidate in directions:
+            n2d = candidate.mdist(goal)
+            n2 = SearchStep(n2d, candidate, n.current_min + 1, n)
             if candidate == goal:
-                q.append(n2)
+                heapq.heappush(q, n2)
             elif candidate.r < 0 or candidate.r >= field.height:
                 log(f"rejecting {candidate=} {field.width=} {field.height=}")
                 pass
@@ -245,7 +253,7 @@ def search_path(
                 log(f"rejecting {n2} due to being in a blizz")
             else:
                 log(f"queuing up {n2}")
-                q.append(n2)
+                heapq.heappush(q, n2)
         # log(f"{q=}")
         # if count > 10:
         #     break
@@ -259,9 +267,9 @@ def main(name: str):
     input_file = read_input(name)
     field = parse_input(input_file)
     blizz_cache: Dict[int, Set[Point]] = {}
-    time1 = search_path(field, 0, field.start, field.end, False, blizz_cache)
-    time2 = search_path(field, time1, field.end, field.start, True, blizz_cache)
-    time3 = search_path(field, time2, field.start, field.end, False, blizz_cache)
+    time1 = search_path(field, 0, field.start, field.end, blizz_cache)
+    time2 = search_path(field, time1, field.end, field.start, blizz_cache)
+    time3 = search_path(field, time2, field.start, field.end, blizz_cache)
     print(f"{time1=} {time2=} {time3=}")
     # print_field(field)
     # pprint(field)
