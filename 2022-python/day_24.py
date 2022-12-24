@@ -174,6 +174,9 @@ def search_path(field: Field):
         dupe_of = SearchStep(n.position, n.current_min % field_cycle_time, None)
         if dupe_of in seen_steps:
             # auto-skip if we've considered this state before
+            print(
+                f">>> rejecting min={n.current_min} r={n.position.r} c={n.position.c}: already seen {dupe_of=}"
+            )
             state_skips += 1
             continue
         seen_steps.add(dupe_of)
@@ -187,8 +190,12 @@ def search_path(field: Field):
             # print(f"found a path! {n}")
             continue
 
-        if n.current_min + n.position.mdist(field.end) >= best_score:
+        remaining_distance = n.position.mdist(field.end)
+        if n.current_min + remaining_distance >= best_score:
             # skip if we can't possibly make it to the goal better than our PB
+            print(
+                f">>> rejecting {n.position} at {n.current_min}: {best_score=} {remaining_distance=}"
+            )
             give_up_skips += 1
             continue
 
@@ -197,7 +204,11 @@ def search_path(field: Field):
             # or we could just wait
             q.append(SearchStep(n.position, n.current_min + 1, n))
 
-        print(f"min={n.current_min}")
+        print(f"min={n.current_min} r={n.position.r} c={n.position.c}")
+        if n.current_min == 16 and n.position == Point(2, 5):
+            print("****************")
+        if n.current_min == 17 and n.position == Point(3, 5):
+            print("################")
         for candidate in n.position.dir4():
             n2 = SearchStep(candidate, n.current_min + 1, n)
             if candidate == field.end:
@@ -208,7 +219,12 @@ def search_path(field: Field):
             elif candidate.c < 0 or candidate.c >= field.width:
                 print(f"rejecting {candidate=} {field.width=} {field.height=}")
                 pass
-            elif candidate not in next_occupied_points:
+            elif candidate in next_occupied_points:
+                print(f"rejecting {candidate=} due to being in a blizz")
+            else:
+                print(
+                    f"queuing up min={n2.current_min} r={candidate.r} c={candidate.c}"
+                )
                 q.append(n2)
         # print(f"{q=}")
         # if count > 10:
