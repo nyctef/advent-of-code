@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from pprint import pprint
+from pprint import pformat, pprint
 from typing import Dict, List, NamedTuple, Set, Tuple
 
 
@@ -60,8 +60,9 @@ class Blizzard(NamedTuple):
     loc: Point
     dir: Point
 
-    def after_time(self, minutes_passed: int, width: int, height: int):
-        new_loc = (self.loc + (self.dir * minutes_passed)).mod(width, height)
+    def after_time(self, minutes_passed: int, rows: int, columns: int):
+        new_loc = (self.loc + (self.dir * minutes_passed)).mod(rows, columns)
+        # print(f"{self.loc=} {self.dir=} {minutes_passed=} {rows=} {columns=}")
         return self._replace(loc=new_loc)
 
 
@@ -74,7 +75,7 @@ class Field(NamedTuple):
 
     def after_time(self, minutes_passed: int):
         updated_blizz = [
-            b.after_time(minutes_passed, self.width, self.height) for b in self.blizz
+            b.after_time(minutes_passed, self.height, self.width) for b in self.blizz
         ]
         return self._replace(blizz=updated_blizz)
 
@@ -147,25 +148,33 @@ def search_path(field: Field):
 
     q: List[SearchStep] = [SearchStep(field.start, 0)]
     count = 0
+    state_skips = 0
+    give_up_skips = 0
     while q:
         n = q.pop()
         count += 1
-        if (count % 10_000) == 0:
-            print(f"{count=} {len(q)=} {best_score=} {n.current_min=} {n.position=}")
-        if SearchStep(n.position, n.current_min % field_cycle_time) in seen_steps:
+        if (count % 100_000) == 0:
+            print(
+                f"{count=} {len(q)=} best={best_score} min={n.current_min} pos={n.position} dedupes={state_skips} best_skips={give_up_skips} seen={len(seen_steps)}"
+            )
+        dupe_of = SearchStep(n.position, n.current_min % field_cycle_time)
+        if dupe_of in seen_steps:
             # auto-skip if we've considered this state before
+            state_skips += 1
             continue
-        seen_steps.add(n)
+        seen_steps.add(dupe_of)
 
         if n.position == field.end:
             # complete!
             if n.current_min < best_score:
                 # with a new PB!
                 best_score = n.current_min
+            print(f"found a path! {n}")
             continue
 
         if n.current_min + n.position.mdist(field.end) >= best_score:
             # skip if we can't possibly make it to the goal better than our PB
+            give_up_skips = 0
             continue
 
         # or we could just wait
@@ -194,7 +203,22 @@ def main(name: str):
     input_file = read_input(name)
     field = parse_input(input_file)
     time = search_path(field)
+    # print_field(field)
+    # pprint(field)
+    # for t in range(19):
+    #     print(t)
+    #     print_field(field.after_time(t))
+
+
+"""
+    for b in field.blizz:
+        try:
+            b2 = b.after_time(0, field.height, field.width)
+            assert b2 == b
+        except AssertionError as e:
+            raise Exception(f"{b=} {b2=} {field.width=} {field.height=}")
+"""
 
 
 if __name__ == "__main__":
-    main("big")
+    main("puzzle")
