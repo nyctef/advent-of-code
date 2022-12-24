@@ -197,15 +197,16 @@ def search_path(field: Field):
             # or we could just wait
             q.append(SearchStep(n.position, n.current_min + 1, n))
 
+        print(f"min={n.current_min}")
         for candidate in n.position.dir4():
             n2 = SearchStep(candidate, n.current_min + 1, n)
             if candidate == field.end:
                 q.append(n2)
             elif candidate.r < 0 or candidate.r >= field.height:
-                # print(f"rejecting {candidate=} {field.width=} {field.height=}")
+                print(f"rejecting {candidate=} {field.width=} {field.height=}")
                 pass
             elif candidate.c < 0 or candidate.c >= field.width:
-                # print(f"rejecting {candidate=} {field.width=} {field.height=}")
+                print(f"rejecting {candidate=} {field.width=} {field.height=}")
                 pass
             elif candidate not in next_occupied_points:
                 q.append(n2)
