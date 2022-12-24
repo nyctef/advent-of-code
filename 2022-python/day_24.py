@@ -156,9 +156,9 @@ def search_path(
     starting_position: Point,
     goal: Point,
     reverse: bool,
+    blizz_cache: Dict[int, Set[Point]] = {},
 ):
     # cache from t cycle to field
-    blizz_cache: Dict[int, Set[Point]] = {}
     field_cycle_time = math.lcm(field.width, field.height)
 
     def get_occupied_points_at(t: int):
@@ -168,7 +168,7 @@ def search_path(
             blizz_cache[t] = r
         return r
 
-    seen_steps: Set[SearchStep] = set()
+    seen_steps: Dict[SearchStep, int] = {}
     best_score = 9999999999999999
     best_path = None
 
@@ -189,13 +189,18 @@ def search_path(
             print_progress()
         log()
         log(f" considering state {n}")
-        dupe_of = SearchStep(n.position, n.current_min, None)
-        if dupe_of in seen_steps:
-            # auto-skip if we've considered this state before
-            log(f">>> rejecting {n}: already seen {dupe_of=}")
+        dupe_of = SearchStep(n.position, n.current_min % field_cycle_time, None)
+        seen_at_time = seen_steps.get(dupe_of, None)
+        if seen_at_time is not None and seen_at_time <= n.current_min:
+            # auto-skip if we've considered this state before, and we considered it at an earlier time
+            # we can't auto-skip if we've been in this cycle at a later minute, since that means
+            # this round is actually an improvement
+            log(
+                f">>> rejecting {n}: already seen {dupe_of=} at earlier time {seen_at_time}"
+            )
             state_skips += 1
             continue
-        seen_steps.add(dupe_of)
+        seen_steps[dupe_of] = n.current_min
 
         if n.position == goal:
             # complete!
@@ -253,9 +258,10 @@ def search_path(
 def main(name: str):
     input_file = read_input(name)
     field = parse_input(input_file)
-    time1 = search_path(field, 0, field.start, field.end, False)
-    time2 = search_path(field, time1, field.end, field.start, True)
-    time3 = search_path(field, time2, field.start, field.end, False)
+    blizz_cache: Dict[int, Set[Point]] = {}
+    time1 = search_path(field, 0, field.start, field.end, False, blizz_cache)
+    time2 = search_path(field, time1, field.end, field.start, True, blizz_cache)
+    time3 = search_path(field, time2, field.start, field.end, False, blizz_cache)
     print(f"{time1=} {time2=} {time3=}")
     # print_field(field)
     # pprint(field)
