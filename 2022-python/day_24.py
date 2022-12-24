@@ -218,9 +218,9 @@ def main(name: str):
     time = search_path(field)
     # print_field(field)
     # pprint(field)
-    # for t in range(19):
-    #     print(t)
-    #     print_field(field.after_time(t))
+    for t in range(19):
+        print(t)
+        print_field(field.after_time(t))
 
 
 """
