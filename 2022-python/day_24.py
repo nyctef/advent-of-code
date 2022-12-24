@@ -152,7 +152,7 @@ def search_path(field: Field):
         count += 1
         if (count % 10_000) == 0:
             print(f"{count=} {len(q)=} {best_score=} {n.current_min=} {n.position=}")
-        if n in seen_steps:
+        if SearchStep(n.position, n.current_min % field_cycle_time) in seen_steps:
             # auto-skip if we've considered this state before
             continue
         seen_steps.add(n)
@@ -186,7 +186,7 @@ def search_path(field: Field):
         # print(f"{q=}")
         # if count > 10:
         #     break
-    print(f"{best_score=}")
+    print(f"{best_score=} {count=}")
     return best_score
 
 
