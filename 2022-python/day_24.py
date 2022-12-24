@@ -160,13 +160,17 @@ def search_path(field: Field):
     count = 0
     state_skips = 0
     give_up_skips = 0
+
+    def print_progress():
+        print(
+            f"{count=} {len(q)=} best={best_score} min={n.current_min} pos={n.position} dedupes={state_skips} best_skips={give_up_skips} seen={len(seen_steps)}"
+        )
+
     while q:
         n = q.pop()
         count += 1
         if (count % 100_000) == 0:
-            print(
-                f"{count=} {len(q)=} best={best_score} min={n.current_min} pos={n.position} dedupes={state_skips} best_skips={give_up_skips} seen={len(seen_steps)}"
-            )
+            print_progress()
         dupe_of = SearchStep(n.position, n.current_min % field_cycle_time, None)
         if dupe_of in seen_steps:
             # auto-skip if we've considered this state before
@@ -185,7 +189,7 @@ def search_path(field: Field):
 
         if n.current_min + n.position.mdist(field.end) >= best_score:
             # skip if we can't possibly make it to the goal better than our PB
-            give_up_skips = 0
+            give_up_skips += 1
             continue
 
         next_occupied_points = get_occupied_points_at(n.current_min + 1)
@@ -194,19 +198,21 @@ def search_path(field: Field):
             q.append(SearchStep(n.position, n.current_min + 1, n))
 
         for candidate in n.position.dir4():
-            # print(f"{candidate=}")
             n2 = SearchStep(candidate, n.current_min + 1, n)
             if candidate == field.end:
                 q.append(n2)
             elif candidate.r < 0 or candidate.r >= field.height:
-                continue
+                # print(f"rejecting {candidate=} {field.width=} {field.height=}")
+                pass
             elif candidate.c < 0 or candidate.c >= field.width:
-                continue
+                # print(f"rejecting {candidate=} {field.width=} {field.height=}")
+                pass
             elif candidate not in next_occupied_points:
                 q.append(n2)
         # print(f"{q=}")
         # if count > 10:
         #     break
+    print_progress()
     print(f"{best_score=} {count=}")
     print_path(best_path)
     return best_score
@@ -218,9 +224,9 @@ def main(name: str):
     time = search_path(field)
     # print_field(field)
     # pprint(field)
-    for t in range(19):
-        print(t)
-        print_field(field.after_time(t))
+    # for t in range(19):
+    #     print(t)
+    #     print_field(field.after_time(t))
 
 
 """
