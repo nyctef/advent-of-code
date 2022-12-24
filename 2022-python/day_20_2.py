@@ -19,14 +19,16 @@ def read_input(name: str):
 
 
 def mix(parsed: list[int]):
+    parsed = [x * 811589153 for x in parsed]
     indexes = list(range(len(parsed)))
-    for i in range(len(indexes)):
-        # print(indexes)
-        ii = next(ii for ii, x in enumerate(indexes) if x == i)
-        distance = parsed[i]
-        # print(f"{i=} {ii=} {distance=}")
-        del indexes[ii]
-        indexes.insert((ii + distance) % len(indexes), i)
+    for _ in range(10):
+        for i in range(len(indexes)):
+            # print(indexes)
+            ii = next(ii for ii, x in enumerate(indexes) if x == i)
+            distance = parsed[i]
+            # print(f"{i=} {ii=} {distance=}")
+            del indexes[ii]
+            indexes.insert((ii + distance) % len(indexes), i)
 
     mixed_orig = [parsed[i] for i in indexes]
     zero_loc = next(i for i, x in enumerate(mixed_orig) if x == 0)
