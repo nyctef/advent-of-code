@@ -32,10 +32,23 @@ class Point(NamedTuple):
     r: int
     c: int
 
+    def __add__(self, other):
+        return Point(self.r + other.r, self.c + other.c)
+
+    def __mul__(self, other):
+        return Point(self.r * other, self.c * other)
+
+    def mod(self, rmod, cmod):
+        return Point(self.r % rmod, self.c % cmod)
+
 
 class Blizzard(NamedTuple):
     loc: Point
     dir: Point
+
+    def after_time(self, minutes_passed: int, width: int, height: int):
+        new_loc = (self.loc + (self.dir * minutes_passed)).mod(width, height)
+        return self._replace(loc=new_loc)
 
 
 class Field(NamedTuple):
@@ -45,9 +58,11 @@ class Field(NamedTuple):
     end: Point
     blizz: list[Blizzard]
 
-
-def add(a: Point, b: Point):
-    return Point(a.r + b.r, a.c + b.c)
+    def after_time(self, minutes_passed: int):
+        updated_blizz = [
+            b.after_time(minutes_passed, self.width, self.height) for b in self.blizz
+        ]
+        return self._replace(blizz=updated_blizz)
 
 
 directions = {
@@ -100,7 +115,8 @@ def main(name: str):
     input_file = read_input(name)
     field = parse_input(input_file)
     pprint(field)
-    print_field(field)
+    for t in range(0, 6):
+        print_field(field.after_time(t))
 
 
 if __name__ == "__main__":
