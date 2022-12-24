@@ -48,12 +48,11 @@ class Point(NamedTuple):
         return abs(self.r - other.r) + abs(self.c - other.c)
 
     def dir4(self):
-        # right, down, left, up
         return [
-            self + Point(0, 1),
-            self + Point(1, 0),
             self + Point(0, -1),
             self + Point(-1, 0),
+            self + Point(0, 1),
+            self + Point(1, 0),
         ]
 
 
@@ -151,8 +150,8 @@ def search_path(field: Field):
     while q:
         n = q.pop()
         count += 1
-        # if (count % 10_000) == 0:
-        print(f"{count=} {len(q)=} {best_score=} {n.current_min=} {n.position=}")
+        if (count % 10_000) == 0:
+            print(f"{count=} {len(q)=} {best_score=} {n.current_min=} {n.position=}")
         if n in seen_steps:
             # auto-skip if we've considered this state before
             continue
@@ -168,8 +167,13 @@ def search_path(field: Field):
         if n.current_min + n.position.mdist(field.end) >= best_score:
             # skip if we can't possibly make it to the goal better than our PB
             continue
+
+        # or we could just wait
+        q.append(SearchStep(n.position, n.current_min + 1))
+
         next_occupied_points = get_occupied_points_at(n.current_min + 1)
         for candidate in n.position.dir4():
+            # print(f"{candidate=}")
             n2 = SearchStep(candidate, n.current_min + 1)
             if candidate == field.end:
                 q.append(n2)
@@ -179,8 +183,9 @@ def search_path(field: Field):
                 continue
             elif candidate not in next_occupied_points:
                 q.append(n2)
-        # or we could just wait
-        q.append(SearchStep(n.position, n.current_min + 1))
+        # print(f"{q=}")
+        # if count > 10:
+        #     break
     print(f"{best_score=}")
     return best_score
 
@@ -192,4 +197,4 @@ def main(name: str):
 
 
 if __name__ == "__main__":
-    main("small")
+    main("big")
