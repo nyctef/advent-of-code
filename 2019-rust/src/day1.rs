@@ -1,4 +1,4 @@
-use std::{cmp::max, error::Error};
+use std::error::Error;
 
 use crate::aoc_util::get_input;
 
