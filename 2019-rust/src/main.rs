@@ -1,5 +1,5 @@
 mod aoc_util;
-mod day1;
+mod day01;
 mod err_util;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match day {
         1 => {
-            day1::solve()?;
+            day01::solve()?;
         }
         other => return Err(format!("day {other} not implemented yet").into()),
     }
