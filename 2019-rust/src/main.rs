@@ -11,11 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|_| usage.to_owned() + ": failed to parse day as u8")?;
 
     match day {
-        1 => {
-            day01::solve()?;
-        }
+        1 => day01::solve(),
         other => return Err(format!("day {other} not implemented yet").into()),
     }
-
-    Ok(())
 }
