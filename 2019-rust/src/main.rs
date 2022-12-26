@@ -2,7 +2,9 @@ mod aoc_util;
 mod day01;
 mod err_util;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+use err_util::*;
+
+fn main() -> Result<()> {
     let usage = "Usage: [exe] [day]";
     let day: u8 = std::env::args()
         .nth(1)
