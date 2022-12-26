@@ -1,8 +1,9 @@
-use std::{error::Error, fs, path::Path};
+use crate::err_util::*;
+use std::{fs, path::Path};
 
 use reqwest::{blocking::Client, cookie::Jar, Url};
 
-pub fn get_input(year: u16, day: u8) -> Result<String, Box<dyn Error>> {
+pub fn get_input(year: u16, day: u8) -> Result<String> {
     let cookie = fs::read_to_string("./.cookie").expect(
         "Need to be able to read .cookie file to get AoC input: \
 make sure this file exists and you are in the correct directory",

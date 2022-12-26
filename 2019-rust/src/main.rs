@@ -1,5 +1,6 @@
 mod aoc_util;
 mod day1;
+mod err_util;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let usage = "Usage: [exe] [day]";

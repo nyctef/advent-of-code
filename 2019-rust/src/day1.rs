@@ -1,8 +1,7 @@
-use std::error::Error;
+use crate::aoc_util::*;
+use crate::err_util::*;
 
-use crate::aoc_util::get_input;
-
-pub fn solve() -> Result<(), Box<dyn Error>> {
+pub fn solve() -> Result<()> {
     let input = get_input(2019, 1)?;
     let sum = input
         .lines()
