@@ -11,8 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match day {
         1 => {
-            day1::part1()?;
-            day1::part2()?;
+            day1::solve()?;
         }
         other => return Err(format!("day {other} not implemented yet").into()),
     }
