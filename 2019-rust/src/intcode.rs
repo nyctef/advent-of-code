@@ -2,11 +2,13 @@ use crate::err_util::*;
 use std::str::FromStr;
 
 // TODO: can we actually make IntCode generic on the size of the integer?
-pub type TInt = usize;
+pub type TInt = i32;
 
 #[derive(Debug, Clone)]
 pub struct IntCode {
     memory: Vec<TInt>,
+    input: Vec<TInt>,
+    output: Vec<TInt>,
 }
 
 #[derive(Debug)]
@@ -25,7 +27,7 @@ impl Parameter {
 
     fn make(param_mode: u8, value: TInt) -> Parameter {
         match param_mode {
-            0 => Parameter::Address(value),
+            0 => Parameter::Address(value.try_into().unwrap()),
             1 => Parameter::Value(value),
             other => todo!("Unknown param_mode {other}"),
         }
@@ -43,6 +45,12 @@ enum Instruction {
         input_1: Parameter,
         input_2: Parameter,
         output_addr: usize,
+    },
+    Input {
+        output_addr: usize,
+    },
+    Output {
+        input: Parameter,
     },
     Halt,
 }
@@ -67,6 +75,14 @@ impl IntCode {
         self.memory[position]
     }
 
+    pub fn queue_input(&mut self, value: TInt) {
+        self.input.push(value)
+    }
+
+    pub fn read_output(&mut self) -> Option<TInt> {
+        self.output.pop()
+    }
+
     fn split_opcode(opcode: TInt) -> (u8, u8, u8, u8) {
         let mut opcode = opcode;
         let opnum = (opcode % 100) as u8;
@@ -88,7 +104,7 @@ impl IntCode {
                 let instr = Instruction::Add {
                     input_1: Parameter::make(param1_mode, self.memory[*position + 1]),
                     input_2: Parameter::make(param2_mode, self.memory[*position + 2]),
-                    output_addr: self.memory[*position + 3],
+                    output_addr: self.memory[*position + 3].try_into()?,
                 };
                 *position += 4;
                 Ok(instr)
@@ -97,9 +113,23 @@ impl IntCode {
                 let instr = Instruction::Mul {
                     input_1: Parameter::make(param1_mode, self.memory[*position + 1]),
                     input_2: Parameter::make(param2_mode, self.memory[*position + 2]),
-                    output_addr: self.memory[*position + 3],
+                    output_addr: self.memory[*position + 3].try_into()?,
                 };
                 *position += 4;
+                Ok(instr)
+            }
+            3 => {
+                let instr = Instruction::Input {
+                    output_addr: self.memory[*position + 1].try_into()?,
+                };
+                *position += 2;
+                Ok(instr)
+            }
+            4 => {
+                let instr = Instruction::Output {
+                    input: Parameter::make(param1_mode, self.memory[*position + 1]),
+                };
+                *position += 2;
                 Ok(instr)
             }
             99 => {
@@ -133,6 +163,16 @@ impl IntCode {
                 self.memory[output_addr] = a * b;
                 true
             }
+            Instruction::Input { output_addr } => {
+                let a = self.input.pop().expect("expecting a value to input");
+                self.memory[output_addr] = a;
+                true
+            }
+            Instruction::Output { input } => {
+                let a = input.get_value(self);
+                self.output.push(a);
+                true
+            }
             Instruction::Halt => false,
         }
     }
@@ -146,8 +186,12 @@ impl FromStr for IntCode {
             .trim()
             .split(',')
             .map(|x| TInt::from_str_radix(x, 10))
-            .collect::<std::result::Result<Vec<_>, _>>()
-            .map_err(|_e| "failed to parse input as a number")?;
-        Ok(IntCode { memory: nums })
+            .map(|x| x.map_err(|e| format!("failed to parse input as a number: {e}")))
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(IntCode {
+            memory: nums,
+            input: vec![],
+            output: vec![],
+        })
     }
 }
