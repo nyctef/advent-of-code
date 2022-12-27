@@ -1,15 +1,14 @@
-use std::fmt::Display;
 use std::str::FromStr;
 
 use crate::aoc_util::*;
 use crate::err_util::*;
 
+// TODO: can we actually make IntCode generic on the size of the integer?
+type TInt = usize;
+
 #[derive(Debug)]
-struct IntCode<T>
-where
-    T: num_traits::Num,
-{
-    data: Vec<T>,
+struct IntCode {
+    data: Vec<TInt>,
 }
 
 #[derive(Debug)]
@@ -27,39 +26,38 @@ enum Opcode {
     Halt,
 }
 
-impl<T: num_traits::Num + Display> IntCode<T>
-where
-    usize: TryFrom<T>,
-    u8: TryFrom<T>,
-{
+impl IntCode {
     /// Overwrites the value at position (zero-indexed)
-    fn set_value_at_position(&mut self, position: usize, value: T) {
+    fn set_value_at_position(&mut self, position: usize, value: TInt) {
         self.data[position] = value;
     }
 
-    fn read_op_at(&self, position: usize) -> Result<Opcode> {
-        let opnum: u8 = self.data[position].try_into()?;
-        let opcode = match opnum {
-            1 => Opcode::Add {
-                input_pos_1: self.data[position + 1].try_into()?,
-                input_pos_2: self.data[position + 2].try_into()?,
-                output_pos: self.data[position + 3].try_into()?,
-            },
+    fn read_op_at(&self, position: &mut usize) -> Result<Opcode> {
+        let opnum = self.data[*position];
+        match opnum {
+            1 => {
+                let op = Opcode::Add {
+                    input_pos_1: self.data[*position + 1],
+                    input_pos_2: self.data[*position + 2],
+                    output_pos: self.data[*position + 3],
+                };
+                *position += 4;
+                return Ok(op);
+            }
             other => todo!("unknown opcode {other}"),
         };
-        Ok(opcode)
     }
 }
 
-impl<T: num_traits::Num> FromStr for IntCode<T> {
+impl FromStr for IntCode {
     type Err = Box<dyn std::error::Error>;
 
     fn from_str(s: &str) -> Result<Self> {
         let nums = s
             .trim()
             .split(",")
-            .map(|x| T::from_str_radix(x, 10))
-            .collect::<std::result::Result<Vec<_>, T::FromStrRadixErr>>()
+            .map(|x| TInt::from_str_radix(x, 10))
+            .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(|_e| "failed to parse input as a number")?;
         Ok(IntCode { data: nums })
     }
@@ -68,12 +66,13 @@ impl<T: num_traits::Num> FromStr for IntCode<T> {
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 2)?;
 
-    let mut intcode: IntCode<u32> = input.parse()?;
+    let mut intcode: IntCode = input.parse()?;
     intcode.set_value_at_position(1, 12);
     intcode.set_value_at_position(2, 2);
 
-    let op1 = intcode.read_op_at(0);
-    dbg!(op1);
+    let mut pc: usize = 0;
+    let op1 = intcode.read_op_at(&mut pc)?;
+    dbg!(op1, pc);
 
     Ok(())
 }
