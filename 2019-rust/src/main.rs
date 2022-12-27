@@ -1,6 +1,7 @@
 mod aoc_util;
 mod day01;
 mod day02;
+mod day03;
 mod err_util;
 
 use err_util::*;
@@ -16,6 +17,7 @@ fn main() -> Result<()> {
     match day {
         1 => day01::solve(),
         2 => day02::solve(),
+        3 => day03::solve(),
         other => return Err(format!("day {other} not implemented yet").into()),
     }
 }
