@@ -10,15 +10,30 @@ pub struct IntCode {
 }
 
 #[derive(Debug)]
+enum Parameter {
+    Address(usize),
+    Value(TInt),
+}
+
+impl Parameter {
+    fn get_value(&self, ic: &IntCode) -> TInt {
+        match self {
+            Parameter::Address(addr) => ic.memory[*addr],
+            Parameter::Value(value) => *value,
+        }
+    }
+}
+
+#[derive(Debug)]
 enum Instruction {
     Add {
-        input_addr_1: usize,
-        input_addr_2: usize,
+        input_1: Parameter,
+        input_2: Parameter,
         output_addr: usize,
     },
     Mul {
-        input_addr_1: usize,
-        input_addr_2: usize,
+        input_1: Parameter,
+        input_2: Parameter,
         output_addr: usize,
     },
     Halt,
@@ -49,8 +64,8 @@ impl IntCode {
         match opnum {
             1 => {
                 let instr = Instruction::Add {
-                    input_addr_1: self.memory[*position + 1],
-                    input_addr_2: self.memory[*position + 2],
+                    input_1: Parameter::Address(self.memory[*position + 1]),
+                    input_2: Parameter::Address(self.memory[*position + 2]),
                     output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
@@ -58,8 +73,8 @@ impl IntCode {
             }
             2 => {
                 let instr = Instruction::Mul {
-                    input_addr_1: self.memory[*position + 1],
-                    input_addr_2: self.memory[*position + 2],
+                    input_1: Parameter::Address(self.memory[*position + 1]),
+                    input_2: Parameter::Address(self.memory[*position + 2]),
                     output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
@@ -77,22 +92,22 @@ impl IntCode {
     fn execute_instr(&mut self, instr: Instruction) -> bool {
         match instr {
             Instruction::Add {
-                input_addr_1,
-                input_addr_2,
+                input_1,
+                input_2,
                 output_addr,
             } => {
-                let a = self.memory[input_addr_1];
-                let b = self.memory[input_addr_2];
+                let a = input_1.get_value(self);
+                let b = input_2.get_value(self);
                 self.memory[output_addr] = a + b;
                 true
             }
             Instruction::Mul {
-                input_addr_1,
-                input_addr_2,
+                input_1,
+                input_2,
                 output_addr,
             } => {
-                let a = self.memory[input_addr_1];
-                let b = self.memory[input_addr_2];
+                let a = input_1.get_value(self);
+                let b = input_2.get_value(self);
                 self.memory[output_addr] = a * b;
                 true
             }
