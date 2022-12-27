@@ -25,12 +25,17 @@ impl Parameter {
         }
     }
 
-    fn make(param_mode: u8, value: TInt) -> Parameter {
-        match param_mode {
-            0 => Parameter::Address(value.try_into().unwrap()),
+    fn make(param_mode: u8, value: TInt) -> Result<Parameter> {
+        let param = match param_mode {
+            0 => Parameter::Address(value.try_into().map_err(|e| {
+                format!(
+                    "Failed to convert value {value:?} to a usize to use as a memory address: {e}"
+                )
+            })?),
             1 => Parameter::Value(value),
             other => todo!("Unknown param_mode {other}"),
-        }
+        };
+        Ok(param)
     }
 }
 
@@ -102,8 +107,8 @@ impl IntCode {
         match opnum {
             1 => {
                 let instr = Instruction::Add {
-                    input_1: Parameter::make(param1_mode, self.memory[*position + 1]),
-                    input_2: Parameter::make(param2_mode, self.memory[*position + 2]),
+                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
+                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
                     output_addr: self.memory[*position + 3].try_into()?,
                 };
                 *position += 4;
@@ -111,8 +116,8 @@ impl IntCode {
             }
             2 => {
                 let instr = Instruction::Mul {
-                    input_1: Parameter::make(param1_mode, self.memory[*position + 1]),
-                    input_2: Parameter::make(param2_mode, self.memory[*position + 2]),
+                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
+                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
                     output_addr: self.memory[*position + 3].try_into()?,
                 };
                 *position += 4;
@@ -127,7 +132,7 @@ impl IntCode {
             }
             4 => {
                 let instr = Instruction::Output {
-                    input: Parameter::make(param1_mode, self.memory[*position + 1]),
+                    input: Parameter::make(param1_mode, self.memory[*position + 1])?,
                 };
                 *position += 2;
                 Ok(instr)
@@ -185,8 +190,10 @@ impl FromStr for IntCode {
         let nums = s
             .trim()
             .split(',')
-            .map(|x| TInt::from_str_radix(x, 10))
-            .map(|x| x.map_err(|e| format!("failed to parse input as a number: {e}")))
+            .map(|x| {
+                TInt::from_str_radix(x, 10)
+                    .map_err(|e| format!("failed to parse {x:?} as a number: {e}"))
+            })
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(IntCode {
             memory: nums,
