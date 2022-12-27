@@ -6,7 +6,7 @@ use crate::err_util::*;
 // TODO: can we actually make IntCode generic on the size of the integer?
 type TInt = usize;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct IntCode {
     memory: Vec<TInt>,
 }
@@ -110,21 +110,34 @@ impl FromStr for IntCode {
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 2)?;
 
-    let mut intcode: IntCode = input.parse()?;
-    intcode.set_value_at_position(1, 12);
-    intcode.set_value_at_position(2, 2);
+    let intcode: IntCode = input.parse()?;
 
+    let mut answer = 0;
+    'outer: for noun in 0..100 {
+        for verb in 0..100 {
+            let result = run_with_inputs(intcode.clone(), noun, verb)?;
+            if result == 19690720 {
+                answer = 100 * noun + verb;
+                break 'outer;
+            }
+        }
+    }
+
+    print!("{}", answer);
+
+    Ok(())
+}
+
+fn run_with_inputs(mut intcode: IntCode, noun: TInt, verb: TInt) -> Result<TInt> {
+    intcode.set_value_at_position(1, noun);
+    intcode.set_value_at_position(2, verb);
     let mut pc: usize = 0;
-
     let mut running = true;
     while running {
         let instr = intcode.read_instr_at(&mut pc)?;
         running = intcode.execute_instr(instr);
     }
-
-    print!("{}", intcode.get_value_at(0));
-
-    Ok(())
+    return Ok(intcode.get_value_at(0));
 }
 
 #[test]
