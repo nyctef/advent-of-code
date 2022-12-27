@@ -3,6 +3,7 @@ mod day01;
 mod day02;
 mod day03;
 mod err_util;
+mod intcode;
 
 use err_util::*;
 
