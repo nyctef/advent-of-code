@@ -36,6 +36,14 @@ fn run_with_inputs(intcode: &IntCode, noun: TInt, verb: TInt) -> Result<TInt> {
 }
 
 #[test]
-fn test1() {
-    // ...
+fn test1() -> Result<()> {
+    let mut ic1 = "1,0,0,0,99".parse::<IntCode>()?;
+    ic1.run()?;
+    assert_eq!(ic1.get_value_at(0), 2);
+
+    let mut ic2 = "1,1,1,4,99,5,6,0,99".parse::<IntCode>()?;
+    ic2.run()?;
+    assert_eq!(ic2.get_value_at(0), 30);
+
+    Ok(())
 }
