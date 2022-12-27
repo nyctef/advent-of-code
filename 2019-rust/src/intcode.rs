@@ -22,6 +22,14 @@ impl Parameter {
             Parameter::Value(value) => *value,
         }
     }
+
+    fn make(param_mode: u8, value: TInt) -> Parameter {
+        match param_mode {
+            0 => Parameter::Address(value),
+            1 => Parameter::Value(value),
+            other => todo!("Unknown param_mode {other}"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -59,13 +67,27 @@ impl IntCode {
         self.memory[position]
     }
 
+    fn split_opcode(opcode: TInt) -> (u8, u8, u8, u8) {
+        let mut opcode = opcode;
+        let opnum = (opcode % 100) as u8;
+        opcode /= 100;
+        let param1_mode = (opcode % 10) as u8;
+        opcode /= 10;
+        let param2_mode = (opcode % 10) as u8;
+        opcode /= 10;
+        let param3_mode = (opcode % 10) as u8;
+
+        (opnum, param1_mode, param2_mode, param3_mode)
+    }
+
     fn read_instr_at(&self, position: &mut usize) -> Result<Instruction> {
-        let opnum = self.memory[*position];
+        let (opnum, param1_mode, param2_mode, _) = Self::split_opcode(self.memory[*position]);
+
         match opnum {
             1 => {
                 let instr = Instruction::Add {
-                    input_1: Parameter::Address(self.memory[*position + 1]),
-                    input_2: Parameter::Address(self.memory[*position + 2]),
+                    input_1: Parameter::make(param1_mode, self.memory[*position + 1]),
+                    input_2: Parameter::make(param2_mode, self.memory[*position + 2]),
                     output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
@@ -73,8 +95,8 @@ impl IntCode {
             }
             2 => {
                 let instr = Instruction::Mul {
-                    input_1: Parameter::Address(self.memory[*position + 1]),
-                    input_2: Parameter::Address(self.memory[*position + 2]),
+                    input_1: Parameter::make(param1_mode, self.memory[*position + 1]),
+                    input_2: Parameter::make(param2_mode, self.memory[*position + 2]),
                     output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
