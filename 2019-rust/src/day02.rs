@@ -32,7 +32,7 @@ fn run_with_inputs(intcode: &IntCode, noun: TInt, verb: TInt) -> Result<TInt> {
 
     intcode.run()?;
 
-    return Ok(intcode.get_value_at(0));
+    Ok(intcode.get_value_at(0))
 }
 
 #[test]

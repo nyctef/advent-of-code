@@ -20,7 +20,7 @@ fn get_mass(obj: u32) -> u32 {
         total += fuel_required;
         next = fuel_required;
     }
-    return total;
+    total
 }
 
 #[test]

@@ -126,12 +126,12 @@ impl Line {
         } else {
             other.start.y
         };
-        return Some(Point2 { x, y });
+        Some(Point2 { x, y })
     }
 }
 
 fn parse_wire(s: &str) -> Result<Vec<Line>> {
-    let parts = s.split(",");
+    let parts = s.split(',');
     let mut result = vec![];
 
     let part_re = Regex::new(r"([ULRD])(\d+)").unwrap();
@@ -139,7 +139,7 @@ fn parse_wire(s: &str) -> Result<Vec<Line>> {
     for part in parts {
         let captures = part_re.captures(part).ok_or("failed to parse line part")?;
         let direction = &captures[1];
-        let distance: i32 = (&captures[2]).parse()?;
+        let distance: i32 = captures[2].parse()?;
 
         let mut p2 = match direction {
             "U" => Point2::up(),

@@ -54,7 +54,7 @@ impl IntCode {
                     output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
-                return Ok(instr);
+                Ok(instr)
             }
             2 => {
                 let instr = Instruction::Mul {
@@ -63,15 +63,15 @@ impl IntCode {
                     output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
-                return Ok(instr);
+                Ok(instr)
             }
             99 => {
                 let instr = Instruction::Halt;
                 *position += 1;
-                return Ok(instr);
+                Ok(instr)
             }
             other => todo!("unknown opcode {other}"),
-        };
+        }
     }
 
     fn execute_instr(&mut self, instr: Instruction) -> bool {
@@ -84,7 +84,7 @@ impl IntCode {
                 let a = self.memory[input_addr_1];
                 let b = self.memory[input_addr_2];
                 self.memory[output_addr] = a + b;
-                return true;
+                true
             }
             Instruction::Mul {
                 input_addr_1,
@@ -94,9 +94,9 @@ impl IntCode {
                 let a = self.memory[input_addr_1];
                 let b = self.memory[input_addr_2];
                 self.memory[output_addr] = a * b;
-                return true;
+                true
             }
-            Instruction::Halt => return false,
+            Instruction::Halt => false,
         }
     }
 }
@@ -107,7 +107,7 @@ impl FromStr for IntCode {
     fn from_str(s: &str) -> Result<Self> {
         let nums = s
             .trim()
-            .split(",")
+            .split(',')
             .map(|x| TInt::from_str_radix(x, 10))
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(|_e| "failed to parse input as a number")?;
