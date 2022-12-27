@@ -8,20 +8,20 @@ type TInt = usize;
 
 #[derive(Debug)]
 struct IntCode {
-    data: Vec<TInt>,
+    memory: Vec<TInt>,
 }
 
 #[derive(Debug)]
-enum Opcode {
+enum Instruction {
     Add {
-        input_pos_1: usize,
-        input_pos_2: usize,
-        output_pos: usize,
+        input_addr_1: usize,
+        input_addr_2: usize,
+        output_addr: usize,
     },
     Mul {
-        input_pos_1: usize,
-        input_pos_2: usize,
-        output_pos: usize,
+        input_addr_1: usize,
+        input_addr_2: usize,
+        output_addr: usize,
     },
     Halt,
 }
@@ -29,66 +29,66 @@ enum Opcode {
 impl IntCode {
     /// Overwrites the value at position (zero-indexed)
     fn set_value_at_position(&mut self, position: usize, value: TInt) {
-        self.data[position] = value;
+        self.memory[position] = value;
     }
 
     fn get_value_at(&self, position: usize) -> TInt {
-        self.data[position]
+        self.memory[position]
     }
 
-    fn read_op_at(&self, position: &mut usize) -> Result<Opcode> {
-        let opnum = self.data[*position];
+    fn read_instr_at(&self, position: &mut usize) -> Result<Instruction> {
+        let opnum = self.memory[*position];
         match opnum {
             1 => {
-                let op = Opcode::Add {
-                    input_pos_1: self.data[*position + 1],
-                    input_pos_2: self.data[*position + 2],
-                    output_pos: self.data[*position + 3],
+                let instr = Instruction::Add {
+                    input_addr_1: self.memory[*position + 1],
+                    input_addr_2: self.memory[*position + 2],
+                    output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
-                return Ok(op);
+                return Ok(instr);
             }
             2 => {
-                let op = Opcode::Mul {
-                    input_pos_1: self.data[*position + 1],
-                    input_pos_2: self.data[*position + 2],
-                    output_pos: self.data[*position + 3],
+                let instr = Instruction::Mul {
+                    input_addr_1: self.memory[*position + 1],
+                    input_addr_2: self.memory[*position + 2],
+                    output_addr: self.memory[*position + 3],
                 };
                 *position += 4;
-                return Ok(op);
+                return Ok(instr);
             }
             99 => {
-                let op = Opcode::Halt;
+                let instr = Instruction::Halt;
                 *position += 1;
-                return Ok(op);
+                return Ok(instr);
             }
             other => todo!("unknown opcode {other}"),
         };
     }
 
-    fn execute_op(&mut self, op: Opcode) -> bool {
-        match op {
-            Opcode::Add {
-                input_pos_1,
-                input_pos_2,
-                output_pos,
+    fn execute_instr(&mut self, instr: Instruction) -> bool {
+        match instr {
+            Instruction::Add {
+                input_addr_1,
+                input_addr_2,
+                output_addr,
             } => {
-                let a = self.data[input_pos_1];
-                let b = self.data[input_pos_2];
-                self.data[output_pos] = a + b;
+                let a = self.memory[input_addr_1];
+                let b = self.memory[input_addr_2];
+                self.memory[output_addr] = a + b;
                 return true;
             }
-            Opcode::Mul {
-                input_pos_1,
-                input_pos_2,
-                output_pos,
+            Instruction::Mul {
+                input_addr_1,
+                input_addr_2,
+                output_addr,
             } => {
-                let a = self.data[input_pos_1];
-                let b = self.data[input_pos_2];
-                self.data[output_pos] = a * b;
+                let a = self.memory[input_addr_1];
+                let b = self.memory[input_addr_2];
+                self.memory[output_addr] = a * b;
                 return true;
             }
-            Opcode::Halt => return false,
+            Instruction::Halt => return false,
         }
     }
 }
@@ -103,7 +103,7 @@ impl FromStr for IntCode {
             .map(|x| TInt::from_str_radix(x, 10))
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(|_e| "failed to parse input as a number")?;
-        Ok(IntCode { data: nums })
+        Ok(IntCode { memory: nums })
     }
 }
 
@@ -118,8 +118,8 @@ pub fn solve() -> Result<()> {
 
     let mut running = true;
     while running {
-        let op = intcode.read_op_at(&mut pc)?;
-        running = intcode.execute_op(op);
+        let instr = intcode.read_instr_at(&mut pc)?;
+        running = intcode.execute_instr(instr);
     }
 
     print!("{}", intcode.get_value_at(0));
