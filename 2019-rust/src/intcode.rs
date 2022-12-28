@@ -85,7 +85,7 @@ impl IntCode {
         self.running = true;
         while self.running {
             let instr = self.read_instr_at(&mut pc)?;
-            self.execute_instr(dbg!(instr), &mut pc);
+            self.execute_instr(instr, &mut pc);
         }
         Ok(())
     }
@@ -105,6 +105,15 @@ impl IntCode {
 
     pub fn read_output(&mut self) -> Option<TInt> {
         self.output.pop()
+    }
+
+    pub fn print_memory(&self) {
+        for chunk in self.memory.chunks(10) {
+            for cell in chunk {
+                print!("{cell}\t")
+            }
+            println!()
+        }
     }
 
     fn split_opcode(opcode: TInt) -> (u8, u8, u8, u8) {
@@ -159,7 +168,7 @@ impl IntCode {
             5 => {
                 let instr = Instruction::JumpNZ {
                     input: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    target: Parameter::make(param1_mode, self.memory[*position + 2])?,
+                    target: Parameter::make(param2_mode, self.memory[*position + 2])?,
                 };
                 *position += 3;
                 Ok(instr)
@@ -167,7 +176,7 @@ impl IntCode {
             6 => {
                 let instr = Instruction::JumpZ {
                     input: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    target: Parameter::make(param1_mode, self.memory[*position + 2])?,
+                    target: Parameter::make(param2_mode, self.memory[*position + 2])?,
                 };
                 *position += 3;
                 Ok(instr)
