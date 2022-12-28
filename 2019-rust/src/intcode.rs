@@ -9,6 +9,7 @@ pub struct IntCode {
     memory: Vec<TInt>,
     input: Vec<TInt>,
     output: Vec<TInt>,
+    running: bool,
 }
 
 #[derive(Debug)]
@@ -57,16 +58,34 @@ enum Instruction {
     Output {
         input: Parameter,
     },
+    JumpNZ {
+        input: Parameter,
+        target: Parameter,
+    },
+    JumpZ {
+        input: Parameter,
+        target: Parameter,
+    },
+    LT {
+        input_1: Parameter,
+        input_2: Parameter,
+        output_addr: usize,
+    },
+    Eq {
+        input_1: Parameter,
+        input_2: Parameter,
+        output_addr: usize,
+    },
     Halt,
 }
 
 impl IntCode {
     pub fn run(&mut self) -> Result<()> {
         let mut pc: usize = 0;
-        let mut running = true;
-        while running {
+        self.running = true;
+        while self.running {
             let instr = self.read_instr_at(&mut pc)?;
-            running = self.execute_instr(instr);
+            self.execute_instr(dbg!(instr), &mut pc);
         }
         Ok(())
     }
@@ -137,16 +156,50 @@ impl IntCode {
                 *position += 2;
                 Ok(instr)
             }
+            5 => {
+                let instr = Instruction::JumpNZ {
+                    input: Parameter::make(param1_mode, self.memory[*position + 1])?,
+                    target: Parameter::make(param1_mode, self.memory[*position + 2])?,
+                };
+                *position += 3;
+                Ok(instr)
+            }
+            6 => {
+                let instr = Instruction::JumpZ {
+                    input: Parameter::make(param1_mode, self.memory[*position + 1])?,
+                    target: Parameter::make(param1_mode, self.memory[*position + 2])?,
+                };
+                *position += 3;
+                Ok(instr)
+            }
+            7 => {
+                let instr = Instruction::LT {
+                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
+                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
+                    output_addr: self.memory[*position + 3].try_into()?,
+                };
+                *position += 4;
+                Ok(instr)
+            }
+            8 => {
+                let instr = Instruction::Eq {
+                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
+                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
+                    output_addr: self.memory[*position + 3].try_into()?,
+                };
+                *position += 4;
+                Ok(instr)
+            }
             99 => {
                 let instr = Instruction::Halt;
                 *position += 1;
                 Ok(instr)
             }
-            other => todo!("unknown opcode {other}"),
+            other => Err(format!("unknown opcode {other}").into()),
         }
     }
 
-    fn execute_instr(&mut self, instr: Instruction) -> bool {
+    fn execute_instr(&mut self, instr: Instruction, position: &mut usize) {
         match instr {
             Instruction::Add {
                 input_1,
@@ -156,7 +209,6 @@ impl IntCode {
                 let a = input_1.get_value(self);
                 let b = input_2.get_value(self);
                 self.memory[output_addr] = a + b;
-                true
             }
             Instruction::Mul {
                 input_1,
@@ -166,19 +218,42 @@ impl IntCode {
                 let a = input_1.get_value(self);
                 let b = input_2.get_value(self);
                 self.memory[output_addr] = a * b;
-                true
             }
             Instruction::Input { output_addr } => {
                 let a = self.input.pop().expect("expecting a value to input");
                 self.memory[output_addr] = a;
-                true
             }
             Instruction::Output { input } => {
                 let a = input.get_value(self);
                 self.output.push(a);
-                true
             }
-            Instruction::Halt => false,
+            Instruction::JumpNZ { input, target } => {
+                if input.get_value(self) != 0 {
+                    *position = target.get_value(self).try_into().unwrap();
+                }
+            }
+            Instruction::JumpZ { input, target } => {
+                if input.get_value(self) == 0 {
+                    *position = target.get_value(self).try_into().unwrap();
+                }
+            }
+            Instruction::LT {
+                input_1,
+                input_2,
+                output_addr,
+            } => {
+                self.memory[output_addr] =
+                    i32::from(input_1.get_value(self) < input_2.get_value(self));
+            }
+            Instruction::Eq {
+                input_1,
+                input_2,
+                output_addr,
+            } => {
+                self.memory[output_addr] =
+                    i32::from(input_1.get_value(self) == input_2.get_value(self));
+            }
+            Instruction::Halt => self.running = false,
         }
     }
 }
@@ -199,6 +274,7 @@ impl FromStr for IntCode {
             memory: nums,
             input: vec![],
             output: vec![],
+            running: false,
         })
     }
 }

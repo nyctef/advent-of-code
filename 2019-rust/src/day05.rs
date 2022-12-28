@@ -6,13 +6,13 @@ pub fn solve() -> Result<()> {
     let input = get_input(2019, 5)?;
 
     let mut intcode = input.parse::<IntCode>()?;
-    intcode.queue_input(1);
-    intcode.run()?;
+    intcode.queue_input(5);
+    let result = intcode.run();
     while let Some(o) = intcode.read_output() {
         dbg!(o);
     }
 
-    Ok(())
+    result
 }
 
 #[test]
