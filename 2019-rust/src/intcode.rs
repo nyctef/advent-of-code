@@ -25,6 +25,16 @@ impl Parameter {
             Parameter::Value(value) => *value,
         }
     }
+    fn as_output_address(&self, ic: &IntCode) -> usize {
+        match self {
+            Parameter::Address(x) => *x,
+            Parameter::Value(_) => panic!(),
+        }
+    }
+
+    fn as_address(&self, ic: &IntCode) -> usize {
+        self.get_value(ic).try_into().unwrap()
+    }
 
     fn make(param_mode: u8, value: TInt) -> Result<Parameter> {
         let param = match param_mode {
@@ -45,15 +55,15 @@ enum Instruction {
     Add {
         input_1: Parameter,
         input_2: Parameter,
-        output_addr: usize,
+        output_addr: Parameter,
     },
     Mul {
         input_1: Parameter,
         input_2: Parameter,
-        output_addr: usize,
+        output_addr: Parameter,
     },
     Input {
-        output_addr: usize,
+        output_addr: Parameter,
     },
     Output {
         input: Parameter,
@@ -69,12 +79,12 @@ enum Instruction {
     LT {
         input_1: Parameter,
         input_2: Parameter,
-        output_addr: usize,
+        output_addr: Parameter,
     },
     Eq {
         input_1: Parameter,
         input_2: Parameter,
-        output_addr: usize,
+        output_addr: Parameter,
     },
     Halt,
 }
@@ -130,71 +140,74 @@ impl IntCode {
     }
 
     fn read_instr_at(&self, position: &mut usize) -> Result<Instruction> {
-        let (opnum, param1_mode, param2_mode, _) = Self::split_opcode(self.memory[*position]);
+        let (opnum, param1_mode, param2_mode, param3_mode) =
+            Self::split_opcode(self.memory[*position]);
+
+        let param1 = || Parameter::make(param1_mode, self.memory[*position + 1]);
+        let param2 = || Parameter::make(param2_mode, self.memory[*position + 2]);
+        let param3 = || Parameter::make(param3_mode, self.memory[*position + 3]);
 
         match opnum {
             1 => {
                 let instr = Instruction::Add {
-                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
-                    output_addr: self.memory[*position + 3].try_into()?,
+                    input_1: param1()?,
+                    input_2: param2()?,
+                    output_addr: param3()?,
                 };
                 *position += 4;
                 Ok(instr)
             }
             2 => {
                 let instr = Instruction::Mul {
-                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
-                    output_addr: self.memory[*position + 3].try_into()?,
+                    input_1: param1()?,
+                    input_2: param2()?,
+                    output_addr: param3()?,
                 };
                 *position += 4;
                 Ok(instr)
             }
             3 => {
                 let instr = Instruction::Input {
-                    output_addr: self.memory[*position + 1].try_into()?,
+                    output_addr: param1()?,
                 };
                 *position += 2;
                 Ok(instr)
             }
             4 => {
-                let instr = Instruction::Output {
-                    input: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                };
+                let instr = Instruction::Output { input: param1()? };
                 *position += 2;
                 Ok(instr)
             }
             5 => {
                 let instr = Instruction::JumpNZ {
-                    input: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    target: Parameter::make(param2_mode, self.memory[*position + 2])?,
+                    input: param1()?,
+                    target: param2()?,
                 };
                 *position += 3;
                 Ok(instr)
             }
             6 => {
                 let instr = Instruction::JumpZ {
-                    input: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    target: Parameter::make(param2_mode, self.memory[*position + 2])?,
+                    input: param1()?,
+                    target: param2()?,
                 };
                 *position += 3;
                 Ok(instr)
             }
             7 => {
                 let instr = Instruction::LT {
-                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
-                    output_addr: self.memory[*position + 3].try_into()?,
+                    input_1: param1()?,
+                    input_2: param2()?,
+                    output_addr: param3()?,
                 };
                 *position += 4;
                 Ok(instr)
             }
             8 => {
                 let instr = Instruction::Eq {
-                    input_1: Parameter::make(param1_mode, self.memory[*position + 1])?,
-                    input_2: Parameter::make(param2_mode, self.memory[*position + 2])?,
-                    output_addr: self.memory[*position + 3].try_into()?,
+                    input_1: param1()?,
+                    input_2: param2()?,
+                    output_addr: param3()?,
                 };
                 *position += 4;
                 Ok(instr)
@@ -217,6 +230,7 @@ impl IntCode {
             } => {
                 let a = input_1.get_value(self);
                 let b = input_2.get_value(self);
+                let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] = a + b;
             }
             Instruction::Mul {
@@ -226,10 +240,12 @@ impl IntCode {
             } => {
                 let a = input_1.get_value(self);
                 let b = input_2.get_value(self);
+                let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] = a * b;
             }
             Instruction::Input { output_addr } => {
                 let a = self.input.pop().expect("expecting a value to input");
+                let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] = a;
             }
             Instruction::Output { input } => {
@@ -238,12 +254,12 @@ impl IntCode {
             }
             Instruction::JumpNZ { input, target } => {
                 if input.get_value(self) != 0 {
-                    *position = target.get_value(self).try_into().unwrap();
+                    *position = target.as_address(self);
                 }
             }
             Instruction::JumpZ { input, target } => {
                 if input.get_value(self) == 0 {
-                    *position = target.get_value(self).try_into().unwrap();
+                    *position = target.as_address(self);
                 }
             }
             Instruction::LT {
@@ -251,6 +267,7 @@ impl IntCode {
                 input_2,
                 output_addr,
             } => {
+                let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] =
                     i32::from(input_1.get_value(self) < input_2.get_value(self));
             }
@@ -259,6 +276,7 @@ impl IntCode {
                 input_2,
                 output_addr,
             } => {
+                let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] =
                     i32::from(input_1.get_value(self) == input_2.get_value(self));
             }

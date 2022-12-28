@@ -6,8 +6,12 @@ pub fn solve() -> Result<()> {
     let input = get_input(2019, 5)?;
 
     let mut intcode = input.parse::<IntCode>()?;
+    // intcode.print_memory();
     intcode.queue_input(5);
+    // println!("running...");
     let result = intcode.run();
+    // println!("completed");
+    // intcode.print_memory();
     while let Some(o) = intcode.read_output() {
         dbg!(o);
     }
