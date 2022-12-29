@@ -5,7 +5,7 @@ use crate::intcode::IntCode;
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 9)?;
     let mut boost = input.parse::<IntCode>()?;
-    boost.queue_input(1);
+    boost.queue_input(2);
 
     boost.run()?;
 
@@ -14,13 +14,8 @@ pub fn solve() -> Result<()> {
         output.push(o);
     }
 
-    if output.len() != 1 {
-        dbg!(output);
-        Err("boost test failed".into())
-    } else {
-        println!("{}", output[0]);
-        Ok(())
-    }
+    dbg!(output);
+    Ok(())
 }
 
 #[test]
