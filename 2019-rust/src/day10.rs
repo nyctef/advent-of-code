@@ -43,17 +43,17 @@ fn count_distinct_slopes(asteroids: &Vec<PointRC>, candidate: &PointRC) -> usize
     let mut distinct_slopes = HashSet::new();
     for other in asteroids {
         if other == candidate {
-            println!("ignoring {} since it's us", other);
+            // println!("ignoring {} since it's us", other);
             continue;
         }
-        let is_new = distinct_slopes.insert((other - candidate).slope());
-        println!(
-            "testing {} with diff {}\tand slope {}\t: {}",
-            other,
-            &(other - candidate),
-            &(other - candidate).slope(),
-            is_new
-        );
+        let is_new = distinct_slopes.insert(candidate.slope_to(other));
+        // println!(
+        //     "testing {} with diff {}\tand slope {}\t: {}",
+        //     other,
+        //     &(other - candidate),
+        //     &(other - candidate).slope(),
+        //     is_new
+        // );
     }
     println!(
         "candidate at {} sees asteroids with {}/{} distinct slopes",
@@ -77,8 +77,11 @@ impl PointRC {
         }
     }
 
-    fn slope(&self) -> Sink64 {
-        Sink64(self.r as f64 / self.c as f64)
+    fn slope_to(&self, other: &PointRC) -> Slope {
+        Slope {
+            dr: self.r - other.r,
+            dc: self.c - other.c,
+        }
     }
 }
 impl Display for &PointRC {
@@ -86,33 +89,40 @@ impl Display for &PointRC {
         write!(f, "r={} c={}", self.r, self.c)
     }
 }
-impl ops::Sub for &PointRC {
-    type Output = PointRC;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        PointRC {
-            r: self.r - rhs.r,
-            c: self.c - rhs.c,
-        }
-    }
-}
 
 #[derive(Debug)]
-struct Sink64(f64);
-impl PartialEq for Sink64 {
+struct Slope {
+    dr: i64,
+    dc: i64,
+}
+impl Slope {
+    fn as_f64(&self) -> f64 {
+        self.dr as f64 / self.dc as f64
+    }
+}
+impl PartialEq for Slope {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        if self.dr.signum() != other.dr.signum() {
+            return false;
+        }
+        if self.dc.signum() != other.dc.signum() {
+            return false;
+        }
+
+        self.as_f64() == other.as_f64()
     }
 }
-impl Eq for Sink64 {}
-impl Hash for Sink64 {
+impl Eq for Slope {
+    // lies, lies, sweet little lies
+}
+impl Hash for Slope {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.to_bits().hash(state);
+        self.as_f64().to_bits().hash(state);
     }
 }
-impl Display for Sink64 {
+impl Display for Slope {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "dr={} dc={}", self.dr, self.dc)
     }
 }
 
