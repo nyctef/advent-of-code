@@ -1,0 +1,162 @@
+use std::cmp::max;
+use std::collections::HashSet;
+use std::fmt::Display;
+use std::hash::Hash;
+use std::ops;
+
+use crate::aoc_util::*;
+use crate::err_util::*;
+
+pub fn solve() -> Result<()> {
+    let input = get_input(2019, 10)?;
+
+    let best = get_most_visible_asteroids(&input);
+    println!("best={best}");
+
+    Ok(())
+}
+
+fn get_most_visible_asteroids(input: &str) -> usize {
+    let asteroids = parse_map(input);
+    let mut best = 0;
+    for candidate in &asteroids {
+        let slopes = count_distinct_slopes(&asteroids, candidate);
+        best = max(best, slopes);
+    }
+    best
+}
+
+fn parse_map(input: &str) -> Vec<PointRC> {
+    input
+        .lines()
+        .enumerate()
+        .flat_map(|(r, line)| {
+            line.chars()
+                .enumerate()
+                .filter(|(_, c)| *c == '#')
+                .map(move |(c, _)| PointRC::new(r, c))
+        })
+        .collect::<Vec<_>>()
+}
+
+fn count_distinct_slopes(asteroids: &Vec<PointRC>, candidate: &PointRC) -> usize {
+    let mut distinct_slopes = HashSet::new();
+    for other in asteroids {
+        if other == candidate {
+            println!("ignoring {} since it's us", other);
+            continue;
+        }
+        let is_new = distinct_slopes.insert((other - candidate).slope());
+        println!(
+            "testing {} with diff {}\tand slope {}\t: {}",
+            other,
+            &(other - candidate),
+            &(other - candidate).slope(),
+            is_new
+        );
+    }
+    println!(
+        "candidate at {} sees asteroids with {}/{} distinct slopes",
+        candidate,
+        distinct_slopes.len(),
+        asteroids.len() - 1
+    );
+    distinct_slopes.len()
+}
+
+#[derive(Debug, PartialEq)]
+struct PointRC {
+    r: i64,
+    c: i64,
+}
+impl PointRC {
+    fn new(r: usize, c: usize) -> PointRC {
+        PointRC {
+            r: r.try_into().unwrap(),
+            c: c.try_into().unwrap(),
+        }
+    }
+
+    fn slope(&self) -> Sink64 {
+        Sink64(self.r as f64 / self.c as f64)
+    }
+}
+impl Display for &PointRC {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "r={} c={}", self.r, self.c)
+    }
+}
+impl ops::Sub for &PointRC {
+    type Output = PointRC;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        PointRC {
+            r: self.r - rhs.r,
+            c: self.c - rhs.c,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Sink64(f64);
+impl PartialEq for Sink64 {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl Eq for Sink64 {}
+impl Hash for Sink64 {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.to_bits().hash(state);
+    }
+}
+impl Display for Sink64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[test]
+fn example1() {
+    let map = ".#..#
+.....
+#####
+....#
+...##";
+
+    assert_eq!(8, get_most_visible_asteroids(map));
+}
+
+#[test]
+fn example2() {
+    let input = "......#.#.
+#..#.#....
+..#######.
+.#.#.###..
+.#..#.....
+..#....#.#
+#..#....#.
+.##.#..###
+##...#..#.
+.#....####";
+
+    assert_eq!(33, get_most_visible_asteroids(input));
+}
+
+#[test]
+fn example2b() {
+    let input = "......#.#.
+#..#.#....
+..#######.
+.#.#.###..
+.#..#.....
+..#....#.#
+#..#....#.
+.##.#..###
+##...#..#.
+.#....####";
+
+    let map = parse_map(input);
+    let best_count = count_distinct_slopes(&map, &PointRC { r: 8, c: 5 });
+    assert_eq!(33, best_count);
+}
