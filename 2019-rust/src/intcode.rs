@@ -246,10 +246,22 @@ impl IntCode {
                 self.pc += 4;
             }
             Instruction::Input { output_addr } => {
-                let a = self.input.pop_back().expect("expecting a value to input");
-                let output_addr = output_addr.as_output_address(self);
-                self.memory[output_addr] = a;
-                self.pc += 2;
+                let a = self.input.pop_back();
+                match a {
+                    Some(value) => {
+                        let output_addr = output_addr.as_output_address(self);
+                        self.memory[output_addr] = value;
+                        self.pc += 2;
+                    }
+                    None => {
+                        // stop running until input is provided.
+                        self.state = MachineState::AwaitingInput;
+                        // note that we don't touch the program counter here - since
+                        // self.pc should have the same value the next time the machine
+                        // starts up, the program should continue as normal once input
+                        // is provided
+                    }
+                }
             }
             Instruction::Output { input } => {
                 let a = input.get_value(self);
