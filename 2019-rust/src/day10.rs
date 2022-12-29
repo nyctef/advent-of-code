@@ -12,6 +12,7 @@ pub fn solve() -> Result<()> {
 
     let asteroids = parse_map(&input);
     let station = get_most_visible_asteroids(&asteroids);
+    dbg!(&station);
 
     let mut asteroids_by_angle = asteroids
         .iter()
@@ -22,7 +23,7 @@ pub fn solve() -> Result<()> {
 
     asteroids_by_angle.sort_by_key(|aba| aba.0);
 
-    for (_, mut asteroid_list) in asteroids_by_angle {
+    for (_, asteroid_list) in asteroids_by_angle.iter_mut() {
         asteroid_list.sort_by(|a, b| {
             a.edist_to(station)
                 .partial_cmp(&b.edist_to(station))
@@ -30,7 +31,7 @@ pub fn solve() -> Result<()> {
         })
     }
 
-    // dbg!(asteroids_by_angle);
+    dbg!(asteroids_by_angle);
 
     Ok(())
 }
@@ -95,8 +96,10 @@ impl PointRC {
 
     fn slope_to(&self, other: &PointRC) -> Slope {
         Slope {
+            // dr should be positive when we're below other (higher row minus lower row)
             dr: self.r - other.r,
-            dc: self.c - other.c,
+            // dc should be positive when other is to the right of us (higher column minus lower column)
+            dc: other.c - self.c,
         }
     }
 
