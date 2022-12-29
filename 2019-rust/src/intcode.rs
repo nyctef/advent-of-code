@@ -10,6 +10,7 @@ pub struct IntCode {
     input: Vec<TInt>,
     output: Vec<TInt>,
     running: bool,
+    pc: usize,
 }
 
 #[derive(Debug)]
@@ -91,11 +92,11 @@ enum Instruction {
 
 impl IntCode {
     pub fn run(&mut self) -> Result<()> {
-        let mut pc: usize = 0;
+        self.pc = 0;
         self.running = true;
         while self.running {
-            let instr = self.read_instr_at(&mut pc)?;
-            self.execute_instr(instr, &mut pc);
+            let instr = self.read_instr_at_pc()?;
+            self.execute_instr(instr);
         }
         Ok(())
     }
@@ -140,13 +141,13 @@ impl IntCode {
         (opnum, param1_mode, param2_mode, param3_mode)
     }
 
-    fn read_instr_at(&self, position: &mut usize) -> Result<Instruction> {
+    fn read_instr_at_pc(&self) -> Result<Instruction> {
         let (opnum, param1_mode, param2_mode, param3_mode) =
-            Self::split_opcode(self.memory[*position]);
+            Self::split_opcode(self.memory[self.pc]);
 
-        let param1 = || Parameter::make(param1_mode, self.memory[*position + 1]);
-        let param2 = || Parameter::make(param2_mode, self.memory[*position + 2]);
-        let param3 = || Parameter::make(param3_mode, self.memory[*position + 3]);
+        let param1 = || Parameter::make(param1_mode, self.memory[self.pc + 1]);
+        let param2 = || Parameter::make(param2_mode, self.memory[self.pc + 2]);
+        let param3 = || Parameter::make(param3_mode, self.memory[self.pc + 3]);
 
         match opnum {
             1 => {
@@ -155,7 +156,6 @@ impl IntCode {
                     input_2: param2()?,
                     output_addr: param3()?,
                 };
-                *position += 4;
                 Ok(instr)
             }
             2 => {
@@ -164,19 +164,16 @@ impl IntCode {
                     input_2: param2()?,
                     output_addr: param3()?,
                 };
-                *position += 4;
                 Ok(instr)
             }
             3 => {
                 let instr = Instruction::Input {
                     output_addr: param1()?,
                 };
-                *position += 2;
                 Ok(instr)
             }
             4 => {
                 let instr = Instruction::Output { input: param1()? };
-                *position += 2;
                 Ok(instr)
             }
             5 => {
@@ -184,7 +181,6 @@ impl IntCode {
                     input: param1()?,
                     target: param2()?,
                 };
-                *position += 3;
                 Ok(instr)
             }
             6 => {
@@ -192,7 +188,6 @@ impl IntCode {
                     input: param1()?,
                     target: param2()?,
                 };
-                *position += 3;
                 Ok(instr)
             }
             7 => {
@@ -201,7 +196,6 @@ impl IntCode {
                     input_2: param2()?,
                     output_addr: param3()?,
                 };
-                *position += 4;
                 Ok(instr)
             }
             8 => {
@@ -210,19 +204,17 @@ impl IntCode {
                     input_2: param2()?,
                     output_addr: param3()?,
                 };
-                *position += 4;
                 Ok(instr)
             }
             99 => {
                 let instr = Instruction::Halt;
-                *position += 1;
                 Ok(instr)
             }
             other => Err(format!("unknown opcode {other}").into()),
         }
     }
 
-    fn execute_instr(&mut self, instr: Instruction, position: &mut usize) {
+    fn execute_instr(&mut self, instr: Instruction) {
         match instr {
             Instruction::Add {
                 input_1,
@@ -233,6 +225,7 @@ impl IntCode {
                 let b = input_2.get_value(self);
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] = a + b;
+                self.pc += 4;
             }
             Instruction::Mul {
                 input_1,
@@ -243,24 +236,31 @@ impl IntCode {
                 let b = input_2.get_value(self);
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] = a * b;
+                self.pc += 4;
             }
             Instruction::Input { output_addr } => {
                 let a = self.input.pop().expect("expecting a value to input");
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] = a;
+                self.pc += 2;
             }
             Instruction::Output { input } => {
                 let a = input.get_value(self);
                 self.output.push(a);
+                self.pc += 2;
             }
             Instruction::JumpNZ { input, target } => {
                 if input.get_value(self) != 0 {
-                    *position = target.as_address(self);
+                    self.pc = target.as_address(self);
+                } else {
+                    self.pc += 3;
                 }
             }
             Instruction::JumpZ { input, target } => {
                 if input.get_value(self) == 0 {
-                    *position = target.as_address(self);
+                    self.pc = target.as_address(self);
+                } else {
+                    self.pc += 3;
                 }
             }
             Instruction::LT {
@@ -271,6 +271,7 @@ impl IntCode {
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] =
                     i32::from(input_1.get_value(self) < input_2.get_value(self));
+                self.pc += 4;
             }
             Instruction::Eq {
                 input_1,
@@ -280,6 +281,7 @@ impl IntCode {
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] =
                     i32::from(input_1.get_value(self) == input_2.get_value(self));
+                self.pc += 4;
             }
             Instruction::Halt => self.running = false,
         }
@@ -302,6 +304,7 @@ impl FromStr for IntCode {
             memory: nums,
             input: vec![],
             output: vec![],
+            pc: 0,
             running: false,
         })
     }
