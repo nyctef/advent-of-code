@@ -1,5 +1,5 @@
 use crate::err_util::*;
-use std::str::FromStr;
+use std::{collections::VecDeque, str::FromStr};
 
 // TODO: can we actually make IntCode generic on the size of the integer?
 pub type TInt = i32;
@@ -14,8 +14,8 @@ enum MachineState {
 #[derive(Debug, Clone)]
 pub struct IntCode {
     memory: Vec<TInt>,
-    input: Vec<TInt>,
-    output: Vec<TInt>,
+    input: VecDeque<TInt>,
+    output: VecDeque<TInt>,
     pc: usize,
     state: MachineState,
 }
@@ -118,11 +118,11 @@ impl IntCode {
     }
 
     pub fn queue_input(&mut self, value: TInt) {
-        self.input.insert(0, value)
+        self.input.push_front(value)
     }
 
     pub fn read_output(&mut self) -> Option<TInt> {
-        self.output.pop()
+        self.output.pop_front()
     }
 
     #[cfg(test)]
@@ -246,14 +246,14 @@ impl IntCode {
                 self.pc += 4;
             }
             Instruction::Input { output_addr } => {
-                let a = self.input.pop().expect("expecting a value to input");
+                let a = self.input.pop_back().expect("expecting a value to input");
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] = a;
                 self.pc += 2;
             }
             Instruction::Output { input } => {
                 let a = input.get_value(self);
-                self.output.push(a);
+                self.output.push_back(a);
                 self.pc += 2;
             }
             Instruction::JumpNZ { input, target } => {
@@ -309,8 +309,8 @@ impl FromStr for IntCode {
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(IntCode {
             memory: nums,
-            input: vec![],
-            output: vec![],
+            input: vec![].into(),
+            output: vec![].into(),
             pc: 0,
             state: MachineState::Halted,
         })
