@@ -4,13 +4,20 @@ use std::str::FromStr;
 // TODO: can we actually make IntCode generic on the size of the integer?
 pub type TInt = i32;
 
+#[derive(Debug, Clone, PartialEq)]
+enum MachineState {
+    Halted,
+    Running,
+    AwaitingInput,
+}
+
 #[derive(Debug, Clone)]
 pub struct IntCode {
     memory: Vec<TInt>,
     input: Vec<TInt>,
     output: Vec<TInt>,
-    running: bool,
     pc: usize,
+    state: MachineState,
 }
 
 #[derive(Debug)]
@@ -93,8 +100,8 @@ enum Instruction {
 impl IntCode {
     pub fn run(&mut self) -> Result<()> {
         self.pc = 0;
-        self.running = true;
-        while self.running {
+        self.state = MachineState::Running;
+        while self.state == MachineState::Running {
             let instr = self.read_instr_at_pc()?;
             self.execute_instr(instr);
         }
@@ -283,7 +290,7 @@ impl IntCode {
                     i32::from(input_1.get_value(self) == input_2.get_value(self));
                 self.pc += 4;
             }
-            Instruction::Halt => self.running = false,
+            Instruction::Halt => self.state = MachineState::Halted,
         }
     }
 }
@@ -305,7 +312,7 @@ impl FromStr for IntCode {
             input: vec![],
             output: vec![],
             pc: 0,
-            running: false,
+            state: MachineState::Halted,
         })
     }
 }
