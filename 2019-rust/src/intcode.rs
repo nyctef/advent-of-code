@@ -2,7 +2,7 @@ use crate::err_util::*;
 use std::{collections::VecDeque, str::FromStr};
 
 // TODO: can we actually make IntCode generic on the size of the integer?
-pub type TInt = i32;
+pub type TInt = i64;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MachineState {
@@ -17,6 +17,7 @@ pub struct IntCode {
     input: VecDeque<TInt>,
     output: VecDeque<TInt>,
     pc: usize,
+    relative_base: usize,
     state: MachineState,
 }
 
@@ -24,6 +25,13 @@ pub struct IntCode {
 enum Parameter {
     Address(usize),
     Value(TInt),
+    Relative(TInt),
+}
+
+fn update_relative_base(rb: usize, diff: TInt) -> usize {
+    let rb: TInt = rb.try_into().unwrap();
+    let result: TInt = rb + diff;
+    result.try_into().unwrap()
 }
 
 impl Parameter {
@@ -31,12 +39,14 @@ impl Parameter {
         match self {
             Parameter::Address(addr) => ic.memory[*addr],
             Parameter::Value(value) => *value,
+            Parameter::Relative(value) => ic.memory[update_relative_base(ic.relative_base, *value)],
         }
     }
-    fn as_output_address(&self, _: &IntCode) -> usize {
+    fn as_output_address(&self, ic: &IntCode) -> usize {
         match self {
             Parameter::Address(x) => *x,
             Parameter::Value(_) => panic!(),
+            Parameter::Relative(x) => update_relative_base(ic.relative_base, *x),
         }
     }
 
@@ -52,6 +62,7 @@ impl Parameter {
                 )
             })?),
             1 => Parameter::Value(value),
+            2 => Parameter::Relative(value),
             other => todo!("Unknown param_mode {other}"),
         };
         Ok(param)
@@ -93,6 +104,9 @@ enum Instruction {
         input_1: Parameter,
         input_2: Parameter,
         output_addr: Parameter,
+    },
+    Rebase {
+        adjustment: Parameter,
     },
     Halt,
 }
@@ -216,6 +230,12 @@ impl IntCode {
                 };
                 Ok(instr)
             }
+            9 => {
+                let instr = Instruction::Rebase {
+                    adjustment: param1()?,
+                };
+                Ok(instr)
+            }
             99 => {
                 let instr = Instruction::Halt;
                 Ok(instr)
@@ -292,7 +312,7 @@ impl IntCode {
             } => {
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] =
-                    i32::from(input_1.get_value(self) < input_2.get_value(self));
+                    TInt::from(input_1.get_value(self) < input_2.get_value(self));
                 self.pc += 4;
             }
             Instruction::Eq {
@@ -302,8 +322,13 @@ impl IntCode {
             } => {
                 let output_addr = output_addr.as_output_address(self);
                 self.memory[output_addr] =
-                    i32::from(input_1.get_value(self) == input_2.get_value(self));
+                    TInt::from(input_1.get_value(self) == input_2.get_value(self));
                 self.pc += 4;
+            }
+            Instruction::Rebase { adjustment } => {
+                let adjustment = adjustment.get_value(self);
+                self.relative_base = update_relative_base(self.relative_base, adjustment);
+                self.pc += 2;
             }
             Instruction::Halt => self.state = MachineState::Halted,
         }
@@ -314,7 +339,7 @@ impl FromStr for IntCode {
     type Err = Box<dyn std::error::Error>;
 
     fn from_str(s: &str) -> Result<Self> {
-        let nums = s
+        let mut nums = s
             .trim()
             .split(',')
             .map(|x| {
@@ -322,11 +347,15 @@ impl FromStr for IntCode {
                     .map_err(|e| format!("failed to parse {x:?} as a number: {e}"))
             })
             .collect::<std::result::Result<Vec<_>, _>>()?;
+
+        nums.resize(nums.len() + 1000, 0);
+
         Ok(IntCode {
             memory: nums,
             input: vec![].into(),
             output: vec![].into(),
             pc: 0,
+            relative_base: 0,
             state: MachineState::Halted,
         })
     }

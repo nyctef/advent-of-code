@@ -6,6 +6,7 @@ mod day05;
 mod day06;
 mod day07;
 mod day08;
+mod day09;
 mod err_util;
 mod intcode;
 
@@ -27,6 +28,7 @@ fn main() -> Result<()> {
         6 => day06::solve(),
         7 => day07::solve(),
         8 => day08::solve(),
+        9 => day09::solve(),
         other => return Err(format!("day {other} not implemented yet").into()),
     }
 }
