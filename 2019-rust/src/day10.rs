@@ -1,8 +1,6 @@
-use std::cmp::max;
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::hash::Hash;
-use std::ops;
 
 use crate::aoc_util::*;
 use crate::err_util::*;
@@ -10,20 +8,17 @@ use crate::err_util::*;
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 10)?;
 
-    let best = get_most_visible_asteroids(&input);
-    println!("best={best}");
+    let asteroids = parse_map(&input);
+    let _station = get_most_visible_asteroids(&asteroids);
 
     Ok(())
 }
 
-fn get_most_visible_asteroids(input: &str) -> usize {
-    let asteroids = parse_map(input);
-    let mut best = 0;
-    for candidate in &asteroids {
-        let slopes = count_distinct_slopes(&asteroids, candidate);
-        best = max(best, slopes);
-    }
-    best
+fn get_most_visible_asteroids(asteroids: &Vec<PointRC>) -> &PointRC {
+    asteroids
+        .iter()
+        .max_by_key(|a| count_distinct_slopes(asteroids, a))
+        .unwrap()
 }
 
 fn parse_map(input: &str) -> Vec<PointRC> {
@@ -46,7 +41,7 @@ fn count_distinct_slopes(asteroids: &Vec<PointRC>, candidate: &PointRC) -> usize
             // println!("ignoring {} since it's us", other);
             continue;
         }
-        let is_new = distinct_slopes.insert(candidate.slope_to(other));
+        distinct_slopes.insert(candidate.slope_to(other));
         // println!(
         //     "testing {} with diff {}\tand slope {}\t: {}",
         //     other,
@@ -128,13 +123,17 @@ impl Display for Slope {
 
 #[test]
 fn example1() {
-    let map = ".#..#
+    let input = ".#..#
 .....
 #####
 ....#
 ...##";
+    let asteroids = parse_map(input);
 
-    assert_eq!(8, get_most_visible_asteroids(map));
+    assert_eq!(
+        PointRC { r: 4, c: 3 },
+        *get_most_visible_asteroids(&asteroids)
+    );
 }
 
 #[test]
@@ -149,8 +148,12 @@ fn example2() {
 .##.#..###
 ##...#..#.
 .#....####";
+    let asteroids = parse_map(input);
 
-    assert_eq!(33, get_most_visible_asteroids(input));
+    assert_eq!(
+        PointRC { r: 8, c: 5 },
+        *get_most_visible_asteroids(&asteroids)
+    );
 }
 
 #[test]
