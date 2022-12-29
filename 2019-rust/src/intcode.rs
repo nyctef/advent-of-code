@@ -99,7 +99,6 @@ enum Instruction {
 
 impl IntCode {
     pub fn run(&mut self) -> Result<()> {
-        self.pc = 0;
         self.state = MachineState::Running;
         while self.state == MachineState::Running {
             let instr = self.read_instr_at_pc()?;
@@ -125,8 +124,8 @@ impl IntCode {
         self.output.pop_front()
     }
 
-    pub fn state(&self) -> MachineState {
-        self.state
+    pub fn state(&self) -> (usize, MachineState) {
+        (self.pc, self.state)
     }
 
     #[cfg(test)]
