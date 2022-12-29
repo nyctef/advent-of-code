@@ -15,7 +15,7 @@ pub fn solve() -> Result<()> {
     dbg!(&station);
 
     let asteroids_in_order = calculate_asteroid_destruction_order(&asteroids, station);
-    let asteroid_200 = asteroids_in_order.get(200);
+    let asteroid_200 = asteroids_in_order.get(199);
     dbg!(asteroid_200);
 
     Ok(())
@@ -242,4 +242,37 @@ fn example2b() {
     let map = parse_map(input);
     let best_count = count_distinct_slopes(&map, &PointRC { r: 8, c: 5 });
     assert_eq!(33, best_count);
+}
+
+#[test]
+fn large_example() {
+    let input = ".#..##.###...#######
+##.############..##.
+.#.######.########.#
+.###.#######.####.#.
+#####.##.#.##.###.##
+..#####..#.#########
+####################
+#.####....###.#.#.##
+##.#################
+#####.##.###..####..
+..######..##.#######
+####.##.####...##..#
+.#####..#.######.###
+##...#.##########...
+#.##########.#######
+.####.#.###.###.#.##
+....##.##.###..#####
+.#.#.###########.###
+#.#.#.#####.####.###
+###.##.####.##.#..##";
+
+    let asteroids = parse_map(input);
+    let station = get_most_visible_asteroids(&asteroids);
+    dbg!(&station);
+
+    let asteroids_in_order = calculate_asteroid_destruction_order(&asteroids, station);
+    let asteroid_200 = asteroids_in_order.get(199);
+    dbg!(asteroid_200);
+    panic!();
 }
