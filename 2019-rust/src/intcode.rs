@@ -25,7 +25,7 @@ impl Parameter {
             Parameter::Value(value) => *value,
         }
     }
-    fn as_output_address(&self, ic: &IntCode) -> usize {
+    fn as_output_address(&self, _: &IntCode) -> usize {
         match self {
             Parameter::Address(x) => *x,
             Parameter::Value(_) => panic!(),
@@ -117,6 +117,7 @@ impl IntCode {
         self.output.pop()
     }
 
+    #[cfg(test)]
     pub fn print_memory(&self) {
         for chunk in self.memory.chunks(10) {
             for cell in chunk {
