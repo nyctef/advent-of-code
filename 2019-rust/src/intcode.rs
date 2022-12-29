@@ -4,8 +4,8 @@ use std::{collections::VecDeque, str::FromStr};
 // TODO: can we actually make IntCode generic on the size of the integer?
 pub type TInt = i32;
 
-#[derive(Debug, Clone, PartialEq)]
-enum MachineState {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MachineState {
     Halted,
     Running,
     AwaitingInput,
@@ -123,6 +123,10 @@ impl IntCode {
 
     pub fn read_output(&mut self) -> Option<TInt> {
         self.output.pop_front()
+    }
+
+    pub fn state(&self) -> MachineState {
+        self.state
     }
 
     #[cfg(test)]
