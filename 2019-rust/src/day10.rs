@@ -14,15 +14,24 @@ pub fn solve() -> Result<()> {
     let station = get_most_visible_asteroids(&asteroids);
     dbg!(&station);
 
+    let asteroids_in_order = calculate_asteroid_destruction_order(&asteroids, station);
+    let asteroid_200 = asteroids_in_order.get(200);
+    dbg!(asteroid_200);
+
+    Ok(())
+}
+
+fn calculate_asteroid_destruction_order<'a>(
+    asteroids: &'a [PointRC],
+    station: &PointRC,
+) -> Vec<&'a PointRC> {
     let mut asteroids_by_angle = asteroids
         .iter()
         .map(|a| (station.slope_to(a), a))
         .into_group_map()
         .into_iter()
         .collect::<Vec<_>>();
-
     asteroids_by_angle.sort_by_key(|aba| aba.0);
-
     for (_, asteroid_list) in asteroids_by_angle.iter_mut() {
         asteroid_list.sort_by(|a, b| {
             a.edist_to(station)
@@ -30,10 +39,21 @@ pub fn solve() -> Result<()> {
                 .unwrap()
         })
     }
-
-    dbg!(asteroids_by_angle);
-
-    Ok(())
+    // TODO: how to make the borrow checker happy with something like the following instead?
+    // let asteroids_in_order = (0..10)
+    //     .flat_map(move |depth| asteroids_by_angle.iter().map(move |aba| aba.1.get(depth)))
+    //     .filter_map(|x| x)
+    //     .collect::<Vec<_>>();
+    let mut asteroids_in_order = vec![];
+    for depth in 0..10 {
+        for (_, group) in asteroids_by_angle.iter() {
+            let next = group.get(depth);
+            if let Some(n) = next {
+                asteroids_in_order.push(*n);
+            }
+        }
+    }
+    asteroids_in_order
 }
 
 fn get_most_visible_asteroids(asteroids: &Vec<PointRC>) -> &PointRC {
@@ -81,7 +101,7 @@ fn count_distinct_slopes(asteroids: &Vec<PointRC>, candidate: &PointRC) -> usize
     distinct_slopes.len()
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct PointRC {
     r: i64,
     c: i64,
