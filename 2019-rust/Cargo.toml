@@ -6,6 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+itertools = "0.10.5"
 num-traits = "0.2.15"
 regex = "1.7.0"
-reqwest = { version = "0.11.13", features = ["cookies", "blocking"] }
+reqwest = { default-features = false, version = "0.11.13", features = [
+    "default-tls",
+    "cookies",
+    "blocking",
+] }

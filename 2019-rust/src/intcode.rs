@@ -110,7 +110,7 @@ impl IntCode {
     }
 
     pub fn queue_input(&mut self, value: TInt) {
-        self.input.push(value)
+        self.input.insert(0, value)
     }
 
     pub fn read_output(&mut self) -> Option<TInt> {
