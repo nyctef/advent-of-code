@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::hash::Hash;
 
+use itertools::Itertools;
+
 use crate::aoc_util::*;
 use crate::err_util::*;
 
@@ -9,7 +11,26 @@ pub fn solve() -> Result<()> {
     let input = get_input(2019, 10)?;
 
     let asteroids = parse_map(&input);
-    let _station = get_most_visible_asteroids(&asteroids);
+    let station = get_most_visible_asteroids(&asteroids);
+
+    let mut asteroids_by_angle = asteroids
+        .iter()
+        .map(|a| (station.slope_to(a), a))
+        .into_group_map()
+        .into_iter()
+        .collect::<Vec<_>>();
+
+    asteroids_by_angle.sort_by_key(|aba| aba.0);
+
+    for (_, mut asteroid_list) in asteroids_by_angle {
+        asteroid_list.sort_by(|a, b| {
+            a.edist_to(station)
+                .partial_cmp(&b.edist_to(station))
+                .unwrap()
+        })
+    }
+
+    // dbg!(asteroids_by_angle);
 
     Ok(())
 }
@@ -50,12 +71,12 @@ fn count_distinct_slopes(asteroids: &Vec<PointRC>, candidate: &PointRC) -> usize
         //     is_new
         // );
     }
-    println!(
-        "candidate at {} sees asteroids with {}/{} distinct slopes",
-        candidate,
-        distinct_slopes.len(),
-        asteroids.len() - 1
-    );
+    // println!(
+    //     "candidate at {} sees asteroids with {}/{} distinct slopes",
+    //     candidate,
+    //     distinct_slopes.len(),
+    //     asteroids.len() - 1
+    // );
     distinct_slopes.len()
 }
 
@@ -78,6 +99,12 @@ impl PointRC {
             dc: self.c - other.c,
         }
     }
+
+    fn edist_to(&self, other: &PointRC) -> f64 {
+        let dr = (self.r - other.r) as f64;
+        let dc = (self.c - other.c) as f64;
+        (dr * dr + dc * dc).sqrt()
+    }
 }
 impl Display for &PointRC {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -85,26 +112,32 @@ impl Display for &PointRC {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Slope {
     dr: i64,
     dc: i64,
 }
 impl Slope {
-    fn as_f64(&self) -> f64 {
-        self.dr as f64 / self.dc as f64
+    fn atan2_from_north(&self) -> f64 {
+        let mut at2 = f64::atan2(self.dr as f64, self.dc as f64);
+        // atan2 by itself gives us the anticlockwise rotation from the direction of the positive x axis
+        // but we want the *clockwise* rotation from the positive *y* axis.
+        // first flip anticlockwise to clockwise:
+        at2 = -at2;
+        // then rotate backwards: any value at the positive x axis now gets treated as being rotated 90deg
+        // from the positive y axis, and those values would have been zero before, so that implies we need
+        // to add a quarter turn:
+        at2 += std::f64::consts::FRAC_PI_2;
+        // we want values left of the y axis to be positive
+        if at2 < 0_f64 {
+            at2 += std::f64::consts::TAU;
+        }
+        at2
     }
 }
 impl PartialEq for Slope {
     fn eq(&self, other: &Self) -> bool {
-        if self.dr.signum() != other.dr.signum() {
-            return false;
-        }
-        if self.dc.signum() != other.dc.signum() {
-            return false;
-        }
-
-        self.as_f64() == other.as_f64()
+        self.atan2_from_north() == other.atan2_from_north()
     }
 }
 impl Eq for Slope {
@@ -112,12 +145,26 @@ impl Eq for Slope {
 }
 impl Hash for Slope {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.as_f64().to_bits().hash(state);
+        self.atan2_from_north().to_bits().hash(state);
     }
 }
 impl Display for Slope {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "dr={} dc={}", self.dr, self.dc)
+    }
+}
+impl PartialOrd for Slope {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.atan2_from_north()
+            .partial_cmp(&other.atan2_from_north())
+    }
+}
+impl Ord for Slope {
+    // more lies
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.atan2_from_north()
+            .partial_cmp(&other.atan2_from_north())
+            .unwrap()
     }
 }
 
