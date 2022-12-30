@@ -26,6 +26,9 @@ pub fn solve() -> Result<()> {
     // println!("round 0");
     // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
     // println!();
+    let mut seen_xs_cycle = false;
+    let mut seen_ys_cycle = false;
+    let mut seen_zs_cycle = false;
     let mut seen_positions: HashMap<Vec<(i32, i32)>, i32> = HashMap::new();
     for round in 0..100_000_000 {
         if round % 10_000_000 == 0 {
@@ -34,24 +37,41 @@ pub fn solve() -> Result<()> {
         simulate(&mut muns);
 
         let mut xs = muns.iter().map(|m| (m.pos_x, m.vel_x)).collect_vec();
-        xs.sort();
+        let mut ys = muns.iter().map(|m| (m.pos_y, m.vel_y)).collect_vec();
+        let mut zs = muns.iter().map(|m| (m.pos_z, m.vel_z)).collect_vec();
 
-        let seen_xs = seen_positions.entry(xs.clone());
-
-        match seen_xs {
-            std::collections::hash_map::Entry::Occupied(prev_round) => println!(
-                "At round {} : seen position {:?} already at round {:?}",
-                round,
-                &xs,
-                &prev_round.get()
-            ),
-            std::collections::hash_map::Entry::Vacant(_) => {
-                seen_positions.insert(xs, round);
-            }
-        }
+        check_cycle(&mut seen_positions, xs, &mut seen_xs_cycle, round, "xs");
+        check_cycle(&mut seen_positions, ys, &mut seen_ys_cycle, round, "ys");
+        check_cycle(&mut seen_positions, zs, &mut seen_zs_cycle, round, "zs");
     }
 
     Ok(())
+}
+
+fn check_cycle(
+    seen_positions: &mut HashMap<Vec<(i32, i32)>, i32>,
+    xs: Vec<(i32, i32)>,
+    seen_this_cycle: &mut bool,
+    round: i32,
+    cycle_name: &str,
+) {
+    let seen_xs = seen_positions.entry(xs.clone());
+    match seen_xs {
+        std::collections::hash_map::Entry::Occupied(prev_round) => {
+            if !*seen_this_cycle {
+                println!(
+                    "At round {} : seen position {:?} already at round {:?}",
+                    round,
+                    cycle_name,
+                    &prev_round.get()
+                );
+                *seen_this_cycle = true;
+            }
+        }
+        std::collections::hash_map::Entry::Vacant(_) => {
+            seen_positions.insert(xs, round);
+        }
+    }
 }
 
 fn simulate(muns: &mut [Mun]) {
