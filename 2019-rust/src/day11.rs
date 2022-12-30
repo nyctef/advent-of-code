@@ -48,7 +48,7 @@ pub fn solve() -> Result<()> {
         current_square = PointXY(current_square.0 + dir.0, current_square.1 + dir.1);
     }
 
-    let mut pixels = white_squares.into_iter().collect::<Vec<_>>();
+    let pixels = white_squares.into_iter().collect::<Vec<_>>();
 
     let bl = (
         pixels.iter().min_by_key(|x| x.0).unwrap().0,
@@ -59,10 +59,8 @@ pub fn solve() -> Result<()> {
         pixels.iter().max_by_key(|x| x.1).unwrap().1,
     );
 
-    dbg!(bl, tr, tr.1..bl.1);
-
-    for row in ((bl.1 - 5)..(tr.1 + 5)).rev() {
-        for col in (bl.0 - 5)..(tr.0 + 5) {
+    for row in ((bl.1)..=(tr.1)).rev() {
+        for col in (bl.0)..=(tr.0) {
             print!(
                 "{}",
                 if pixels.contains(&PointXY(col, row)) {
