@@ -3,6 +3,7 @@ use nom::bytes::complete::tag;
 use nom::character;
 use nom::multi::separated_list1;
 use nom::sequence::tuple;
+use nom::Finish;
 use nom::IResult;
 
 use crate::aoc_util::*;
@@ -11,8 +12,9 @@ use crate::err_util::*;
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 12)?;
 
-    // TODO: how to make ? work here?
-    let (_, muns) = parse_muns(&input).unwrap();
+    // have to map_err to get an owned copy of &input that can outlive this function,
+    // since the error message may refer to parts of &input
+    let (_, muns) = parse_muns(&input).finish().map_err(|err| err.to_string())?;
     dbg!(muns);
 
     Ok(())
