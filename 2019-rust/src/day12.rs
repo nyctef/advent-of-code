@@ -21,11 +21,17 @@ pub fn solve() -> Result<()> {
     // since the error message may refer to parts of &input
     let (_, mut muns) = parse_muns(&input).finish().map_err(|err| err.to_string())?;
 
-    for _ in 0..1 {
+    // println!("round 0");
+    // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
+    // println!();
+    for round in 0..1000 {
         simulate(&mut muns);
+        // println!("after round {}", round + 1);
+        // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
+        // println!()
     }
 
-    dbg!(&muns);
+    println!("{}", muns.iter().map(|m| m.energy()).sum::<i32>());
 
     Ok(())
 }
@@ -36,6 +42,7 @@ fn simulate(muns: &mut [Mun]) {
         let (this_mun, higher_muns) = rest.split_at_mut(1);
 
         assert!(this_mun.len() == 1);
+        assert!(lower_muns.len() + higher_muns.len() == 3);
         let mut this_mun = &mut this_mun[0];
 
         for other_mun in chain!(lower_muns.iter(), higher_muns.iter()) {
@@ -44,7 +51,25 @@ fn simulate(muns: &mut [Mun]) {
             } else if other_mun.pos_x < this_mun.pos_x {
                 this_mun.vel_x -= 1
             }
+
+            if other_mun.pos_y > this_mun.pos_y {
+                this_mun.vel_y += 1
+            } else if other_mun.pos_y < this_mun.pos_y {
+                this_mun.vel_y -= 1
+            }
+
+            if other_mun.pos_z > this_mun.pos_z {
+                this_mun.vel_z += 1
+            } else if other_mun.pos_z < this_mun.pos_z {
+                this_mun.vel_z -= 1
+            }
         }
+    }
+
+    for mun in muns.iter_mut() {
+        mun.pos_x += mun.vel_x;
+        mun.pos_y += mun.vel_y;
+        mun.pos_z += mun.vel_z;
     }
 }
 
@@ -67,6 +92,11 @@ impl Mun {
             vel_y: 0,
             vel_z: 0,
         }
+    }
+
+    fn energy(&self) -> i32 {
+        (self.pos_x.abs() + self.pos_y.abs() + self.pos_z.abs())
+            * (self.vel_x.abs() + self.vel_y.abs() + self.vel_z.abs())
     }
 }
 impl Display for Mun {
