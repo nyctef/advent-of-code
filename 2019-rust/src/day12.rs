@@ -1,6 +1,8 @@
+use std::collections::HashSet;
 use std::fmt::Display;
 
 use itertools::chain;
+use itertools::Itertools;
 use nom::bytes::complete::is_a;
 use nom::bytes::complete::tag;
 use nom::character;
@@ -22,14 +24,27 @@ pub fn solve() -> Result<()> {
     // println!("round 0");
     // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
     // println!();
-    for _round in 0..1000 {
+    let mut seen_muns: HashSet<Mun> = HashSet::new();
+    for round in 0..100_000_000 {
+        if round % 100_000 == 0 {
+            dbg!(round, seen_muns.len());
+        }
         simulate(&mut muns);
         // println!("after round {}", round + 1);
         // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
         // println!()
-    }
+        // println!("{}", muns.iter().map(|m| m.energy()).sum::<i32>());
+        for mun in muns.iter() {
+            let unseen = seen_muns.insert(mun.to_owned());
 
-    println!("{}", muns.iter().map(|m| m.energy()).sum::<i32>());
+            if !unseen {
+                println!(
+                    "found a repeat of individual mun {} at round {}",
+                    mun, round
+                );
+            }
+        }
+    }
 
     Ok(())
 }
@@ -72,7 +87,7 @@ fn simulate(muns: &mut [Mun]) {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 struct Mun {
     pos_x: i32,
     pos_y: i32,
