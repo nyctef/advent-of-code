@@ -26,7 +26,7 @@ pub fn solve() -> Result<()> {
     // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
     // println!();
     let mut seen_muns: HashMap<(i32, i32, i32), i32> = HashMap::new();
-    for round in 0..100_000 {
+    for round in 0..100_000_000 {
         if round % 10_000_000 == 0 {
             dbg!(round, seen_muns.len());
         }
@@ -35,7 +35,12 @@ pub fn solve() -> Result<()> {
         // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
         // println!()
         // println!("{}", muns.iter().map(|m| m.energy()).sum::<i32>());
-        for mun in muns.iter() {
+        let mut normalized_muns = normalize(&muns);
+        normalized_muns.sort();
+        // *seen_muns
+        //     .entry(normalized_muns.try_into().unwrap())
+        //     .or_insert(0) += 1;
+        for mun in normalized_muns.iter() {
             let pos = (mun.pos_x, mun.pos_y, mun.pos_z);
             *seen_muns.entry(pos).or_insert(0) += 1;
         }
@@ -46,6 +51,22 @@ pub fn solve() -> Result<()> {
     dbg!(popular_positions.iter().take(10).collect_vec());
 
     Ok(())
+}
+
+fn normalize(muns: &[Mun]) -> Vec<Mun> {
+    let mut normalized = muns.to_owned();
+
+    let min_x = normalized.iter().map(|m| m.pos_x).min().unwrap();
+    let min_y = normalized.iter().map(|m| m.pos_y).min().unwrap();
+    let min_z = normalized.iter().map(|m| m.pos_z).min().unwrap();
+
+    for mut n in normalized.iter_mut() {
+        n.pos_x -= min_x;
+        n.pos_y -= min_y;
+        n.pos_z -= min_z;
+    }
+
+    normalized
 }
 
 fn simulate(muns: &mut [Mun]) {
