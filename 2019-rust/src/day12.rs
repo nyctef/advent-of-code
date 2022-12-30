@@ -1,6 +1,8 @@
 use nom::bytes::complete::is_a;
 use nom::bytes::complete::tag;
 use nom::character;
+use nom::multi::separated_list1;
+use nom::sequence::tuple;
 use nom::IResult;
 
 use crate::aoc_util::*;
@@ -9,7 +11,8 @@ use crate::err_util::*;
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 12)?;
 
-    let muns = parse_muns(&input);
+    // TODO: how to make ? work here?
+    let (_, muns) = parse_muns(&input).unwrap();
     dbg!(muns);
 
     Ok(())
@@ -38,16 +41,19 @@ impl Mun {
 }
 
 fn parse_muns(input: &str) -> IResult<&str, Vec<Mun>> {
-    let (rest, _) = tag("<")(input)?;
+    let (rest, muns) = separated_list1(tag("\n"), parse_mun)(input)?;
+    Ok((rest, muns))
+}
 
-    let (rest, attrs) = nom::multi::separated_list1(tag(", "), parse_attr)(rest)?;
+fn parse_mun(input: &str) -> IResult<&str, Mun> {
+    let (rest, (_, attrs, _)) =
+        tuple((tag("<"), separated_list1(tag(", "), parse_attr), tag(">")))(input)?;
 
-    let (rest, _) = tag(">")(rest)?;
+    let x = attrs.iter().find(|a| a.0 == "x").unwrap().1;
+    let y = attrs.iter().find(|a| a.0 == "y").unwrap().1;
+    let z = attrs.iter().find(|a| a.0 == "z").unwrap().1;
 
-    println!("attrs");
-    dbg!(attrs);
-
-    Ok((rest, vec![]))
+    Ok((rest, Mun::new(x, y, z)))
 }
 
 fn parse_attr(input: &str) -> IResult<&str, (&str, i32)> {
