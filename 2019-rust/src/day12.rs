@@ -1,3 +1,4 @@
+use std::collections::hash_map::OccupiedEntry;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Display;
@@ -25,48 +26,32 @@ pub fn solve() -> Result<()> {
     // println!("round 0");
     // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
     // println!();
-    let mut seen_muns: HashMap<(i32, i32, i32), i32> = HashMap::new();
+    let mut seen_positions: HashMap<Vec<(i32, i32)>, i32> = HashMap::new();
     for round in 0..100_000_000 {
         if round % 10_000_000 == 0 {
-            dbg!(round, seen_muns.len());
+            dbg!(round, seen_positions.len());
         }
         simulate(&mut muns);
-        // println!("after round {}", round + 1);
-        // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
-        // println!()
-        // println!("{}", muns.iter().map(|m| m.energy()).sum::<i32>());
-        let mut normalized_muns = normalize(&muns);
-        normalized_muns.sort();
-        // *seen_muns
-        //     .entry(normalized_muns.try_into().unwrap())
-        //     .or_insert(0) += 1;
-        for mun in normalized_muns.iter() {
-            let pos = (mun.pos_x, mun.pos_y, mun.pos_z);
-            *seen_muns.entry(pos).or_insert(0) += 1;
+
+        let mut xs = muns.iter().map(|m| (m.pos_x, m.vel_x)).collect_vec();
+        xs.sort();
+
+        let seen_xs = seen_positions.entry(xs.clone());
+
+        match seen_xs {
+            std::collections::hash_map::Entry::Occupied(prev_round) => println!(
+                "At round {} : seen position {:?} already at round {:?}",
+                round,
+                &xs,
+                &prev_round.get()
+            ),
+            std::collections::hash_map::Entry::Vacant(_) => {
+                seen_positions.insert(xs, round);
+            }
         }
     }
 
-    let mut popular_positions = seen_muns.iter().collect_vec();
-    popular_positions.sort_by_key(|p| -p.1);
-    dbg!(popular_positions.iter().take(10).collect_vec());
-
     Ok(())
-}
-
-fn normalize(muns: &[Mun]) -> Vec<Mun> {
-    let mut normalized = muns.to_owned();
-
-    let min_x = normalized.iter().map(|m| m.pos_x).min().unwrap();
-    let min_y = normalized.iter().map(|m| m.pos_y).min().unwrap();
-    let min_z = normalized.iter().map(|m| m.pos_z).min().unwrap();
-
-    for mut n in normalized.iter_mut() {
-        n.pos_x -= min_x;
-        n.pos_y -= min_y;
-        n.pos_z -= min_z;
-    }
-
-    normalized
 }
 
 fn simulate(muns: &mut [Mun]) {
