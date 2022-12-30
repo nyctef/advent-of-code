@@ -1,8 +1,6 @@
 use std::fmt::Display;
-use std::ptr;
 
 use itertools::chain;
-use itertools::Itertools;
 use nom::bytes::complete::is_a;
 use nom::bytes::complete::tag;
 use nom::character;
@@ -24,7 +22,7 @@ pub fn solve() -> Result<()> {
     // println!("round 0");
     // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
     // println!();
-    for round in 0..1000 {
+    for _round in 0..1000 {
         simulate(&mut muns);
         // println!("after round {}", round + 1);
         // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
@@ -45,6 +43,7 @@ fn simulate(muns: &mut [Mun]) {
         assert!(lower_muns.len() + higher_muns.len() == 3);
         let mut this_mun = &mut this_mun[0];
 
+        #[allow(clippy::comparison_chain)]
         for other_mun in chain!(lower_muns.iter(), higher_muns.iter()) {
             if other_mun.pos_x > this_mun.pos_x {
                 this_mun.vel_x += 1
