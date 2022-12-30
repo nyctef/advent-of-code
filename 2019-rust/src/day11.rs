@@ -13,8 +13,8 @@ pub fn solve() -> Result<()> {
     assert!(robot.state().1 == MachineState::AwaitingInput);
 
     let mut white_squares: HashSet<PointXY> = HashSet::new();
-    let mut squares_painted: HashSet<PointXY> = HashSet::new();
     let mut current_square = PointXY(0, 0);
+    white_squares.insert(current_square);
     let directions = vec![(0, 1), (1, 0), (0, -1), (-1, 0)];
     let mut current_direction = 0_isize;
 
@@ -23,8 +23,6 @@ pub fn solve() -> Result<()> {
 
         robot.run()?;
         // dbg!(robot.state());
-
-        squares_painted.insert(current_square);
 
         if let Some(color_to_paint) = robot.read_output() {
             match color_to_paint {
@@ -50,7 +48,32 @@ pub fn solve() -> Result<()> {
         current_square = PointXY(current_square.0 + dir.0, current_square.1 + dir.1);
     }
 
-    println!("{}", squares_painted.len());
+    let mut pixels = white_squares.into_iter().collect::<Vec<_>>();
+
+    let bl = (
+        pixels.iter().min_by_key(|x| x.0).unwrap().0,
+        pixels.iter().min_by_key(|x| x.1).unwrap().1,
+    );
+    let tr = (
+        pixels.iter().max_by_key(|x| x.0).unwrap().0,
+        pixels.iter().max_by_key(|x| x.1).unwrap().1,
+    );
+
+    dbg!(bl, tr, tr.1..bl.1);
+
+    for row in ((bl.1 - 5)..(tr.1 + 5)).rev() {
+        for col in (bl.0 - 5)..(tr.0 + 5) {
+            print!(
+                "{}",
+                if pixels.contains(&PointXY(col, row)) {
+                    '#'
+                } else {
+                    ' '
+                }
+            )
+        }
+        println!()
+    }
 
     Ok(())
 }
