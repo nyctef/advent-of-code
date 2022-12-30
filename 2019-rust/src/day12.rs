@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Display;
 
@@ -24,9 +25,9 @@ pub fn solve() -> Result<()> {
     // println!("round 0");
     // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));
     // println!();
-    let mut seen_muns: HashSet<Mun> = HashSet::new();
-    for round in 0..100_000_000 {
-        if round % 100_000 == 0 {
+    let mut seen_muns: HashMap<(i32, i32, i32), i32> = HashMap::new();
+    for round in 0..100_000 {
+        if round % 10_000_000 == 0 {
             dbg!(round, seen_muns.len());
         }
         simulate(&mut muns);
@@ -35,16 +36,14 @@ pub fn solve() -> Result<()> {
         // println!()
         // println!("{}", muns.iter().map(|m| m.energy()).sum::<i32>());
         for mun in muns.iter() {
-            let unseen = seen_muns.insert(mun.to_owned());
-
-            if !unseen {
-                println!(
-                    "found a repeat of individual mun {} at round {}",
-                    mun, round
-                );
-            }
+            let pos = (mun.pos_x, mun.pos_y, mun.pos_z);
+            *seen_muns.entry(pos).or_insert(0) += 1;
         }
     }
+
+    let mut popular_positions = seen_muns.iter().collect_vec();
+    popular_positions.sort_by_key(|p| -p.1);
+    dbg!(popular_positions.iter().take(10).collect_vec());
 
     Ok(())
 }
