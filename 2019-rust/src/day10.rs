@@ -273,6 +273,6 @@ fn large_example() {
 
     let asteroids_in_order = calculate_asteroid_destruction_order(&asteroids, station);
     let asteroid_200 = asteroids_in_order.get(199);
-    dbg!(asteroid_200);
-    panic!();
+
+    assert_eq!(Some(&&PointRC { r: 2, c: 8 }), asteroid_200)
 }
