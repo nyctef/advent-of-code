@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
 use crate::aoc_util::*;
-use crate::err_util::*;
 use crate::intcode::IntCode;
 use crate::intcode::MachineState;
+use color_eyre::eyre::Result;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 11)?;

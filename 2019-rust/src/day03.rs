@@ -3,7 +3,8 @@ use std::cmp::min;
 use std::ops;
 
 use crate::aoc_util::*;
-use crate::err_util::*;
+use color_eyre::eyre::Result;
+use color_eyre::Report;
 use regex::Regex;
 
 pub fn solve() -> Result<()> {
@@ -137,7 +138,9 @@ fn parse_wire(s: &str) -> Result<Vec<Line>> {
     let part_re = Regex::new(r"([ULRD])(\d+)").unwrap();
     let mut p1 = Point2 { x: 0, y: 0 };
     for part in parts {
-        let captures = part_re.captures(part).ok_or("failed to parse line part")?;
+        let captures = part_re
+            .captures(part)
+            .ok_or(Report::msg("failed to parse line part"))?;
         let direction = &captures[1];
         let distance: i32 = captures[2].parse()?;
 

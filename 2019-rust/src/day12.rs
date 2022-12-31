@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use std::fmt::Display;
-
+use crate::aoc_util::*;
+use color_eyre::eyre::Result;
+use color_eyre::Report;
 use itertools::chain;
 use itertools::Itertools;
 use nom::bytes::complete::is_a;
@@ -10,16 +10,17 @@ use nom::multi::separated_list1;
 use nom::sequence::tuple;
 use nom::Finish;
 use nom::IResult;
-
-use crate::aoc_util::*;
-use crate::err_util::*;
+use std::collections::HashMap;
+use std::fmt::Display;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 12)?;
 
     // have to map_err to get an owned copy of &input that can outlive this function,
     // since the error message may refer to parts of &input
-    let (_, mut muns) = parse_muns(&input).finish().map_err(|err| err.to_string())?;
+    let (_, mut muns) = parse_muns(&input)
+        .finish()
+        .map_err(|err| Report::msg(err.to_string()))?;
 
     // println!("round 0");
     // println!("{}", muns.iter().map(|x| x.to_string()).join("\n"));

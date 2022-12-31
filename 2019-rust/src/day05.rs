@@ -1,6 +1,8 @@
 use crate::aoc_util::*;
-use crate::err_util::*;
 use crate::intcode::*;
+use color_eyre::eyre::Result;
+#[cfg(test)]
+use color_eyre::Report;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 5)?;
@@ -32,7 +34,7 @@ fn test_example() -> Result<()> {
 
         intcode
             .read_output()
-            .ok_or_else(|| "failed to produce output".into())
+            .ok_or_else(|| Report::msg("failed to produce output"))
     }
 
     assert_eq!(999, example(5)?);
@@ -51,7 +53,7 @@ fn test_simple() -> Result<()> {
 
         intcode
             .read_output()
-            .ok_or_else(|| "failed to produce output".into())
+            .ok_or_else(|| Report::msg("failed to produce output"))
     }
     assert_eq!(1, eq_8(8)?);
     assert_eq!(0, eq_8(9)?);

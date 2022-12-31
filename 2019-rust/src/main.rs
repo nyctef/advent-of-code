@@ -10,18 +10,18 @@ mod day09;
 mod day10;
 mod day11;
 mod day12;
-mod err_util;
 mod intcode;
-
-use err_util::*;
+use color_eyre::{eyre::Result, Report};
 
 fn main() -> Result<()> {
+    color_eyre::install()?;
+
     let usage = "Usage: [exe] [day]";
     let day: u8 = std::env::args()
         .nth(1)
-        .ok_or(usage)?
+        .ok_or(Report::msg(usage))?
         .parse()
-        .map_err(|_| usage.to_owned() + ": failed to parse day as u8")?;
+        .map_err(|_| Report::msg(usage.to_owned() + ": failed to parse day as u8"))?;
 
     match day {
         1 => day01::solve(),
@@ -35,6 +35,6 @@ fn main() -> Result<()> {
         10 => day10::solve(),
         11 => day11::solve(),
         12 => day12::solve(),
-        other => return Err(format!("day {other} not implemented yet").into()),
+        other => return Err(Report::msg(format!("day {other} not implemented yet"))),
     }
 }

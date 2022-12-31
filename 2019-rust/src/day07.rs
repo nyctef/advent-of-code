@@ -1,10 +1,10 @@
 use itertools::Itertools;
 
 use crate::aoc_util::*;
-use crate::err_util::*;
 use crate::intcode::IntCode;
 use crate::intcode::MachineState;
 use crate::intcode::TInt;
+use color_eyre::eyre::Result;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 7)?;

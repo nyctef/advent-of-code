@@ -1,5 +1,5 @@
 use crate::aoc_util::*;
-use crate::err_util::*;
+use color_eyre::eyre::Result;
 use itertools::Itertools;
 
 pub fn solve() -> Result<()> {

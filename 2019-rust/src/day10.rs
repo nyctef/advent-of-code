@@ -5,7 +5,7 @@ use std::hash::Hash;
 use itertools::Itertools;
 
 use crate::aoc_util::*;
-use crate::err_util::*;
+use color_eyre::eyre::Result;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 10)?;

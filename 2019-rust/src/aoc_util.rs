@@ -1,4 +1,4 @@
-use crate::err_util::*;
+use color_eyre::eyre::Result;
 use std::{fs, path::Path};
 
 use reqwest::{blocking::Client, cookie::Jar, Url};

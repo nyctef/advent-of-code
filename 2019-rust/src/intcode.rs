@@ -1,4 +1,4 @@
-use crate::err_util::*;
+use color_eyre::{eyre::Result, Report};
 use std::{collections::VecDeque, str::FromStr};
 
 // TODO: can we actually make IntCode generic on the size of the integer?
@@ -57,9 +57,9 @@ impl Parameter {
     fn make(param_mode: u8, value: TInt) -> Result<Parameter> {
         let param = match param_mode {
             0 => Parameter::Address(value.try_into().map_err(|e| {
-                format!(
+                Report::msg(format!(
                     "Failed to convert value {value:?} to a usize to use as a memory address: {e}"
-                )
+                ))
             })?),
             1 => Parameter::Value(value),
             2 => Parameter::Relative(value),
@@ -240,7 +240,7 @@ impl IntCode {
                 let instr = Instruction::Halt;
                 Ok(instr)
             }
-            other => Err(format!("unknown opcode {other}").into()),
+            other => Err(Report::msg(format!("unknown opcode {other}"))),
         }
     }
 
@@ -336,7 +336,7 @@ impl IntCode {
 }
 
 impl FromStr for IntCode {
-    type Err = Box<dyn std::error::Error>;
+    type Err = Report;
 
     fn from_str(s: &str) -> Result<Self> {
         let mut nums = s
@@ -345,6 +345,7 @@ impl FromStr for IntCode {
             .map(|x| {
                 TInt::from_str_radix(x, 10)
                     .map_err(|e| format!("failed to parse {x:?} as a number: {e}"))
+                    .map_err(Report::msg)
             })
             .collect::<std::result::Result<Vec<_>, _>>()?;
 
