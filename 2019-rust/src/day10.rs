@@ -43,7 +43,7 @@ fn calculate_asteroid_destruction_order<'asteroid_list>(
     (0..10)
         .flat_map(|d| asteroids_by_angle.iter().map(move |aba| aba.1.get(d)))
         .flatten()
-        .map(|x| *x)
+        .copied() // .copied() here turns a &&PointRC into a &PointRC
         .collect::<Vec<_>>()
 }
 
