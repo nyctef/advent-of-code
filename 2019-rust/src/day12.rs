@@ -1,6 +1,4 @@
-use std::collections::hash_map::OccupiedEntry;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fmt::Display;
 
 use itertools::chain;
@@ -36,9 +34,9 @@ pub fn solve() -> Result<()> {
         }
         simulate(&mut muns);
 
-        let mut xs = muns.iter().map(|m| (m.pos_x, m.vel_x)).collect_vec();
-        let mut ys = muns.iter().map(|m| (m.pos_y, m.vel_y)).collect_vec();
-        let mut zs = muns.iter().map(|m| (m.pos_z, m.vel_z)).collect_vec();
+        let xs = muns.iter().map(|m| (m.pos_x, m.vel_x)).collect_vec();
+        let ys = muns.iter().map(|m| (m.pos_y, m.vel_y)).collect_vec();
+        let zs = muns.iter().map(|m| (m.pos_z, m.vel_z)).collect_vec();
 
         check_cycle(&mut seen_positions, xs, &mut seen_xs_cycle, round, "xs");
         check_cycle(&mut seen_positions, ys, &mut seen_ys_cycle, round, "ys");
@@ -131,11 +129,6 @@ impl Mun {
             vel_y: 0,
             vel_z: 0,
         }
-    }
-
-    fn energy(&self) -> i32 {
-        (self.pos_x.abs() + self.pos_y.abs() + self.pos_z.abs())
-            * (self.vel_x.abs() + self.vel_y.abs() + self.vel_z.abs())
     }
 }
 impl Display for Mun {
