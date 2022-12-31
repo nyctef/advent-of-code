@@ -21,10 +21,10 @@ pub fn solve() -> Result<()> {
     Ok(())
 }
 
-fn calculate_asteroid_destruction_order<'a>(
-    asteroids: &'a [PointRC],
-    station: &PointRC,
-) -> Vec<&'a PointRC> {
+fn calculate_asteroid_destruction_order<'asteroid_list>(
+    asteroids: &'asteroid_list [PointRC],
+    station: &'asteroid_list PointRC,
+) -> Vec<&'asteroid_list PointRC> {
     let mut asteroids_by_angle = asteroids
         .iter()
         .map(|a| (station.slope_to(a), a))
@@ -39,21 +39,12 @@ fn calculate_asteroid_destruction_order<'a>(
                 .unwrap()
         })
     }
-    // TODO: how to make the borrow checker happy with something like the following instead?
-    // let asteroids_in_order = (0..10)
-    //     .flat_map(move |depth| asteroids_by_angle.iter().map(move |aba| aba.1.get(depth)))
-    //     .filter_map(|x| x)
-    //     .collect::<Vec<_>>();
-    let mut asteroids_in_order = vec![];
-    for depth in 0..10 {
-        for (_, group) in asteroids_by_angle.iter() {
-            let next = group.get(depth);
-            if let Some(n) = next {
-                asteroids_in_order.push(*n);
-            }
-        }
-    }
-    asteroids_in_order
+
+    (0..10)
+        .flat_map(|d| asteroids_by_angle.iter().map(move |aba| aba.1.get(d)))
+        .flatten()
+        .map(|x| *x)
+        .collect::<Vec<_>>()
 }
 
 fn get_most_visible_asteroids(asteroids: &Vec<PointRC>) -> &PointRC {
