@@ -11,7 +11,7 @@ use nom::{
     Finish,
 };
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     fmt::Debug,
 };
 
@@ -39,10 +39,10 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut requirements: HashMap<&str, u32> = HashMap::new();
     requirements.insert("FUEL", 1);
-    let mut steps: VecDeque<&str> = VecDeque::new();
-    steps.push_back("FUEL");
+    let steps = sort_steps(&lookup);
+    // dbg!(&steps);
 
-    while let Some(next) = steps.pop_front() {
+    for &next in &steps {
         if next == "ORE" {
             continue;
         }
@@ -54,18 +54,52 @@ fn solve_for(input: &str) -> Result<String> {
         let needed = requirements.get(next).expect("requirements");
         let recipe_runs = div_ceil(*needed, recipe.output.quantity);
 
-        dbg!(next, recipe, needed, recipe_runs);
-        println!("-----------------------------");
+        // dbg!(next, recipe, needed, recipe_runs);
+        // println!("-----------------------------");
 
         for input in &recipe.inputs {
             *requirements.entry(&input.name).or_insert(0) += input.quantity * recipe_runs;
-            if !steps.contains(&&input.name[..]) {
-                steps.push_back(&input.name);
-            }
         }
     }
 
     Ok(requirements["ORE"].to_string())
+}
+
+fn sort_steps<'input_string>(
+    lookup: &HashMap<&'input_string str, &'input_string Recipe>,
+) -> Vec<&'input_string str> {
+    // list of edges (output -> input)
+    let mut edges: HashSet<(&str, &str)> = lookup
+        .values()
+        .flat_map(|r| {
+            r.inputs
+                .iter()
+                .map(|i| (r.output.name.as_ref(), i.name.as_ref()))
+        })
+        .collect::<HashSet<_>>();
+
+    let mut q: Vec<&str> = vec![];
+    q.push(lookup["FUEL"].output.name.as_ref());
+    let mut result = vec![];
+
+    while let Some(nextOutput) = q.pop() {
+        result.push(nextOutput);
+        // remove all edges
+        let edges_from_next = edges
+            .iter()
+            .filter(|(o, i)| *o == nextOutput)
+            .copied()
+            .collect_vec();
+        edges.retain(|(o, i)| *o != nextOutput);
+        // dbg!(&edges_from_next, &edges);
+        for (_, candidate) in edges_from_next {
+            if !edges.iter().any(|(_, i)| *i == candidate) {
+                // candidate has no remaining incoming edges
+                q.push(candidate);
+            }
+        }
+    }
+    result
 }
 
 fn div_ceil(a: u32, b: u32) -> u32 {
@@ -91,7 +125,7 @@ fn parse_input(input: &str) -> Result<Vec<Recipe>> {
     Ok(result)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct Recipe {
     inputs: Vec<Ingredient>,
     output: Ingredient,
@@ -105,6 +139,7 @@ impl Recipe {
     }
 }
 
+#[derive(PartialEq, Eq, Hash)]
 struct Ingredient {
     quantity: u32,
     name: String,
