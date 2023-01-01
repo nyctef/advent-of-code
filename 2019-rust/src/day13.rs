@@ -4,8 +4,7 @@ use crate::{
 };
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use std::time;
-use std::{collections::HashMap, thread};
+use std::collections::HashMap;
 
 type Screen = HashMap<(i64, i64), i64>;
 
