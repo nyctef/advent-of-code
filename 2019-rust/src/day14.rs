@@ -1,12 +1,13 @@
 use crate::aoc_util::*;
 use color_eyre::{eyre::Result, Report};
+use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
     character::complete::{alpha1, digit1},
-    combinator::{all_consuming, map},
-    error::{convert_error, ErrorKind, VerboseError},
-    multi::separated_list1,
-    sequence::separated_pair,
+    combinator::{eof, map, opt},
+    error::convert_error,
+    multi::{many_till, separated_list1},
+    sequence::{separated_pair, terminated},
     Finish,
 };
 use std::{
@@ -79,11 +80,15 @@ fn parse_input(input: &str) -> Result<Vec<Recipe>> {
         separated_pair(parse_inputs, tag(" => "), parse_ingredient()),
         Recipe::from,
     );
-    let parse_lines = separated_list1(tag("\n"), parse_line);
-    let result = all_consuming::<_, _, VerboseError<_>, _>(parse_lines)(input.trim())
+    let parse_line_with_ending = terminated(parse_line, opt(tag("\n")));
+    let result = many_till(parse_line_with_ending, eof)(input.trim())
         .finish()
-        .map_err(|e| Report::msg(convert_error(input, e)));
-    Ok(result?.1)
+        .map_err(|e| Report::msg(convert_error(input, e)))?
+        .1
+         .0
+        .into_iter()
+        .collect_vec();
+    Ok(result)
 }
 
 #[derive(Debug)]
@@ -122,7 +127,7 @@ impl Debug for Ingredient {
 fn test_example1() -> Result<()> {
     let input = r###"
 10 ORE => 10 A
---1 ORE => 1 B
+1 ORE => 1 B
 7 A, 1 B => 1 C
 7 A, 1 C => 1 D
 7 A, 1 D => 1 E
