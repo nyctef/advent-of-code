@@ -32,31 +32,37 @@ fn solve_for(input: &str) -> Result<String> {
         .map(|r| (&r.output.name[..], r))
         .collect::<HashMap<_, _>>();
 
+    // check that we dont have to do anything complicated like choosing between
+    // two alternate versions of a recipe
     assert!(
         lookup.len() == parsed.len(),
         "each item should only have one recipe"
     );
 
     let mut requirements: HashMap<&str, u64> = HashMap::new();
-    requirements.insert("FUEL", 8193614);
+    requirements.insert("FUEL", 1);
+
+    // do a topological sort of the recipes. This means that we won't attempt to process
+    // an ingredient until we've processed all the recipes which consume that ingredient.
+    // This is important since the math below only works if we process each ingredient
+    // exactly once: otherwise we'd need to make the logic more complicated by tracking
+    // spare materials left and reusing them when revising ingredients.
     let steps = sort_steps(&lookup);
-    // dbg!(&steps);
 
     for &next in &steps {
         if next == "ORE" {
             continue;
         }
-        // in theory we should have calculated the total required sum of this ingredient by now
+
         let recipe = lookup
             .get(next)
             .ok_or(format!("missing recipe for {}", next))
             .map_err(Report::msg)?;
         let needed = requirements.get(next).expect("requirements");
+        // we need to run the recipe enough times to give us the required quantity *or more*
         let recipe_runs = div_ceil(*needed, recipe.output.quantity);
 
-        // dbg!(next, recipe, needed, recipe_runs);
-        // println!("-----------------------------");
-
+        // save the results of running this recipe, then loop on to the next one
         for input in &recipe.inputs {
             *requirements.entry(&input.name).or_insert(0) += input.quantity * recipe_runs;
         }
@@ -72,7 +78,10 @@ fn solve_for(input: &str) -> Result<String> {
 fn sort_steps<'input_string>(
     lookup: &HashMap<&'input_string str, &'input_string Recipe>,
 ) -> Vec<&'input_string str> {
-    // list of edges (output -> input)
+    // topological sort of recipes: a rough implementation of Kahn's algorithm
+    // https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
+
+    // gather all the edges in the recipe graph for easy lookup
     let mut edges: HashSet<(&str, &str)> = lookup
         .values()
         .flat_map(|r| {
@@ -83,22 +92,30 @@ fn sort_steps<'input_string>(
         .collect::<HashSet<_>>();
 
     let mut q: Vec<&str> = vec![];
+    // we happen to know that FUEL is one node in the graph with no
+    // incoming edges (nothing consumes it)
     q.push(lookup["FUEL"].output.name.as_ref());
     let mut result = vec![];
 
     while let Some(next_output) = q.pop() {
+        // we now know that `next` has no surviving incoming edges, so
+        // we can safely put it next in the resulting order
         result.push(next_output);
-        // remove all edges
+
+        // collect all edges going out from `next`...
         let edges_from_next = edges
             .iter()
             .filter(|(o, _)| *o == next_output)
             .copied()
             .collect_vec();
+        // ...and remove them from our collection
         edges.retain(|(o, _)| *o != next_output);
-        // dbg!(&edges_from_next, &edges);
+
+        // After removing the edges going out from `next`, if any of
+        // the referenced recipes no longer have incoming edges, we can
+        // process those next.
         for (_, candidate) in edges_from_next {
             if !edges.iter().any(|(_, i)| *i == candidate) {
-                // candidate has no remaining incoming edges
                 q.push(candidate);
             }
         }
