@@ -11,7 +11,7 @@ use nom::{
     Finish,
 };
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, HashSet},
     fmt::Debug,
 };
 
@@ -37,8 +37,8 @@ fn solve_for(input: &str) -> Result<String> {
         "each item should only have one recipe"
     );
 
-    let mut requirements: HashMap<&str, u32> = HashMap::new();
-    requirements.insert("FUEL", 1);
+    let mut requirements: HashMap<&str, u64> = HashMap::new();
+    requirements.insert("FUEL", 8193614);
     let steps = sort_steps(&lookup);
     // dbg!(&steps);
 
@@ -62,6 +62,10 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
+    dbg!(
+        requirements["ORE"],
+        1000000000000_i64 - requirements["ORE"] as i64
+    );
     Ok(requirements["ORE"].to_string())
 }
 
@@ -82,15 +86,15 @@ fn sort_steps<'input_string>(
     q.push(lookup["FUEL"].output.name.as_ref());
     let mut result = vec![];
 
-    while let Some(nextOutput) = q.pop() {
-        result.push(nextOutput);
+    while let Some(next_output) = q.pop() {
+        result.push(next_output);
         // remove all edges
         let edges_from_next = edges
             .iter()
-            .filter(|(o, i)| *o == nextOutput)
+            .filter(|(o, _)| *o == next_output)
             .copied()
             .collect_vec();
-        edges.retain(|(o, i)| *o != nextOutput);
+        edges.retain(|(o, _)| *o != next_output);
         // dbg!(&edges_from_next, &edges);
         for (_, candidate) in edges_from_next {
             if !edges.iter().any(|(_, i)| *i == candidate) {
@@ -102,7 +106,7 @@ fn sort_steps<'input_string>(
     result
 }
 
-fn div_ceil(a: u32, b: u32) -> u32 {
+fn div_ceil(a: u64, b: u64) -> u64 {
     // https://stackoverflow.com/a/72442854/895407
     (a + b - 1) / b
 }
@@ -141,13 +145,13 @@ impl Recipe {
 
 #[derive(PartialEq, Eq, Hash)]
 struct Ingredient {
-    quantity: u32,
+    quantity: u64,
     name: String,
 }
 impl Ingredient {
     fn from((q, n): (&str, &str)) -> Self {
         Self {
-            quantity: u32::from_str_radix(q, 10).unwrap(),
+            quantity: u64::from_str_radix(q, 10).unwrap(),
             name: n.to_owned(),
         }
     }
