@@ -42,7 +42,7 @@ fn parse_input(input: &str) -> Result<Vec<Recipe>> {
     let parse_lines = separated_list1(tag("\n"), parse_line);
     let result = all_consuming(parse_lines)(input.trim())
         .finish()
-        .map_err(|e| Report::msg(format!("{:?}", e)));
+        .map_err(|(r, k)| Report::msg(format!("Failed to match {:?} near {:?}", k, r)));
     Ok(result?.1)
 }
 
