@@ -8,6 +8,7 @@ use crate::{
     intcode::{IntCode, TInt},
 };
 use color_eyre::eyre::Result;
+use itertools::Itertools;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 15)?;
@@ -58,6 +59,7 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut walls = HashSet::<PointXY>::new();
     let mut visited_spots = HashSet::<PointXY>::new();
+    let mut macguffin = PointXY(99, 99);
 
     'outer: loop {
         visited_spots.insert(current_position);
@@ -79,7 +81,8 @@ fn solve_for(input: &str) -> Result<String> {
                     // the robot is now in the new position
                     println!("Moved to {candidate:?}");
                     if result == 2 {
-                        println!("!!! Found the thingy at {candidate:?}")
+                        println!("!!! Found the thingy at {candidate:?}");
+                        macguffin = candidate;
                     }
                     current_position = candidate;
                     backtrace.push_back(opposite_dir(dir));
@@ -107,6 +110,28 @@ fn solve_for(input: &str) -> Result<String> {
                 break 'outer;
             }
         }
+    }
+
+    let min_x = walls.iter().min_by_key(|w| w.0).unwrap().0;
+    let max_x = walls.iter().max_by_key(|w| w.0).unwrap().0;
+    let min_y = walls.iter().min_by_key(|w| w.1).unwrap().1;
+    let max_y = walls.iter().max_by_key(|w| w.1).unwrap().1;
+
+    dbg!(min_x, max_x, min_y, max_y);
+
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
+            if (x, y) == (0, 0) {
+                print!("S")
+            } else if PointXY(x, y) == macguffin {
+                print!("O");
+            } else if walls.contains(&PointXY(x, y)) {
+                print!("#");
+            } else {
+                print!(" ")
+            }
+        }
+        println!()
     }
 
     Ok("todo".to_owned())
