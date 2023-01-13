@@ -4,7 +4,7 @@ use crate::{
 };
 use color_eyre::eyre::Result;
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashSet, VecDeque},
     fmt::Debug,
 };
 

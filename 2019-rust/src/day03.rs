@@ -140,7 +140,7 @@ fn parse_wire(s: &str) -> Result<Vec<Line>> {
     for part in parts {
         let captures = part_re
             .captures(part)
-            .ok_or(Report::msg("failed to parse line part"))?;
+            .ok_or_else(|| Report::msg("failed to parse line part"))?;
         let direction = &captures[1];
         let distance: i32 = captures[2].parse()?;
 

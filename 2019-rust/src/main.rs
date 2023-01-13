@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     let usage = "Usage: [exe] [day]";
     let day: u8 = std::env::args()
         .nth(1)
-        .ok_or(Report::msg(usage))?
+        .ok_or_else(|| Report::msg(usage))?
         .parse()
         .map_err(|_| Report::msg(usage.to_owned() + ": failed to parse day as u8"))?;
 

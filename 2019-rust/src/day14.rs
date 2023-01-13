@@ -168,7 +168,7 @@ struct Ingredient {
 impl Ingredient {
     fn from((q, n): (&str, &str)) -> Self {
         Self {
-            quantity: u64::from_str_radix(q, 10).unwrap(),
+            quantity: q.parse::<u64>().unwrap(),
             name: n.to_owned(),
         }
     }
