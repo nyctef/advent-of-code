@@ -131,13 +131,13 @@ fn solve_for(input: &str) -> Result<String> {
         println!()
     }
 
-    // second part: flood-fill (BFS) from the start until we find the macguffin
+    // second part of part 1: flood-fill (BFS) from the start until we find the macguffin
     let mut filled_spaces = HashSet::<PointXY>::new();
     let mut wave = HashSet::<PointXY>::new();
     wave.insert(PointXY(0, 0));
-    let mut step_count = 0;
+    let mut robot_step_count = 0;
     loop {
-        step_count += 1;
+        robot_step_count += 1;
         let next_wave = wave
             .iter()
             .flat_map(|p| p.surrounding4())
@@ -151,7 +151,32 @@ fn solve_for(input: &str) -> Result<String> {
         wave = next_wave;
     }
 
-    Ok(format!("{}", step_count))
+    // part 2 is a similar flood fill, but this time starting from the macguffin
+    // and spreading through the entire maze
+    filled_spaces.clear();
+    wave.clear();
+    wave.insert(macguffin);
+    let mut oxygen_spread_minutes = 0;
+    loop {
+        let next_wave = wave
+            .iter()
+            .flat_map(|p| p.surrounding4())
+            .map(|p| p.1)
+            .filter(|p| !(filled_spaces.contains(p) || walls.contains(p)))
+            .collect::<HashSet<_>>();
+        if next_wave.is_empty() {
+            // no more room left to fill
+            break;
+        }
+        filled_spaces.extend(&next_wave);
+        wave = next_wave;
+        oxygen_spread_minutes += 1;
+    }
+
+    Ok(format!(
+        "shortest_path: {} | oxygen spread minutes: {}",
+        robot_step_count, oxygen_spread_minutes
+    ))
 }
 
 fn try_move(robot: &mut IntCode, direction: TInt) -> TInt {
