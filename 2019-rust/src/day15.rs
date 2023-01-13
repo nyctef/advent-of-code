@@ -1,14 +1,12 @@
-use std::{
-    collections::{HashSet, VecDeque},
-    fmt::Debug,
-};
-
 use crate::{
     aoc_util::*,
     intcode::{IntCode, TInt},
 };
 use color_eyre::eyre::Result;
-use itertools::Itertools;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    fmt::Debug,
+};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 15)?;
@@ -67,21 +65,22 @@ fn solve_for(input: &str) -> Result<String> {
 
         for (dir, candidate) in current_position.surrounding4() {
             if walls.contains(&candidate) || visited_spots.contains(&candidate) {
-                //
+                // don't bother trying here: we might backtrack to this point later,
+                // so we don't need to consider revisiting it right away
             } else {
                 have_moved_this_turn = true;
                 // we've not tried this way yet, so let's give it a go
                 let result = try_move(&mut robot, dir);
                 if result == 0 {
                     // hit a wall, so don't update position
-                    println!("Hit a wall at {candidate:?}");
+                    // println!("Hit a wall at {candidate:?}");
                     walls.insert(candidate);
                     continue;
                 } else {
                     // the robot is now in the new position
-                    println!("Moved to {candidate:?}");
+                    // println!("Moved to {candidate:?}");
                     if result == 2 {
-                        println!("!!! Found the thingy at {candidate:?}");
+                        // println!("!!! Found the thingy at {candidate:?}");
                         macguffin = candidate;
                     }
                     current_position = candidate;
@@ -91,8 +90,6 @@ fn solve_for(input: &str) -> Result<String> {
             }
         }
         if !have_moved_this_turn {
-            // TODO: we need to only backtrack if all four candidates are invalid
-
             // we've run out of places to explore from this position
             let backwards = backtrace.pop_back();
             if let Some(backwards_dir) = backwards {
@@ -101,7 +98,7 @@ fn solve_for(input: &str) -> Result<String> {
                     0, result,
                     "the robot should not have hit a wall in the backtrace"
                 );
-                println!("Backtracking from {:?}", &current_position);
+                // println!("Backtracking from {:?}", &current_position);
                 current_position = current_position.move_in(backwards_dir);
                 continue;
             } else {
@@ -117,7 +114,7 @@ fn solve_for(input: &str) -> Result<String> {
     let min_y = walls.iter().min_by_key(|w| w.1).unwrap().1;
     let max_y = walls.iter().max_by_key(|w| w.1).unwrap().1;
 
-    dbg!(min_x, max_x, min_y, max_y);
+    // dbg!(min_x, max_x, min_y, max_y);
 
     for y in min_y..=max_y {
         for x in min_x..=max_x {
@@ -134,7 +131,27 @@ fn solve_for(input: &str) -> Result<String> {
         println!()
     }
 
-    Ok("todo".to_owned())
+    // second part: flood-fill (BFS) from the start until we find the macguffin
+    let mut filled_spaces = HashSet::<PointXY>::new();
+    let mut wave = HashSet::<PointXY>::new();
+    wave.insert(PointXY(0, 0));
+    let mut step_count = 0;
+    loop {
+        step_count += 1;
+        let next_wave = wave
+            .iter()
+            .flat_map(|p| p.surrounding4())
+            .map(|p| p.1)
+            .filter(|p| !(filled_spaces.contains(p) || walls.contains(p)))
+            .collect::<HashSet<_>>();
+        if next_wave.contains(&macguffin) {
+            break;
+        }
+        filled_spaces.extend(&next_wave);
+        wave = next_wave;
+    }
+
+    Ok(format!("{}", step_count))
 }
 
 fn try_move(robot: &mut IntCode, direction: TInt) -> TInt {
