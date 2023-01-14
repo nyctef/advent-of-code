@@ -1,3 +1,8 @@
+use std::{
+    io::{self, Write},
+    vec,
+};
+
 use crate::aoc_util::*;
 use color_eyre::eyre::Result;
 use itertools::{chain, repeat_n, Itertools};
@@ -12,26 +17,51 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str, num_phases: u8) -> Result<String> {
-    let parsed = input
+    let offset = input
         .trim()
         .chars()
-        .map(|c| c.to_digit(10).unwrap() as i32)
-        .collect_vec();
+        .take(7)
+        .join("")
+        .parse::<usize>()
+        .unwrap();
+
+    let parsed = repeat_n(
+        input.trim().chars().map(|c| c.to_digit(10).unwrap() as i32),
+        10_000,
+    )
+    .flatten()
+    .skip(offset)
+    .collect_vec();
+
+    println!(
+        "offset is {}, revised signal length is {}",
+        offset,
+        parsed.len()
+    );
 
     let mut signal = parsed;
-    for phase in 0..num_phases {
+    for _phase in 0..num_phases {
+        print!(".");
+        io::stdout().flush().unwrap();
         // println!("phase {phase}: before: {:?}", &signal);
-        signal = (0..signal.len())
-            .map(|i| {
-                signal
-                    .iter()
-                    .zip(make_pattern(i + 1))
-                    .map(|(&x, p)| (x * p as i32))
-                    .sum::<i32>()
-                    .abs()
-                    % 10
-            })
-            .collect_vec();
+        let mut next_signal = vec![];
+        let mut acc = 0;
+        for x in signal.iter().rev() {
+            acc = (x + acc) % 10;
+            next_signal.push(acc);
+        }
+        signal = next_signal.into_iter().rev().collect_vec();
+        // signal = (0..signal.len())
+        //     .map(|i| {
+        //         signal
+        //             .iter()
+        //             .zip(make_pattern(i + 1))
+        //             .map(|(&x, p)| (x * p as i32))
+        //             .sum::<i32>()
+        //             .abs()
+        //             % 10
+        //     })
+        //     .collect_vec();
         // println!("after: {:?}", &signal);
     }
 
@@ -52,24 +82,13 @@ fn make_pattern(repeats: usize) -> impl Iterator<Item = i8> {
 }
 
 #[test]
-fn test_example1() -> Result<()> {
-    let input = r###"
-    12345678
-    "###;
-    let result = solve_for(input, 4)?;
-
-    assert_eq!("01029498", result);
-    Ok(())
-}
-
-#[test]
 fn test_example2() -> Result<()> {
     let input = r###"
-    80871224585914546619083218645595
+    03036732577212944063491565474664
     "###;
     let result = solve_for(input, 100)?;
 
-    assert_eq!("24176176", result);
+    assert_eq!("84462026", result);
     Ok(())
 }
 #[test]
