@@ -27,6 +27,8 @@ make sure this file exists and you are in the correct directory",
     let puzzle_string = client
         .get(format!("https://adventofcode.com/{year}/day/{day}/input"))
         .send()?
+        // TODO: can we get the response text into this error message?
+        .error_for_status()?
         .text()?;
 
     fs::create_dir_all(input_file_path.parent().unwrap())
