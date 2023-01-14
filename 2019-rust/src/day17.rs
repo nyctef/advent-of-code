@@ -120,7 +120,10 @@ n
 
     assert_eq!(MachineState::Halted, machine_2.state().1);
 
-    let dust_collected = machine_2.read_output().unwrap();
+    let mut dust_collected: TInt = 0;
+    while let Some(x) = machine_2.read_output() {
+        dust_collected = x;
+    }
 
     Ok(format!(
         "part 1: {} part 2: {}",
