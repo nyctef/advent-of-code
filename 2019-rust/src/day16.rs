@@ -68,7 +68,7 @@ fn solve_for(input: &str, num_phases: u8) -> Result<String> {
     Ok(signal.iter().take(8).join(""))
 }
 
-fn make_pattern(repeats: usize) -> impl Iterator<Item = i8> {
+fn _make_pattern(repeats: usize) -> impl Iterator<Item = i8> {
     // eg if repeats is 2, then this produces an infinite cycle of
     // 0, 1, 1, 0, 0, -1, -1, 0, 0, 1, 1, 0, 0, -1, -1, ...
     chain!(
@@ -93,8 +93,8 @@ fn test_example2() -> Result<()> {
 }
 #[test]
 fn test_pattern() {
-    let result = make_pattern(2).take(5).collect_vec();
+    let result = _make_pattern(2).take(5).collect_vec();
     assert_eq!(vec![0, 1, 1, 0, 0], result);
 
-    assert_eq!(vec![1, 0, -1, 0, 1], make_pattern(1).take(5).collect_vec());
+    assert_eq!(vec![1, 0, -1, 0, 1], _make_pattern(1).take(5).collect_vec());
 }

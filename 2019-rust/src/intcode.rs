@@ -349,7 +349,7 @@ impl FromStr for IntCode {
             })
             .collect::<std::result::Result<Vec<_>, _>>()?;
 
-        nums.resize(nums.len() + 1000, 0);
+        nums.resize(nums.len() + 5000, 0);
 
         Ok(IntCode {
             memory: nums,
