@@ -194,14 +194,3 @@ fn opposite_dir(dir: TInt) -> TInt {
         _ => panic!(),
     }
 }
-
-#[test]
-fn test_example1() -> Result<()> {
-    let input = r###"
-    
-"###;
-    let result = solve_for(input)?;
-
-    assert_eq!("expected", result);
-    Ok(())
-}

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{aoc_util::*, intcode::IntCode};
 use color_eyre::eyre::Result;
 use itertools::Itertools;
@@ -19,9 +21,35 @@ fn solve_for(input: &str) -> Result<String> {
         map.push(c as u8 as char);
     }
 
-    let _map = map.iter().join("");
+    let map = map.iter().join("");
 
-    todo!()
+    println!("{}", &map);
+
+    let scaffolds = map
+        .lines()
+        .enumerate()
+        .map(|(r, l)| {
+            l.chars()
+                .enumerate()
+                .map(move |(c, char)| ((r as i32, c as i32), char))
+        })
+        .flatten()
+        .filter(|(_p, c)| c == &'#')
+        .collect::<HashMap<_, _>>();
+
+    let mut align_param_sum = 0;
+    for (p, _) in &scaffolds {
+        // if north, south, east and west are also in the collection, then this is an intersection
+        if scaffolds.contains_key(&(p.0 + 1, p.1))
+            && scaffolds.contains_key(&(p.0 - 1, p.1))
+            && scaffolds.contains_key(&(p.0, p.1 + 1))
+            && scaffolds.contains_key(&(p.0, p.1 - 1))
+        {
+            align_param_sum += p.0 * p.1;
+        }
+    }
+
+    Ok(format!("{}", align_param_sum))
 }
 
 #[test]
