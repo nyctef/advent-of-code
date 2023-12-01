@@ -15,6 +15,6 @@ fn main() -> Result<()> {
 
     match day {
         1 => day01::solve(),
-        other => return Err(Report::msg(format!("day {other} not implemented yet"))),
+        other => Err(Report::msg(format!("day {other} not implemented yet"))),
     }
 }
