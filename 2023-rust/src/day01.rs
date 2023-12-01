@@ -23,29 +23,31 @@ fn solve_for(input: &str) -> Result<String> {
 }
 
 fn parse_line(line: &str) -> Result<u32> {
-    let digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-    let digit_strings = [
-        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    let digits = [
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "one", "two", "three", "four", "five", "six",
+        "seven", "eight", "nine",
     ];
 
-    let digit_re = regex::Regex::new(&format!(
-        r"{}|{}",
-        digits.join("|"),
-        digit_strings.join("|"),
-    ))?;
+    let first_digit = (digits
+        .iter()
+        .enumerate()
+        .min_by_key(|(_, &s)| line.find(s).unwrap_or(usize::MAX))
+        .unwrap()
+        .0
+        % 9)
+        + 1;
 
-    let mut first_digit = digit_re.find(line).unwrap().as_str();
-    if let Some(i) = digit_strings.iter().position(|&s| s == first_digit) {
-        first_digit = digits[i];
-    }
-
-    let mut last_digit = digit_re.find_iter(line).last().unwrap().as_str();
-    if let Some(i) = digit_strings.iter().position(|&s| s == last_digit) {
-        last_digit = digits[i];
-    }
+    let last_digit = (digits
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, &s)| line.rfind(s).map(|x| x as i32).unwrap_or(-1))
+        .unwrap()
+        .0
+        % 9)
+        + 1;
 
     let number = format!("{}{}", first_digit, last_digit);
-    println!("{}\t -> \t{}", line, number);
+    //println!("{}\t -> \t{}", line, number);
     Ok(number.parse::<u32>()?)
 }
 
