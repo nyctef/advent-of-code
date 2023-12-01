@@ -34,6 +34,8 @@ digit_strings = [
     "nine",
 ]
 
+# hack to allow overlapping matches
+# https://stackoverflow.com/a/5616910/895407
 digits_re = re.compile(f"(?=({('|'.join(digits))}|{('|'.join(digit_strings))}))")
 
 total = 0
