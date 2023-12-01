@@ -11,13 +11,13 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let mut sum: u64 = 0;
+    let mut sum = 0;
     for line in input.lines() {
         if line.is_empty() {
             continue;
         }
 
-        sum += parse_line(line)? as u64;
+        sum += parse_line(line)?;
     }
     Ok(sum.to_string())
 }
