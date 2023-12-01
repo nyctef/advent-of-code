@@ -90,4 +90,8 @@ fn parse_lines() {
     assert_eq!(77, parse_line("7").unwrap());
     assert_eq!(77, parse_line("seven").unwrap());
     assert_eq!(22, parse_line("2xq").unwrap());
+    assert_eq!(
+        72,
+        parse_line("sevenmfpxvntvkpqvpbnnbpr5seven18sixeighteightwok").unwrap()
+    );
 }
