@@ -106,13 +106,18 @@ fn solve_for(input: &str) -> Result<String> {
         .filter_map(|g| g.as_ref().ok())
         .collect_vec();
 
-    let possible_games = parsed_games.iter().filter(|g| {
-        g.1.picks
-            .iter()
-            .all(|p| p.red <= 12 && p.green <= 13 && p.blue <= 14)
-    });
+    let minimum_picks = parsed_games
+        .iter()
+        .map(|g| Pick {
+            red: g.1.picks.iter().map(|p| p.red).max().unwrap_or(0),
+            blue: g.1.picks.iter().map(|p| p.blue).max().unwrap_or(0),
+            green: g.1.picks.iter().map(|p| p.green).max().unwrap_or(0),
+        })
+        .collect_vec();
 
-    let result: u32 = possible_games.map(|g| g.1.num).sum();
+    dbg!(&minimum_picks);
+
+    let result: u32 = minimum_picks.iter().map(|p| p.red * p.blue * p.green).sum();
 
     Ok(result.to_string())
     // Ok("asdf".to_string())
@@ -129,6 +134,6 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("8", result);
+    assert_eq!("2286", result);
     Ok(())
 }
