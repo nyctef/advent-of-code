@@ -4,8 +4,8 @@ use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::u32,
-    combinator::{map, map_res},
+    character::complete::{newline, u32},
+    combinator::{cut, map, map_res},
     multi::separated_list0,
     sequence::{pair, preceded, terminated},
     IResult,
@@ -85,23 +85,27 @@ fn game(input: &str) -> IResult<&str, Game> {
     )(input)
 }
 
-fn solve_for(input: &str) -> Result<String> {
-    let lines = input.lines().filter(|l| !l.is_empty()).collect_vec();
+fn games(input: &str) -> IResult<&str, Vec<Game>> {
+    separated_list0(newline, cut(game))(input)
+}
 
-    // TODO: why doesn't this version work?
-    // let parsed_games: Vec<_> = lines.iter().map(|l| game(l)).try_collect()?;
-    let parsed_games = lines.iter().map(|l| game(l)).collect_vec();
-    let parsed_games = parsed_games
-        .iter()
-        .filter_map(|g| g.as_ref().ok())
-        .collect_vec();
+fn parse(input: &str) -> Result<Vec<Game>> {
+    let (_remaining, result) = games(input).map_err(|e|
+            // since nom errors hold a reference to the input string (which is borrowed here)
+            // we need to make an owned copy before we can return them
+             e.to_owned())?;
+    Ok(result)
+}
+
+fn solve_for(input: &str) -> Result<String> {
+    let parsed_games = parse(input.trim())?;
 
     let minimum_picks = parsed_games
         .iter()
         .map(|g| Pick {
-            red: g.1.picks.iter().map(|p| p.red).max().unwrap_or(0),
-            blue: g.1.picks.iter().map(|p| p.blue).max().unwrap_or(0),
-            green: g.1.picks.iter().map(|p| p.green).max().unwrap_or(0),
+            red: g.picks.iter().map(|p| p.red).max().unwrap_or(0),
+            blue: g.picks.iter().map(|p| p.blue).max().unwrap_or(0),
+            green: g.picks.iter().map(|p| p.green).max().unwrap_or(0),
         })
         .collect_vec();
 
