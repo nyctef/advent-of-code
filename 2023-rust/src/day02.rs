@@ -60,23 +60,15 @@ fn color_pick(input: &str) -> IResult<&str, (u32, Color)> {
     pair(terminated(u32, tag(" ")), color)(input)
 }
 
+fn count_color(input: &[(u32, Color)], color: Color) -> u32 {
+    input.iter().filter(|x| x.1 == color).map(|x| x.0).sum()
+}
+
 fn pick(input: &str) -> IResult<&str, Pick> {
     map(separated_list0(tag(", "), color_pick), |color_picks| Pick {
-        red: color_picks
-            .iter()
-            .filter(|p| p.1 == Color::Red)
-            .map(|p| p.0)
-            .sum(),
-        green: color_picks
-            .iter()
-            .filter(|p| p.1 == Color::Green)
-            .map(|p| p.0)
-            .sum(),
-        blue: color_picks
-            .iter()
-            .filter(|p| p.1 == Color::Blue)
-            .map(|p| p.0)
-            .sum(),
+        red: count_color(&color_picks, Color::Red),
+        green: count_color(&color_picks, Color::Green),
+        blue: count_color(&color_picks, Color::Blue),
     })(input)
 }
 
