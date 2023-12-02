@@ -105,8 +105,6 @@ fn solve_for(input: &str) -> Result<String> {
         })
         .collect_vec();
 
-    dbg!(&minimum_picks);
-
     let result: u32 = minimum_picks.iter().map(|p| p.red * p.blue * p.green).sum();
 
     Ok(result.to_string())
