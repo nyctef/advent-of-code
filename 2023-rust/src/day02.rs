@@ -83,20 +83,6 @@ fn games<
 fn parse(input: &str) -> Result<Vec<Game>> {
     let parse_result = games::<VerboseError<&str>>(input)
         .finish()
-        .map_err(|e| {
-            // since nom errors hold a reference to the input string (which is borrowed here)
-            // we need to make an owned copy before we can return them
-            //
-            // TODO: is there a nicer way to implement this than digging down into VerboseError and manually cloning the input string?
-            // VerboseError {
-            //     errors: e
-            //         .errors
-            //         .into_iter()
-            //         .map(|(i, e)| (i.to_owned(), e))
-            //         .collect(),
-            // }
-            e
-        })
         .map_err(|e| eyre!(convert_error(input, e)))?;
     Ok(parse_result.1)
 }
