@@ -1,11 +1,12 @@
 use crate::aoc_util::*;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{eyre, Result};
 use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{newline, u32},
     combinator::{cut, eof, map, map_res},
+    error::{convert_error, ContextError, ParseError, VerboseError},
     multi::separated_list0,
     sequence::{pair, preceded, terminated},
     Finish, IResult,
@@ -40,12 +41,20 @@ enum Color {
     Blue,
 }
 
-fn game_num(input: &str) -> IResult<&str, u32> {
-    preceded(tag("Game "), u32)(input)
+fn count_color(input: &[(u32, Color)], color: Color) -> u32 {
+    input.iter().filter(|x| x.1 == color).map(|x| x.0).sum()
 }
 
-fn color(input: &str) -> IResult<&str, Color> {
-    map_res(
+fn games<
+    'a,
+    E: ParseError<&'a str>
+        + ContextError<&'a str>
+        + nom::error::FromExternalError<&'a str, nom::Err<(&'a str, nom::error::ErrorKind)>>,
+>(
+    input: &'a str,
+) -> IResult<&'a str, Vec<Game>, E> {
+    let game_num = preceded(tag("Game "), u32);
+    let color = map_res(
         alt((tag("red"), tag("green"), tag("blue"))),
         |s: &str| match s {
             "red" => Ok(Color::Red),
@@ -53,50 +62,43 @@ fn color(input: &str) -> IResult<&str, Color> {
             "blue" => Ok(Color::Blue),
             _ => Err(nom::Err::Failure((s, nom::error::ErrorKind::Tag))),
         },
-    )(input)
-}
-
-fn color_pick(input: &str) -> IResult<&str, (u32, Color)> {
-    pair(terminated(u32, tag(" ")), color)(input)
-}
-
-fn count_color(input: &[(u32, Color)], color: Color) -> u32 {
-    input.iter().filter(|x| x.1 == color).map(|x| x.0).sum()
-}
-
-fn pick(input: &str) -> IResult<&str, Pick> {
-    map(separated_list0(tag(", "), color_pick), |color_picks| Pick {
+    );
+    let color_pick = pair(terminated(u32, tag(" ")), color);
+    let pick = map(separated_list0(tag(", "), color_pick), |color_picks| Pick {
         red: count_color(&color_picks, Color::Red),
         green: count_color(&color_picks, Color::Green),
         blue: count_color(&color_picks, Color::Blue),
-    })(input)
-}
-
-fn picks(input: &str) -> IResult<&str, Vec<Pick>> {
-    map(separated_list0(tag("; "), pick), |picks| {
+    });
+    let picks = map(separated_list0(tag("; "), pick), |picks| {
         picks.into_iter().collect()
-    })(input)
-}
-
-fn game(input: &str) -> IResult<&str, Game> {
-    map(
+    });
+    let game = map(
         pair(terminated(game_num, tag(": ")), picks),
         |(num, picks)| Game { num, picks },
-    )(input)
-}
-
-fn games(input: &str) -> IResult<&str, Vec<Game>> {
-    terminated(separated_list0(newline, cut(game)), eof)(input)
+    );
+    let mut games = terminated(separated_list0(newline, cut(game)), eof);
+    games(input)
 }
 
 fn parse(input: &str) -> Result<Vec<Game>> {
-    let (_remaining, result) = games(input)
-        .map_err(|e|
+    let parse_result = games::<VerboseError<&str>>(input)
+        .finish()
+        .map_err(|e| {
             // since nom errors hold a reference to the input string (which is borrowed here)
             // we need to make an owned copy before we can return them
-             e.to_owned())
-        .finish()?;
-    Ok(result)
+            //
+            // TODO: is there a nicer way to implement this than digging down into VerboseError and manually cloning the input string?
+            // VerboseError {
+            //     errors: e
+            //         .errors
+            //         .into_iter()
+            //         .map(|(i, e)| (i.to_owned(), e))
+            //         .collect(),
+            // }
+            e
+        })
+        .map_err(|e| eyre!(convert_error(input, e)))?;
+    Ok(parse_result.1)
 }
 
 fn solve_for(input: &str) -> Result<String> {
@@ -114,7 +116,6 @@ fn solve_for(input: &str) -> Result<String> {
     let result: u32 = minimum_picks.iter().map(|p| p.red * p.blue * p.green).sum();
 
     Ok(result.to_string())
-    // Ok("asdf".to_string())
 }
 
 #[test]
