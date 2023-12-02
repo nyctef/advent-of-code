@@ -4,11 +4,11 @@ use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{digit1, u32},
-    combinator::map_res,
+    character::complete::u32,
+    combinator::{map, map_res},
     multi::separated_list0,
     sequence::{pair, preceded, terminated},
-    Finish, IResult,
+    IResult,
 };
 
 pub fn solve() -> Result<()> {
@@ -61,37 +61,35 @@ fn color_pick(input: &str) -> IResult<&str, (u32, Color)> {
 }
 
 fn pick(input: &str) -> IResult<&str, Pick> {
-    map_res(separated_list0(tag(", "), color_pick), |color_picks| {
-        return Ok::<Pick, ()>(Pick {
-            red: color_picks
-                .iter()
-                .filter(|p| p.1 == Color::Red)
-                .map(|p| p.0)
-                .sum(),
-            green: color_picks
-                .iter()
-                .filter(|p| p.1 == Color::Green)
-                .map(|p| p.0)
-                .sum(),
-            blue: color_picks
-                .iter()
-                .filter(|p| p.1 == Color::Blue)
-                .map(|p| p.0)
-                .sum(),
-        });
+    map(separated_list0(tag(", "), color_pick), |color_picks| Pick {
+        red: color_picks
+            .iter()
+            .filter(|p| p.1 == Color::Red)
+            .map(|p| p.0)
+            .sum(),
+        green: color_picks
+            .iter()
+            .filter(|p| p.1 == Color::Green)
+            .map(|p| p.0)
+            .sum(),
+        blue: color_picks
+            .iter()
+            .filter(|p| p.1 == Color::Blue)
+            .map(|p| p.0)
+            .sum(),
     })(input)
 }
 
 fn picks(input: &str) -> IResult<&str, Vec<Pick>> {
-    map_res(separated_list0(tag("; "), pick), |picks| {
-        Ok::<_, ()>(picks.into_iter().collect())
+    map(separated_list0(tag("; "), pick), |picks| {
+        picks.into_iter().collect()
     })(input)
 }
 
 fn game(input: &str) -> IResult<&str, Game> {
-    map_res(
+    map(
         pair(terminated(game_num, tag(": ")), picks),
-        |(num, picks)| Ok::<_, ()>(Game { num, picks }),
+        |(num, picks)| Game { num, picks },
     )(input)
 }
 
