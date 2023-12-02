@@ -5,10 +5,10 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{newline, u32},
-    combinator::{cut, map, map_res},
+    combinator::{cut, eof, map, map_res},
     multi::separated_list0,
     sequence::{pair, preceded, terminated},
-    IResult,
+    Finish, IResult,
 };
 
 pub fn solve() -> Result<()> {
@@ -51,7 +51,7 @@ fn color(input: &str) -> IResult<&str, Color> {
             "red" => Ok(Color::Red),
             "green" => Ok(Color::Green),
             "blue" => Ok(Color::Blue),
-            _ => Err(nom::Err::Error((s, nom::error::ErrorKind::Tag))),
+            _ => Err(nom::Err::Failure((s, nom::error::ErrorKind::Tag))),
         },
     )(input)
 }
@@ -86,14 +86,16 @@ fn game(input: &str) -> IResult<&str, Game> {
 }
 
 fn games(input: &str) -> IResult<&str, Vec<Game>> {
-    separated_list0(newline, cut(game))(input)
+    terminated(separated_list0(newline, cut(game)), eof)(input)
 }
 
 fn parse(input: &str) -> Result<Vec<Game>> {
-    let (_remaining, result) = games(input).map_err(|e|
+    let (_remaining, result) = games(input)
+        .map_err(|e|
             // since nom errors hold a reference to the input string (which is borrowed here)
             // we need to make an owned copy before we can return them
-             e.to_owned())?;
+             e.to_owned())
+        .finish()?;
     Ok(result)
 }
 
