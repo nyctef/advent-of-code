@@ -23,6 +23,7 @@ pub fn solve() -> Result<()> {
 
 #[derive(Debug)]
 struct Game {
+    #[allow(dead_code)]
     num: u32,
     picks: Vec<Pick>,
 }
