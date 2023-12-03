@@ -28,12 +28,12 @@ fn solve_for(input: &str) -> Result<String> {
         let bottom = (span.end + 1).row.min(grid.height() - 1);
         //dbg!((span, num_value, left, top, right, bottom));
 
-        let mut symbol_found = false;
+        let mut symbol = None;
         'search: for row_to_check in top..=bottom {
             for col_to_check in left..=right {
                 let char = grid.index_rc(row_to_check, col_to_check);
                 if char != '.' && !char.is_digit(10) {
-                    symbol_found = true;
+                    symbol = Some(char);
                     let map_entry = symbol_map.entry((row_to_check, col_to_check)).or_default();
                     map_entry.0 = char;
                     map_entry.1.push(num_value);
@@ -42,7 +42,7 @@ fn solve_for(input: &str) -> Result<String> {
             }
         }
 
-        if symbol_found {
+        if let Some(sym) = symbol {
             total += num_value;
             // eprintln!("found num {num_value}")
         } else {
@@ -104,5 +104,17 @@ fn test_breaking_numbers_across_rows() -> Result<()> {
     let result = solve_for(input)?;
 
     assert_eq!(format!("Part 1: {} | Part 2: 467835", 4361 + 34), result);
+    Ok(())
+}
+
+#[test]
+fn test_num_at_end_of_line() -> Result<()> {
+    let input = r###"
+...*123
+.......
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!(format!("Part 1: {} | Part 2: 0", 123), result);
     Ok(())
 }

@@ -89,14 +89,14 @@ impl CharGrid {
         let mut range_start: Option<CharGridIndexRC> = None;
         // TODO: might be interesting to try and make this lazy using something like iter::from_fn ?
         let mut result = Vec::new();
-        let mut current_row: usize = 0;
+        let mut last_pos = CharGridIndexRC::zero();
         for (pos, char) in self.enumerate_chars_rc() {
             // dbg!((pos, char, &s));
-            let row_changed = pos.row != current_row;
+            let row_changed = pos.row != last_pos.row;
             let end_of_digits = (!char.is_digit(10) || row_changed) && !s.is_empty();
 
             if end_of_digits {
-                let range_end = pos;
+                let range_end = last_pos.right();
                 result.push((
                     CharGridRange::new(range_start.unwrap(), range_end),
                     s.parse().unwrap(),
@@ -112,7 +112,7 @@ impl CharGrid {
                     range_start = Some(pos)
                 }
             }
-            current_row = pos.row;
+            last_pos = pos;
         }
 
         result.into_iter()
@@ -135,6 +135,20 @@ pub struct CharGridIndexRC {
     pub row: usize,
     pub col: usize,
 }
+
+impl CharGridIndexRC {
+    pub fn zero() -> CharGridIndexRC {
+        CharGridIndexRC { row: 0, col: 0 }
+    }
+
+    pub fn right(&self) -> CharGridIndexRC {
+        CharGridIndexRC {
+            row: self.row,
+            col: self.col + 1,
+        }
+    }
+}
+
 impl Add<usize> for CharGridIndexRC {
     type Output = CharGridIndexRC;
 
@@ -165,5 +179,6 @@ using our own range type, since rust's isn't really flexible in the way we want
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor)]
 pub struct CharGridRange<T> {
     pub start: T,
+    /// exclusive, so may point just off the end of the grid
     pub end: T,
 }
