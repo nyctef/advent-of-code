@@ -1,4 +1,4 @@
-use crate::aoc_util::*;
+use crate::utils::*;
 use color_eyre::eyre::Result;
 
 pub fn solve() -> Result<()> {

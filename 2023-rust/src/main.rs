@@ -1,7 +1,7 @@
-mod aoc_util;
 mod day01;
 mod day02;
 mod day03;
+mod utils;
 
 use color_eyre::{eyre::Result, Report};
 

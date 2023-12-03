@@ -1,9 +1,8 @@
-use std::collections::HashMap;
-
-use crate::aoc_util::*;
+use crate::utils::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
 use regex::Regex;
+use std::collections::HashMap;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 3)?;
