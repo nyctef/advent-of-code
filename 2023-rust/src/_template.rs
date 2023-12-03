@@ -13,7 +13,8 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     // ...
 
-    todo!()
+    todo!();
+    Ok(format!("Part 1: {} | Part 2: {}"))
 }
 
 #[test]
@@ -23,6 +24,6 @@ fn test_example1() -> Result<()> {
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("expected", result);
+    assert_eq!("Part 1: | Part 2:", result);
     Ok(())
 }
