@@ -1,9 +1,8 @@
 use derive_more::Constructor;
 use itertools::Itertools;
-use nom::AsChar;
 use std::{
     fmt::Debug,
-    ops::{Add, Index, Range},
+    ops::{Add, Index},
 };
 
 pub struct CharGrid {
@@ -22,6 +21,7 @@ pub struct CharGrid {
     lines: Vec<Vec<char>>,
 }
 
+#[allow(dead_code)]
 impl CharGrid {
     pub fn new(lines: Vec<String>) -> CharGrid {
         let height = lines.len();
@@ -69,7 +69,7 @@ impl CharGrid {
     pub fn index_rc(&self, row: usize, col: usize) -> char {
         assert!(row < self.height);
         assert!(col < self.width);
-        self.lines[row][col].as_char()
+        self.lines[row][col]
     }
 
     pub fn iter_positions_rc(&self) -> impl Iterator<Item = CharGridIndexRC> + '_ {
@@ -84,16 +84,28 @@ impl CharGrid {
         })
     }
 
+    pub fn set_range_rc(&mut self, range: CharGridRange<CharGridIndexRC>, new_value: char) {
+        dbg!(range, new_value);
+        // todo: be able to properly enumerate a range
+        // (and decide what should be inclusive/exclusive etc)
+        for r in range.start.row..=range.end.row {
+            for c in range.start.col..range.end.col {
+                self.lines[r][c] = new_value;
+            }
+        }
+    }
+
     pub fn enumerate_numbers(&self) -> impl Iterator<Item = (CharGridRange<CharGridIndexRC>, u32)> {
         let mut s = String::new();
         let mut range_start: Option<CharGridIndexRC> = None;
         // TODO: might be interesting to try and make this lazy using something like iter::from_fn ?
+        // (or just fold over enumerate_chars_rc())
         let mut result = Vec::new();
         let mut last_pos = CharGridIndexRC::zero();
         for (pos, char) in self.enumerate_chars_rc() {
             // dbg!((pos, char, &s));
             let row_changed = pos.row != last_pos.row;
-            let end_of_digits = (!char.is_digit(10) || row_changed) && !s.is_empty();
+            let end_of_digits = (!char.is_ascii_digit() || row_changed) && !s.is_empty();
 
             if end_of_digits {
                 let range_end = last_pos.right();
@@ -106,9 +118,9 @@ impl CharGrid {
                 range_start = None;
             }
 
-            if char.is_digit(10) {
+            if char.is_ascii_digit() {
                 s.push(char);
-                if range_start == None {
+                if range_start.is_none() {
                     range_start = Some(pos)
                 }
             }
@@ -136,6 +148,7 @@ pub struct CharGridIndexRC {
     pub col: usize,
 }
 
+#[allow(dead_code)]
 impl CharGridIndexRC {
     pub fn zero() -> CharGridIndexRC {
         CharGridIndexRC { row: 0, col: 0 }

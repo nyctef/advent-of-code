@@ -16,23 +16,21 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut symbol_map: HashMap<(usize, usize), (char, Vec<u32>)> = HashMap::new();
 
-    // dbg!(&grid, &digits_re);
     let mut total = 0;
-
-    let mut limit: i32 = 30;
+    // let mut spans_missing_symbols = Vec::new();
 
     for (span, num_value) in grid.enumerate_numbers() {
         let left = span.start.col.saturating_sub(1);
         let top = span.start.row.saturating_sub(1);
         let right = (span.end + 1).col.min(grid.width() - 1);
         let bottom = (span.end + 1).row.min(grid.height() - 1);
-        //dbg!((span, num_value, left, top, right, bottom));
+        // dbg!((span, num_value, left, top, right, bottom));
 
         let mut symbol = None;
         'search: for row_to_check in top..=bottom {
             for col_to_check in left..right {
                 let char = grid.index_rc(row_to_check, col_to_check);
-                if char != '.' && !char.is_digit(10) {
+                if char != '.' && !char.is_ascii_digit() {
                     symbol = Some(char);
                     let map_entry = symbol_map.entry((row_to_check, col_to_check)).or_default();
                     map_entry.0 = char;
@@ -42,18 +40,19 @@ fn solve_for(input: &str) -> Result<String> {
             }
         }
 
-        if let Some(sym) = symbol {
+        if let Some(_sym) = symbol {
             total += num_value;
-            // eprintln!("found num {num_value}")
+            // println!("found num {num_value} with symbol {sym}")
         } else {
-            // eprintln!("{num_value} seems to be missing a symbol {:?}", span);
+            // spans_missing_symbols.push(span);
+            // println!("found num {num_value} without a symbol");
         }
-
-        // limit -= 1;
-        // if limit <= 0 {
-        //     break;
-        // }
     }
+
+    // for m in spans_missing_symbols {
+    //     grid.set_range_rc(m, '█');
+    // }
+    // dbg!(grid);
 
     let mut gear_ratios = 0;
     // dbg!(symbol_map.values());
