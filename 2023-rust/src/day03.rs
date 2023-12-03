@@ -22,12 +22,12 @@ fn solve_for(input: &str) -> Result<String> {
     for (span, num_value) in grid.enumerate_numbers() {
         let left = span.start.col.saturating_sub(1);
         let top = span.start.row.saturating_sub(1);
-        let right = (span.end + 1).col.min(grid.width() - 1);
-        let bottom = (span.end + 1).row.min(grid.height() - 1);
+        let right = (span.end + 1).col.min(grid.width());
+        let bottom = (span.end + 1).row.min(grid.height());
         // dbg!((span, num_value, left, top, right, bottom));
 
         let mut symbol = None;
-        'search: for row_to_check in top..=bottom {
+        'search: for row_to_check in top..bottom {
             for col_to_check in left..right {
                 let char = grid.index_rc(row_to_check, col_to_check);
                 if char != '.' && !char.is_ascii_digit() {

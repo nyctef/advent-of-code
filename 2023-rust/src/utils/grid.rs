@@ -88,7 +88,7 @@ impl CharGrid {
         dbg!(range, new_value);
         // todo: be able to properly enumerate a range
         // (and decide what should be inclusive/exclusive etc)
-        for r in range.start.row..=range.end.row {
+        for r in range.start.row..range.end.row {
             for c in range.start.col..range.end.col {
                 self.lines[r][c] = new_value;
             }
@@ -108,7 +108,7 @@ impl CharGrid {
             let end_of_digits = (!char.is_ascii_digit() || row_changed) && !s.is_empty();
 
             if end_of_digits {
-                let range_end = last_pos.right();
+                let range_end = last_pos + 1;
                 result.push((
                     CharGridRange::new(range_start.unwrap(), range_end),
                     s.parse().unwrap(),
