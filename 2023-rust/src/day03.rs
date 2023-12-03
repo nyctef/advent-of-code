@@ -30,7 +30,7 @@ fn solve_for(input: &str) -> Result<String> {
 
         let mut symbol = None;
         'search: for row_to_check in top..=bottom {
-            for col_to_check in left..=right {
+            for col_to_check in left..right {
                 let char = grid.index_rc(row_to_check, col_to_check);
                 if char != '.' && !char.is_digit(10) {
                     symbol = Some(char);
@@ -116,5 +116,18 @@ fn test_num_at_end_of_line() -> Result<()> {
     let result = solve_for(input)?;
 
     assert_eq!(format!("Part 1: {} | Part 2: 0", 123), result);
+    Ok(())
+}
+
+#[test]
+fn test_distant_symbol() -> Result<()> {
+    let input = r###"
+.......
+.826...
+.....*.
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!(format!("Part 1: 0 | Part 2: 0"), result);
     Ok(())
 }
