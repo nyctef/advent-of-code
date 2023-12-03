@@ -1,6 +1,7 @@
 mod aoc_util;
 mod day01;
 mod day02;
+mod day03;
 
 use color_eyre::{eyre::Result, Report};
 
@@ -17,6 +18,7 @@ fn main() -> Result<()> {
     match day {
         1 => day01::solve(),
         2 => day02::solve(),
+        3 => day03::solve(),
         other => Err(Report::msg(format!("day {other} not implemented yet"))),
     }
 }
