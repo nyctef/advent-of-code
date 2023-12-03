@@ -1,6 +1,10 @@
+use derive_more::Constructor;
 use itertools::Itertools;
 use nom::AsChar;
-use std::{fmt::Debug, ops::Index};
+use std::{
+    fmt::Debug,
+    ops::{Add, Index, Range},
+};
 
 pub struct CharGrid {
     width: usize,
@@ -67,6 +71,52 @@ impl CharGrid {
         assert!(col < self.width);
         self.lines[row][col].as_char()
     }
+
+    pub fn iter_positions_rc(&self) -> impl Iterator<Item = CharGridIndexRC> + '_ {
+        self.enumerate_chars_rc().map(|(pos, _)| pos)
+    }
+
+    pub fn enumerate_chars_rc(&self) -> impl Iterator<Item = (CharGridIndexRC, char)> + '_ {
+        self.lines.iter().enumerate().flat_map(|(r, line)| {
+            line.iter()
+                .enumerate()
+                .map(move |(c, char)| (CharGridIndexRC::new(r, c), *char))
+        })
+    }
+
+    pub fn enumerate_numbers(&self) -> impl Iterator<Item = (CharGridRange<CharGridIndexRC>, u32)> {
+        let mut s = String::new();
+        let mut range_start: Option<CharGridIndexRC> = None;
+        // TODO: might be interesting to try and make this lazy using something like iter::from_fn ?
+        let mut result = Vec::new();
+        let mut current_row: usize = 0;
+        for (pos, char) in self.enumerate_chars_rc() {
+            // dbg!((pos, char, &s));
+            let row_changed = pos.row != current_row;
+            let end_of_digits = (!char.is_digit(10) || row_changed) && !s.is_empty();
+
+            if end_of_digits {
+                let range_end = pos;
+                result.push((
+                    CharGridRange::new(range_start.unwrap(), range_end),
+                    s.parse().unwrap(),
+                ));
+
+                s.clear();
+                range_start = None;
+            }
+
+            if char.is_digit(10) {
+                s.push(char);
+                if range_start == None {
+                    range_start = Some(pos)
+                }
+            }
+            current_row = pos.row;
+        }
+
+        result.into_iter()
+    }
 }
 
 impl Debug for CharGrid {
@@ -80,10 +130,20 @@ impl Debug for CharGrid {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor)]
 pub struct CharGridIndexRC {
     pub row: usize,
     pub col: usize,
+}
+impl Add<usize> for CharGridIndexRC {
+    type Output = CharGridIndexRC;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        Self {
+            col: self.col + rhs,
+            row: self.row + rhs,
+        }
+    }
 }
 
 impl Index<CharGridIndexRC> for CharGrid {
@@ -95,4 +155,15 @@ impl Index<CharGridIndexRC> for CharGrid {
         assert!(col < self.width);
         &self.lines[row][col]
     }
+}
+
+/**
+using our own range type, since rust's isn't really flexible in the way we want
+- https://kaylynn.gay/blog/post/rust_ranges_and_suffering
+- https://ridiculousfish.com/blog/posts/least-favorite-rust-type.html
+*/
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor)]
+pub struct CharGridRange<T> {
+    pub start: T,
+    pub end: T,
 }
