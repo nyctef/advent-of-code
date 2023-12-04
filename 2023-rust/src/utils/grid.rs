@@ -2,7 +2,7 @@ use derive_more::Constructor;
 use itertools::Itertools;
 use std::{
     fmt::Debug,
-    ops::{Add, Index},
+    ops::{Add, Index, Sub},
 };
 
 pub struct CharGrid {
@@ -72,6 +72,10 @@ impl CharGrid {
         self.lines[row][col]
     }
 
+    pub fn index(&self, index: CharGridIndexRC) -> char {
+        self.index_rc(index.row, index.col)
+    }
+
     pub fn iter_positions_rc(&self) -> impl Iterator<Item = CharGridIndexRC> + '_ {
         self.enumerate_chars_rc().map(|(pos, _)| pos)
     }
@@ -84,14 +88,41 @@ impl CharGrid {
         })
     }
 
-    pub fn set_range_rc(&mut self, range: CharGridRange<CharGridIndexRC>, new_value: char) {
-        dbg!(range, new_value);
-        // todo: be able to properly enumerate a range
-        // (and decide what should be inclusive/exclusive etc)
+    pub fn enumerate_range_rc(
+        &self,
+        range: CharGridRange<CharGridIndexRC>,
+    ) -> impl Iterator<Item = (CharGridIndexRC, char)> {
+        // todo: should this use an iter() on the range itself?
+        let range = self.clip_range(range);
+        let mut result = Vec::new();
         for r in range.start.row..range.end.row {
             for c in range.start.col..range.end.col {
-                self.lines[r][c] = new_value;
+                result.push((CharGridIndexRC::new(r, c), self.lines[r][c]))
             }
+        }
+        result.into_iter()
+    }
+
+    pub fn clip_range(
+        &self,
+        range: CharGridRange<CharGridIndexRC>,
+    ) -> CharGridRange<CharGridIndexRC> {
+        CharGridRange {
+            start: self.clip_index(range.start),
+            end: self.clip_index(range.end),
+        }
+    }
+
+    pub fn clip_index(&self, index: CharGridIndexRC) -> CharGridIndexRC {
+        CharGridIndexRC {
+            row: index.row.clamp(0, self.height),
+            col: index.col.clamp(0, self.width),
+        }
+    }
+
+    pub fn set_range_rc(&mut self, range: CharGridRange<CharGridIndexRC>, new_value: char) {
+        for (pos, _) in self.enumerate_range_rc(range) {
+            self.lines[pos.row][pos.col] = new_value;
         }
     }
 
@@ -142,7 +173,7 @@ impl Debug for CharGrid {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor, Hash)]
 pub struct CharGridIndexRC {
     pub row: usize,
     pub col: usize,
@@ -173,6 +204,18 @@ impl Add<usize> for CharGridIndexRC {
     }
 }
 
+impl Sub<usize> for CharGridIndexRC {
+    type Output = CharGridIndexRC;
+
+    fn sub(self, rhs: usize) -> Self::Output {
+        Self {
+            // todo: is it confusing that we don't actually go negative here?
+            col: self.col.saturating_sub(rhs),
+            row: self.row.saturating_sub(rhs),
+        }
+    }
+}
+
 impl Index<CharGridIndexRC> for CharGrid {
     type Output = char;
 
@@ -194,4 +237,13 @@ pub struct CharGridRange<T> {
     pub start: T,
     /// exclusive, so may point just off the end of the grid
     pub end: T,
+}
+
+impl CharGridRange<CharGridIndexRC> {
+    pub fn grow_1(&self) -> CharGridRange<CharGridIndexRC> {
+        CharGridRange {
+            start: self.start - 1,
+            end: self.end + 1,
+        }
+    }
 }

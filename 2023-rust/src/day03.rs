@@ -14,29 +14,23 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let grid = CharGrid::from_string(input);
 
-    let mut symbol_map: HashMap<(usize, usize), (char, Vec<u32>)> = HashMap::new();
+    let mut symbol_map: HashMap<CharGridIndexRC, (char, Vec<u32>)> = HashMap::new();
 
     let mut total = 0;
     // let mut spans_missing_symbols = Vec::new();
 
     for (span, num_value) in grid.enumerate_numbers() {
-        let left = span.start.col.saturating_sub(1);
-        let top = span.start.row.saturating_sub(1);
-        let right = (span.end + 1).col.min(grid.width());
-        let bottom = (span.end + 1).row.min(grid.height());
+        let search_span = span.grow_1();
         // dbg!((span, num_value, left, top, right, bottom));
 
         let mut symbol = None;
-        'search: for row_to_check in top..bottom {
-            for col_to_check in left..right {
-                let char = grid.index_rc(row_to_check, col_to_check);
-                if char != '.' && !char.is_ascii_digit() {
-                    symbol = Some(char);
-                    let map_entry = symbol_map.entry((row_to_check, col_to_check)).or_default();
-                    map_entry.0 = char;
-                    map_entry.1.push(num_value);
-                    break 'search;
-                }
+        'search: for (search_pos, char) in grid.enumerate_range_rc(search_span) {
+            if char != '.' && !char.is_ascii_digit() {
+                symbol = Some(char);
+                let map_entry = symbol_map.entry(search_pos).or_default();
+                map_entry.0 = char;
+                map_entry.1.push(num_value);
+                break 'search;
             }
         }
 
