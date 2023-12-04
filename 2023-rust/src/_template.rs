@@ -1,5 +1,6 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
+use itertools::Itertools;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 1)?;

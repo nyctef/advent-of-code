@@ -12,53 +12,52 @@ pub fn solve() -> Result<()> {
     Ok(())
 }
 
-fn all_numbers(input: &str) -> Vec<u32> {
-    regex::Regex::new(r"\d+")
-        .unwrap()
-        .find_iter(input)
-        .map(|x| x.as_str().parse().unwrap())
-        .collect()
-}
-
 fn solve_for(input: &str) -> Result<String> {
-    let mut point_total = 0;
-
-    let mut card_list: Vec<u32> = Vec::new();
-
     let lines = input.trim().lines().collect_vec();
-    for line in &lines {
-        let (num, line) = line.split_once(':').unwrap();
-        // let num = all_numbers(num).iter().exactly_one();
 
-        let (winners, have) = line.split_once('|').unwrap();
-        let (winners, have) = (all_numbers(winners), all_numbers(have));
-        let winners: HashSet<_> = HashSet::from_iter(winners);
-        let have: HashSet<_> = HashSet::from_iter(have);
-        let in_common: HashSet<_> = winners.intersection(&have).collect();
-        let num_in_common: usize = in_common.len();
+    let card_list = lines
+        .iter()
+        .map(|line| {
+            let (_, line) = line.split_once(':').unwrap();
+            // let num = all_numbers(num).iter().exactly_one();
 
-        if num_in_common > 0 {
-            // dbg!(in_common, num_in_common, 2u32.pow(num_in_common as u32 - 1));
-            point_total += 2u32.pow(num_in_common as u32 - 1);
-        }
+            let (winners, have) = line.split_once('|').unwrap();
+            let (winners, have) = (all_numbers(winners), all_numbers(have));
+            let winners: HashSet<_> = HashSet::from_iter(winners);
+            let have: HashSet<_> = HashSet::from_iter(have);
+            let in_common: HashSet<_> = winners.intersection(&have).collect();
+            let match_count = in_common.len() as u32;
 
-        card_list.push(num_in_common as u32);
-    }
+            match_count
+        })
+        .collect_vec();
+
+    let point_total: u32 = card_list
+        .iter()
+        .map(|&match_count| {
+            if match_count > 0 {
+                // dbg!(in_common, num_in_common, 2u32.pow(num_in_common as u32 - 1));
+                2u32.pow(match_count - 1)
+            } else {
+                0
+            }
+        })
+        .sum();
 
     let mut card_counts: Vec<u32> = Vec::from_iter(std::iter::repeat(1).take(lines.len()));
 
-    for (card_index, &num_in_common_for_card) in card_list.iter().enumerate() {
-        println!("considering {card_index} with {num_in_common_for_card} matches");
-        if num_in_common_for_card > 0 {
+    for (card_index, &match_count) in card_list.iter().enumerate() {
+        //println!("considering {card_index} with {num_in_common_for_card} matches");
+
+        if match_count > 0 {
             // println!(
             //     "updating card counts for {} to {} with {}",
             //     (card_index + 1),
             //     (card_index + (num_in_common_for_card as usize)),
             //     card_counts[card_index]
             // );
-            for future_card in
-                (card_index + 1)..(card_index + (num_in_common_for_card as usize) + 1)
-            {
+            let next_card = card_index + 1;
+            for future_card in next_card..(next_card + match_count as usize) {
                 card_counts[future_card] += card_counts[card_index];
             }
             // dbg!(&card_counts);
