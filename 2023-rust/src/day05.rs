@@ -14,7 +14,7 @@ pub fn solve() -> Result<()> {
     Ok(())
 }
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 struct Range {
     start: u64,
     len: u64,
@@ -70,7 +70,7 @@ impl Range {
 
 impl Debug for Range {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("<{},{}>", self.start, self.len))
+        f.write_fmt(format_args!("[{},{})", self.start, self.end()))
     }
 }
 
@@ -89,23 +89,13 @@ impl Mapping {
         (val - self.source.start) + self.dest.start
     }
 
-    fn remap(&self, val: Range) -> Vec<Range> {
-        let mut result = val.remainder(&self.source);
+    // fn remap(&self, val: Range) -> Vec<Range> {
+    //     let mut result = val.remainder(&self.source);
 
-        let overlap = self.source.overlap(&val);
-        if overlap.is_none() {
-            return result;
-        }
-        let overlap = overlap.unwrap();
-        let mapped_overlap = Range {
-            start: self.map(overlap.start),
-            len: overlap.len,
-        };
-
-        result.push(mapped_overlap);
-        dbg!(self.source, self.dest, val, &result);
-        result
-    }
+    //     result.push(mapped_overlap);
+    //     // dbg!(self.source, self.dest, val, &result);
+    //     result
+    // }
 }
 
 #[derive(Debug)]
@@ -122,6 +112,39 @@ impl Map {
             }
         }
         return val;
+    }
+
+    fn map_range(&self, val: Range) -> Vec<Range> {
+        let mut remaining = vec![val];
+        let mut result = vec![];
+
+        for mapping in &self.mappings {
+            // println!("applying mapping {:?} to {:?}", &mapping, &remaining);
+            remaining = remaining
+                .iter()
+                .flat_map(|r| {
+                    let overlap = mapping.source.overlap(&val);
+                    if overlap.is_some() {
+                        let overlap = overlap.unwrap();
+                        let mapped_overlap = Range {
+                            start: mapping.map(overlap.start),
+                            len: overlap.len,
+                        };
+                        // println!(
+                        //     "{r:?} got mapped to {mapped_overlap:?}, adding that to the result"
+                        // );
+                        result.push(mapped_overlap);
+                    }
+
+                    let remaining = r.remainder(&mapping.source);
+                    // println!("{remaining:?} is left - throwing back in the bucket");
+                    remaining
+                })
+                .collect_vec()
+        }
+
+        result.append(&mut remaining);
+        result
     }
 }
 
@@ -164,8 +187,6 @@ fn solve_for(input: &str) -> Result<String> {
         })
         .collect_vec();
 
-    dbg!(&seed_ranges);
-
     let maps = mapslines
         .trim()
         .split("\n\n")
@@ -174,17 +195,21 @@ fn solve_for(input: &str) -> Result<String> {
 
     // dbg!(&seed_ranges, &maps);
 
-    // let mut locations = Vec::new();
-    let mut min_location: u64 = u64::MAX;
-    for seed_range in &seed_ranges {
-        for seed in seed_range.start..seed_range.end() {
-            let mut seed_val = seed as u64;
-            for map in &maps {
-                seed_val = map.map(seed_val as u64);
-            }
-            min_location = min_location.min(seed_val);
+    let mut resulting_locations: Vec<Range> = vec![];
+    for i in 0..seed_ranges.len() {
+        let mut current_ranges = vec![seed_ranges[i]];
+        for map in &maps {
+            // println!("next iteration for map {} {:?}", map.name, current_ranges);
+            current_ranges = current_ranges
+                .iter()
+                .flat_map(|&r| map.map_range(r))
+                .unique()
+                .collect_vec()
         }
+        resulting_locations.append(&mut current_ranges);
     }
+    // dbg!(&resulting_locations);
+    let min_location = resulting_locations.iter().map(|r| r.start).min().unwrap();
 
     Ok(format!("Part 1: | Part 2: {min_location}"))
 }
@@ -264,30 +289,39 @@ fn range_overlap_left() {
     assert_eq!(result, Some(Range { start: 5, len: 1 }))
 }
 
-#[test]
-fn test_remap_range_no_overlap() {
-    let mapping = Mapping {
-        source: Range { start: 10, len: 5 },
-        dest: Range { start: 20, len: 5 },
-    };
-    let input_range = Range { start: 5, len: 5 };
+// #[test]
+// fn test_remap_range_no_overlap() {
+//     let mapping = Mapping {
+//         source: Range { start: 10, len: 5 },
+//         dest: Range { start: 20, len: 5 },
+//     };
+//     let input_range = Range { start: 5, len: 5 };
 
-    assert_eq!(mapping.remap(input_range), vec![input_range]);
-}
+//     assert_eq!(mapping.remap(input_range), vec![input_range]);
+// }
 
-#[test]
-fn test_remap_left_overlap() {
-    let mapping = Mapping {
-        source: Range { start: 10, len: 5 },
-        dest: Range { start: 20, len: 5 },
-    };
-    let input_range = Range { start: 12, len: 5 };
+// #[test]
+// fn test_remap_left_overlap() {
+//     let mapping = Mapping {
+//         source: Range { start: 10, len: 5 },
+//         dest: Range { start: 20, len: 5 },
+//     };
+//     let input_range = Range { start: 12, len: 5 };
 
-    assert_eq!(
-        mapping.remap(input_range),
-        vec![Range { start: 15, len: 2 }, Range { start: 22, len: 3 }]
-    );
-}
+//     assert_eq!(
+//         mapping.remap(input_range),
+//         vec![Range { start: 15, len: 2 }, Range { start: 22, len: 3 }]
+//     );
+// }
+
+// #[test]
+// fn test_x() {
+//     let mapping = Mapping {
+//         source: Range { start: 45, len: 19 },
+//         dest: Range { start: 81, len: 19 },
+//     };
+//     let range = Range { start: 45, len: 11 };
+// }
 
 #[test]
 fn test_example1() -> Result<()> {
