@@ -22,9 +22,10 @@ struct Range {
 
 impl Range {
     fn contains(&self, val: u64) -> bool {
-        val >= self.start && val <= self.start + self.len
+        val >= self.start && val < self.end()
     }
 
+    /// (exclusive)
     fn end(&self) -> u64 {
         self.start + self.len
     }
@@ -39,6 +40,17 @@ impl Range {
             start: start,
             len: end - start,
         })
+    }
+
+    /// what remains of `self` if `other` is taken away
+    fn remainder(&self, other: &Range) -> Vec<Range> {
+        let start = self.start.max(other.start);
+        let end = self.end().min(other.end());
+        if start >= end {
+            // no overlap, so self remains intact
+            return vec![*self];
+        }
+        vec![]
     }
 }
 
@@ -68,8 +80,13 @@ impl Mapping {
         if overlap.is_none() {
             return vec![val];
         }
+        let overlap = overlap.unwrap();
+        let mapped_overlap = Range {
+            start: self.map(overlap.start),
+            len: overlap.len,
+        };
 
-        return vec![];
+        return vec![mapped_overlap];
     }
 }
 
@@ -129,6 +146,8 @@ fn solve_for(input: &str) -> Result<String> {
         })
         .collect_vec();
 
+    dbg!(&seed_ranges);
+
     let maps = mapslines
         .trim()
         .split("\n\n")
@@ -138,24 +157,38 @@ fn solve_for(input: &str) -> Result<String> {
     // dbg!(&seed_ranges, &maps);
 
     // let mut locations = Vec::new();
-    // for &seed in &seeds {
-    //     let mut seed_val = seed as u64;
-    //     for map in &maps {
-    //         seed_val = map.map(seed_val as u64);
-    //     }
-    //     println!("{}", seed_val);
-    //     locations.push(seed_val);
-    // }
+    let mut min_location: u64 = u64::MAX;
+    for seed_range in &seed_ranges {
+        for seed in seed_range.start..seed_range.end() {
+            let mut seed_val = seed as u64;
+            for map in &maps {
+                seed_val = map.map(seed_val as u64);
+            }
+            min_location = min_location.min(seed_val);
+        }
+    }
 
-    // let part1 = locations.iter().min().unwrap();
-    let part2 = "";
-    Ok(format!("Part 1: | Part 2: {part2}"))
+    Ok(format!("Part 1: | Part 2: {min_location}"))
 }
 
 #[test]
-fn range_overlap_no_intersection() {
-    let result = Range { start: 10, len: 5 }.overlap(&Range { start: 20, len: 5 });
-    assert_eq!(result, None)
+fn when_no_intersection() {
+    let first = Range { start: 10, len: 5 };
+    let second = Range { start: 20, len: 5 };
+    let overlap = first.overlap(&second);
+    let remaining = first.remainder(&second);
+    assert_eq!(overlap, None);
+    assert_eq!(remaining, vec![first]);
+}
+
+#[test]
+fn when_first_is_contained_inside_second() {
+    let first = Range { start: 10, len: 5 };
+    let second = Range { start: 5, len: 25 };
+    let overlap = first.overlap(&second);
+    let remaining = first.remainder(&second);
+    assert_eq!(overlap, Some(first));
+    assert_eq!(remaining, vec![]);
 }
 
 #[test]
@@ -179,6 +212,20 @@ fn test_remap_range_no_overlap() {
     let input_range = Range { start: 5, len: 5 };
 
     assert_eq!(mapping.remap(input_range), vec![input_range]);
+}
+
+#[test]
+fn test_remap_left_overlap() {
+    let mapping = Mapping {
+        source: Range { start: 10, len: 5 },
+        dest: Range { start: 20, len: 5 },
+    };
+    let input_range = Range { start: 12, len: 5 };
+
+    assert_eq!(
+        mapping.remap(input_range),
+        vec![Range { start: 20, len: 3 }, Range { start: 15, len: 2 }]
+    );
 }
 
 #[test]
@@ -221,6 +268,6 @@ humidity-to-location map:
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: | Part 2: ", result);
+    assert_eq!("Part 1: | Part 2: 46", result);
     Ok(())
 }
