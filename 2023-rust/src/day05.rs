@@ -229,6 +229,26 @@ fn when_first_and_second_dont_intersect() {
 }
 
 #[test]
+fn when_start_of_first_overlaps_end_of_second() {
+    let first = Range { start: 10, len: 5 };
+    let second = Range { start: 7, len: 5 };
+    let overlap = first.overlap(&second);
+    let remaining = first.remainder(&second);
+    assert_eq!(overlap, Some(Range { start: 10, len: 2 }));
+    assert_eq!(remaining, vec![Range { start: 12, len: 3 }]);
+}
+
+#[test]
+fn when_end_of_first_overlaps_start_of_second() {
+    let first = Range { start: 7, len: 5 };
+    let second = Range { start: 10, len: 5 };
+    let overlap = first.overlap(&second);
+    let remaining = first.remainder(&second);
+    assert_eq!(overlap, Some(Range { start: 10, len: 2 }));
+    assert_eq!(remaining, vec![Range { start: 7, len: 3 }]);
+}
+
+#[test]
 fn range_overlap_contained() {
     let result = Range { start: 0, len: 30 }.overlap(&Range { start: 10, len: 5 });
     assert_eq!(result, Some(Range { start: 10, len: 5 }))
