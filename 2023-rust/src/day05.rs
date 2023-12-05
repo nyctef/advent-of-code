@@ -90,9 +90,11 @@ impl Mapping {
     }
 
     fn remap(&self, val: Range) -> Vec<Range> {
+        let mut result = val.remainder(&self.source);
+
         let overlap = self.source.overlap(&val);
         if overlap.is_none() {
-            return vec![val];
+            return result;
         }
         let overlap = overlap.unwrap();
         let mapped_overlap = Range {
@@ -100,7 +102,9 @@ impl Mapping {
             len: overlap.len,
         };
 
-        return vec![mapped_overlap];
+        result.push(mapped_overlap);
+        dbg!(self.source, self.dest, val, &result);
+        result
     }
 }
 
@@ -281,7 +285,7 @@ fn test_remap_left_overlap() {
 
     assert_eq!(
         mapping.remap(input_range),
-        vec![Range { start: 20, len: 3 }, Range { start: 15, len: 2 }]
+        vec![Range { start: 15, len: 2 }, Range { start: 22, len: 3 }]
     );
 }
 
