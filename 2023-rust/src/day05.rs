@@ -8,7 +8,10 @@ use std::fmt::Debug;
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 5)?;
 
-    let result = solve_for(&input)?;
+    let mut result = solve_for(&input)?;
+    for _ in 0..2000 {
+        result = solve_for(&input)?;
+    }
 
     println!("{}", result);
     Ok(())
