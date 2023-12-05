@@ -44,13 +44,27 @@ impl Range {
 
     /// what remains of `self` if `other` is taken away
     fn remainder(&self, other: &Range) -> Vec<Range> {
-        let start = self.start.max(other.start);
-        let end = self.end().min(other.end());
-        if start >= end {
+        let overlap = self.overlap(other);
+        if overlap.is_none() {
             // no overlap, so self remains intact
             return vec![*self];
         }
-        vec![]
+        let overlap = overlap.unwrap();
+        let mut result = vec![];
+        if self.start < overlap.start {
+            result.push(Range {
+                start: self.start,
+                len: overlap.start - self.start,
+            });
+        }
+        if self.end() > overlap.end() {
+            result.push(Range {
+                start: overlap.end(),
+                len: self.end() - overlap.end(),
+            });
+        }
+
+        result
     }
 }
 
@@ -189,6 +203,29 @@ fn when_first_is_contained_inside_second() {
     let remaining = first.remainder(&second);
     assert_eq!(overlap, Some(first));
     assert_eq!(remaining, vec![]);
+}
+
+#[test]
+fn when_second_is_contained_inside_first() {
+    let first = Range { start: 5, len: 20 };
+    let second = Range { start: 10, len: 5 };
+    let overlap = first.overlap(&second);
+    let remaining = first.remainder(&second);
+    assert_eq!(overlap, Some(second));
+    assert_eq!(
+        remaining,
+        vec![Range { start: 5, len: 5 }, Range { start: 15, len: 10 }]
+    );
+}
+
+#[test]
+fn when_first_and_second_dont_intersect() {
+    let first = Range { start: 5, len: 5 };
+    let second = Range { start: 10, len: 5 };
+    let overlap = first.overlap(&second);
+    let remaining = first.remainder(&second);
+    assert_eq!(overlap, None);
+    assert_eq!(remaining, vec![first]);
 }
 
 #[test]
