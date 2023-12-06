@@ -14,9 +14,10 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let races = input
         .trim()
+        .replace(" ", "")
         .lines()
         .map(|l| l.split_once(':').unwrap().1)
-        .map(all_numbers)
+        .map(all_numbers_u64)
         .collect_vec();
     let races = races[0].iter().zip(races[1].iter()).collect_vec();
 
