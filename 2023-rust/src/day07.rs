@@ -54,19 +54,21 @@ fn solve_for(input: &str) -> Result<String> {
                 .chars()
                 .map(|c| card_strength.iter().find(|(r, cs)| **cs == c).unwrap().0)
                 .collect_vec();
-            // println!("{hand_kind:?}, {hand_kind_rank}, {card_ranks:?}");
+            // println!("{hand} {bid} {hand_kind:?}, {hand_kind_rank}, {card_ranks:?}");
             (bid, hand_kind_rank, card_ranks)
         })
         .collect_vec();
 
     inputs.sort_by_key(|i| (i.1, i.2.clone()));
-    inputs.reverse();
+    // inputs.reverse();
 
-    let part1: usize = inputs
+    let sorted = inputs
         .iter()
         .enumerate()
         .map(|(r, i)| (r + 1) * i.0 as usize)
-        .sum();
+        .collect_vec();
+    // println!("{:?}", &sorted);
+    let part1: usize = sorted.iter().sum();
 
     // dbg!(&inputs);
 
