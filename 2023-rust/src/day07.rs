@@ -1,5 +1,5 @@
 use crate::utils::*;
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::Result;
 use itertools::Itertools;
 use std::cmp::Reverse;
 
@@ -25,6 +25,10 @@ fn hand_kind_rank(hand: &str) -> usize {
     hand_kinds.reverse();
     let hand_kinds = hand_kinds.iter().enumerate().collect_vec();
 
+    // we find the kind of a hand by sorting its individual characters, then
+    // counting how long each run of a given character is.
+    // eg KTKTK might sorted into TTKKK, which has duplicate counts of [2, 3]
+    //    then [2, 3] gets sorted to [3, 2] which we can look up in the above list.
     let hand_kind = hand
         .chars()
         .sorted()
@@ -34,7 +38,7 @@ fn hand_kind_rank(hand: &str) -> usize {
         .collect_vec();
     let hand_kind_rank = hand_kinds
         .iter()
-        .find(|(r, hk)| **hk == hand_kind)
+        .find(|(_, hk)| **hk == hand_kind)
         .unwrap_or_else(|| panic!("can't find hand kind for hand {hand} {hand_kind:?}"))
         .0;
     hand_kind_rank
@@ -49,12 +53,13 @@ fn solve_for(input: &str) -> Result<String> {
     cards.reverse();
     let card_strength = cards.iter().enumerate().collect_vec();
 
-    let mut inputs = lines
+    let mut players = lines
         .map(|l| {
             let (hand, bid) = l.split_once(' ').unwrap();
             let bid: u32 = bid.parse().unwrap();
-            // println!("hand {hand} with bid {bid}");
 
+            // to check the effect of the Joker we just try replacing it
+            // with every other card to see what the best option would be
             let hand_kind_rank = cards
                 .iter()
                 .map(|c| hand_kind_rank(&hand.replace('J', &c.to_string())))
@@ -63,29 +68,33 @@ fn solve_for(input: &str) -> Result<String> {
 
             let card_ranks = hand
                 .chars()
-                .map(|c| card_strength.iter().find(|(r, cs)| **cs == c).unwrap().0)
+                .map(|c| card_strength.iter().find(|(_, cs)| **cs == c).unwrap().0)
                 .collect_vec();
-            // println!("{hand} {bid} {hand_kind_rank}, {card_ranks:?}");
+
+            // rust will conveniently sort this tuple of (hand_kind_rank, card_ranks)
+            // in the way that we want - first sorting by the first element of the tuple,
+            // then by the vec of card ranks: breaking ties by the first element of the vec,
+            // then the second, and so on
             (bid, (hand_kind_rank, card_ranks))
         })
         .collect_vec();
 
-    inputs.sort_by_key(|i| i.1.clone());
-    // inputs.reverse();
+    // this sort is ascending, so the weakest hands will be at the beginning of the resulting
+    // vec (and so .enumerate() will give them a lower rank)
+    players.sort_by_key(|i| i.1.clone());
 
-    for i in &inputs {
+    for i in &players {
         println!("{:?}", &i);
     }
 
-    let sorted = inputs
+    let sorted = players
         .iter()
         .enumerate()
         .map(|(r, i)| (r + 1) * i.0 as usize)
         .collect_vec();
-    // println!("{:?}", &sorted);
     let winnings: usize = sorted.iter().sum();
 
-    Ok(format!("{winnings} "))
+    Ok(format!("{winnings}"))
 }
 
 #[test]
