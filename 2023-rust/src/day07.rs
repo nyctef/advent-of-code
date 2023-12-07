@@ -12,14 +12,7 @@ pub fn solve() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<String> {
-    let lines = input.trim().lines();
-
-    let mut card_strength = [
-        'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
-    ];
-    card_strength.reverse();
-    let card_strength = card_strength.iter().enumerate().collect_vec();
+fn hand_kind_rank(hand: &str) -> usize {
     let mut hand_kinds: [Vec<usize>; 7] = [
         vec![5],
         vec![4, 1],
@@ -32,34 +25,51 @@ fn solve_for(input: &str) -> Result<String> {
     hand_kinds.reverse();
     let hand_kinds = hand_kinds.iter().enumerate().collect_vec();
 
+    let hand_kind = hand
+        .chars()
+        .sorted()
+        .dedup_with_count()
+        .map(|(c, _)| c)
+        .sorted_by_key(|&c| Reverse(c))
+        .collect_vec();
+    let hand_kind_rank = hand_kinds
+        .iter()
+        .find(|(r, hk)| **hk == hand_kind)
+        .unwrap_or_else(|| panic!("can't find hand kind for hand {hand} {hand_kind:?}"))
+        .0;
+    hand_kind_rank
+}
+
+fn solve_for(input: &str) -> Result<String> {
+    let lines = input.trim().lines();
+
+    let mut cards = [
+        'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
+    ];
+    cards.reverse();
+    let card_strength = cards.iter().enumerate().collect_vec();
+
     let mut inputs = lines
         .map(|l| {
             let (hand, bid) = l.split_once(' ').unwrap();
             let bid: u32 = bid.parse().unwrap();
             // println!("hand {hand} with bid {bid}");
-            let hand_kind = hand
-                .chars()
-                .sorted()
-                .dedup_with_count()
-                .map(|(c, _)| c)
-                .sorted_by_key(|&c| Reverse(c))
-                .collect_vec();
-            let hand_kind_rank = hand_kinds
+
+            let hand_kind_rank = cards
                 .iter()
-                .find(|(r, hk)| **hk == hand_kind)
-                .unwrap_or_else(|| panic!("can't find hand kind for hand {hand} {hand_kind:?}"))
-                .0;
+                .map(|c| hand_kind_rank(&hand.replace('J', &c.to_string())))
+                .max();
 
             let card_ranks = hand
                 .chars()
                 .map(|c| card_strength.iter().find(|(r, cs)| **cs == c).unwrap().0)
                 .collect_vec();
             // println!("{hand} {bid} {hand_kind:?}, {hand_kind_rank}, {card_ranks:?}");
-            (bid, hand_kind_rank, card_ranks)
+            (bid, (hand_kind_rank, card_ranks))
         })
         .collect_vec();
 
-    inputs.sort_by_key(|i| (i.1, i.2.clone()));
+    inputs.sort_by_key(|i| i.1.clone());
     // inputs.reverse();
 
     let sorted = inputs
@@ -68,13 +78,9 @@ fn solve_for(input: &str) -> Result<String> {
         .map(|(r, i)| (r + 1) * i.0 as usize)
         .collect_vec();
     // println!("{:?}", &sorted);
-    let part1: usize = sorted.iter().sum();
+    let winnings: usize = sorted.iter().sum();
 
-    // dbg!(&inputs);
-
-    let part2 = "";
-
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    Ok(format!("{winnings}"))
 }
 
 #[test]
@@ -88,6 +94,6 @@ QQQJA 483
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 6640 | Part 2: ", result);
+    assert_eq!("5905", result);
     Ok(())
 }
