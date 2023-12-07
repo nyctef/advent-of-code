@@ -44,7 +44,7 @@ fn solve_for(input: &str) -> Result<String> {
     let lines = input.trim().lines();
 
     let mut cards = [
-        'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
+        'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
     ];
     cards.reverse();
     let card_strength = cards.iter().enumerate().collect_vec();
@@ -58,19 +58,24 @@ fn solve_for(input: &str) -> Result<String> {
             let hand_kind_rank = cards
                 .iter()
                 .map(|c| hand_kind_rank(&hand.replace('J', &c.to_string())))
-                .max();
+                .max()
+                .unwrap();
 
             let card_ranks = hand
                 .chars()
                 .map(|c| card_strength.iter().find(|(r, cs)| **cs == c).unwrap().0)
                 .collect_vec();
-            // println!("{hand} {bid} {hand_kind:?}, {hand_kind_rank}, {card_ranks:?}");
+            // println!("{hand} {bid} {hand_kind_rank}, {card_ranks:?}");
             (bid, (hand_kind_rank, card_ranks))
         })
         .collect_vec();
 
     inputs.sort_by_key(|i| i.1.clone());
     // inputs.reverse();
+
+    for i in &inputs {
+        println!("{:?}", &i);
+    }
 
     let sorted = inputs
         .iter()
@@ -80,7 +85,7 @@ fn solve_for(input: &str) -> Result<String> {
     // println!("{:?}", &sorted);
     let winnings: usize = sorted.iter().sum();
 
-    Ok(format!("{winnings}"))
+    Ok(format!("{winnings} "))
 }
 
 #[test]
