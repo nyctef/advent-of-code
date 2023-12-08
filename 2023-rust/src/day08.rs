@@ -60,7 +60,7 @@ fn solve_part_1(input: &str) -> Result<String> {
 }
 
 fn solve_part_2(input: &str) -> Result<String> {
-    let mut step_count = 0;
+    let mut step_count: u64 = 0;
 
     let (instructions, network) = parse_input(input);
 
