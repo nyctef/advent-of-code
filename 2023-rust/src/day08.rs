@@ -13,9 +13,7 @@ pub fn solve() -> Result<()> {
     Ok(())
 }
 
-fn solve_part_1(input: &str) -> Result<String> {
-    let mut step_count = 0;
-
+fn parse_input(input: &str) -> (Vec<char>, HashMap<String, (String, String)>) {
     let (instructions, network) = input.trim().split_once("\n\n").unwrap();
     let instructions = instructions.chars().collect_vec();
     let network = network.lines().map(|l| {
@@ -29,6 +27,13 @@ fn solve_part_1(input: &str) -> Result<String> {
         )
     });
     let network: HashMap<String, (String, String), RandomState> = HashMap::from_iter(network);
+    (instructions, network)
+}
+
+fn solve_part_1(input: &str) -> Result<String> {
+    let mut step_count = 0;
+
+    let (instructions, network) = parse_input(input);
 
     dbg!(&instructions, &network);
     let mut current_node_name = "AAA";
@@ -51,26 +56,13 @@ fn solve_part_1(input: &str) -> Result<String> {
     }
 
     let part1 = step_count;
-    let part2 = "";
     Ok(format!("Part 1: {part1}"))
 }
 
 fn solve_part_2(input: &str) -> Result<String> {
     let mut step_count = 0;
 
-    let (instructions, network) = input.trim().split_once("\n\n").unwrap();
-    let instructions = instructions.chars().collect_vec();
-    let network = network.lines().map(|l| {
-        let (name, nodes) = l.split_once("=").unwrap();
-        let name = name.trim();
-        let nodes = nodes.replace("(", "").replace(")", "");
-        let (left_node, right_node) = nodes.split_once(", ").unwrap();
-        (
-            name.to_string(),
-            (left_node.trim().to_string(), right_node.trim().to_string()),
-        )
-    });
-    let network: HashMap<String, (String, String), RandomState> = HashMap::from_iter(network);
+    let (instructions, network) = parse_input(input);
 
     let mut current_node_names = vec![];
     let mut current_nodes = vec![];
