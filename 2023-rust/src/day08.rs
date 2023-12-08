@@ -1,0 +1,90 @@
+use std::collections::{hash_map::RandomState, HashMap};
+
+use crate::utils::*;
+use color_eyre::eyre::Result;
+use itertools::Itertools;
+
+pub fn solve() -> Result<()> {
+    let input = get_input(2023, 8)?;
+
+    let result = solve_for(&input)?;
+
+    println!("{}", result);
+    Ok(())
+}
+
+fn solve_for(input: &str) -> Result<String> {
+    let mut step_count = 0;
+
+    let (instructions, network) = input.trim().split_once("\n\n").unwrap();
+    let instructions = instructions.chars().collect_vec();
+    let network = network.lines().map(|l| {
+        let (name, nodes) = l.split_once("=").unwrap();
+        let name = name.trim();
+        let nodes = nodes.replace("(", "").replace(")", "");
+        let (left_node, right_node) = nodes.split_once(", ").unwrap();
+        (
+            name.to_string(),
+            (left_node.trim().to_string(), right_node.trim().to_string()),
+        )
+    });
+    let network: HashMap<String, (String, String), RandomState> = HashMap::from_iter(network);
+
+    dbg!(&instructions, &network);
+    let mut current_node_name = "AAA";
+    let mut current_node = network.get("AAA").unwrap();
+    let mut instructions = instructions.iter().cycle();
+    loop {
+        if current_node_name == "ZZZ" {
+            break;
+        }
+        step_count += 1;
+        let next_instruction = instructions.next().unwrap();
+        let next_node_name = match next_instruction {
+            'L' => &current_node.0,
+            'R' => &current_node.1,
+            _ => panic!("Unknown instruction {}", next_instruction),
+        };
+        println!("Going {} to get {}", next_instruction, next_node_name);
+        current_node_name = next_node_name;
+        current_node = network.get(next_node_name).unwrap();
+    }
+
+    let part1 = step_count;
+    let part2 = "";
+    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+}
+
+#[test]
+fn test_example1() -> Result<()> {
+    let input = r###"
+RL
+
+AAA = (BBB, CCC)
+BBB = (DDD, EEE)
+CCC = (ZZZ, GGG)
+DDD = (DDD, DDD)
+EEE = (EEE, EEE)
+GGG = (GGG, GGG)
+ZZZ = (ZZZ, ZZZ)
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("Part 1: 2 | Part 2: ", result);
+    Ok(())
+}
+
+#[test]
+fn test_example2() -> Result<()> {
+    let input = r###"
+LLR
+
+AAA = (BBB, BBB)
+BBB = (AAA, ZZZ)
+ZZZ = (ZZZ, ZZZ)
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("Part 1: 6 | Part 2: ", result);
+    Ok(())
+}
