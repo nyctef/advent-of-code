@@ -60,8 +60,6 @@ fn solve_part_1(input: &str) -> Result<String> {
 }
 
 fn solve_part_2(input: &str) -> Result<String> {
-    let mut step_count: u64 = 0;
-
     let (instructions, network) = parse_input(input);
 
     let mut current_node_names = vec![];
@@ -73,27 +71,39 @@ fn solve_part_2(input: &str) -> Result<String> {
         }
     }
 
-    let mut instructions = instructions.iter().cycle();
-    loop {
-        if current_node_names.iter().all(|k| k.ends_with("Z")) {
-            break;
-        }
-        step_count += 1;
-        let next_instruction = instructions.next().unwrap();
+    dbg!(&current_node_names, &current_nodes);
+    let mut loops = vec![];
 
-        for i in 0..current_node_names.len() {
+    for i in 0..current_node_names.len() {
+        let mut step_count: u64 = 0;
+        let mut instructions = instructions.iter().cycle();
+        let mut current_node_name = current_node_names[i];
+        let mut current_node = current_nodes[i];
+        loop {
+            if current_node_name.ends_with("Z") {
+                break;
+            }
+            step_count += 1;
+            let next_instruction = instructions.next().unwrap();
             let next_node_name = match next_instruction {
-                'L' => &current_nodes[i].0,
-                'R' => &current_nodes[i].1,
+                'L' => &current_node.0,
+                'R' => &current_node.1,
                 _ => panic!("Unknown instruction {}", next_instruction),
             };
             // println!("Going {} to get {}", next_instruction, next_node_name);
-            current_node_names[i] = next_node_name;
-            current_nodes[i] = network.get(next_node_name).unwrap();
+            current_node_name = next_node_name;
+            current_node = network.get(next_node_name).unwrap();
         }
+        println!(
+            "Starting from {} took {} steps to reach a Z-ending node ({})",
+            current_node_names[i], step_count, current_node_name
+        );
+        loops.push(step_count);
     }
 
-    Ok(format!("Part 2: {step_count}"))
+    let result = loops.iter().fold(1, |a, n| num::integer::lcm(a, *n));
+
+    Ok(format!("lcm of each cycle is {}", result))
 }
 
 #[test]
