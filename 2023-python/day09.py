@@ -1,8 +1,5 @@
 from pathlib import Path
-import scipy
-import numpy as np
 import re
-import lagrange_polynomial
 
 
 def find_layers(nums: list[int]) -> list[list[int]]:
@@ -19,12 +16,21 @@ def find_layers(nums: list[int]) -> list[list[int]]:
     return result
 
 
+def incr_layers(ls: list[list[int]]):
+    ls = ls.copy()
+    res = 0
+    for i in range(len(ls) - 2, -1, -1):
+        ls[i].append(ls[i][-1] + ls[i + 1][-1])
+        res = ls[i][-1]
+    return res
+
+
 input = """
 0 3 6 9 12 15
 1 3 6 10 15 21
 10 13 16 21 30 45
 """
-# input = Path("./input/day09.txt").read_text()
+input = Path("./input/day09.txt").read_text()
 lines = input.strip().splitlines()
 input = [([int(x) for x in i.split(" ")]) for i in lines]
 
@@ -33,18 +39,8 @@ target = 5
 total = 0
 
 for l in input:
-    degree = len(find_layers(l)) - 1
-    print("l=", l)
-    print("degree=", degree)
-    xs = range(0, degree + 1)
-    ys = l[: degree + 1]
-    print("xs,ys=", xs, ys)
-    poly = lagrange_polynomial.LagrangePolynomial(xs, ys)
-    # print("degree=", degree)
-    # print(poly)
-    print(poly(target))
-    total += poly(target)
-    print("min_error=", "{:f}".format(round(poly(target)) - poly(target)))
+    layers = find_layers(l)
+    total += incr_layers(layers)
 
 print("total=", total)
 
