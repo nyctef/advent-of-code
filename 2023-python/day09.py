@@ -25,12 +25,21 @@ def incr_layers(ls: list[list[int]]):
     return res
 
 
+def decr_layers(ls: list[list[int]]):
+    ls = ls.copy()
+    res = 0
+    for i in range(len(ls) - 2, -1, -1):
+        ls[i].insert(0, ls[i][0] - ls[i + 1][0])
+        res = ls[i][0]
+    return res
+
+
 input = """
 0 3 6 9 12 15
 1 3 6 10 15 21
 10 13 16 21 30 45
 """
-input = Path("./input/day09.txt").read_text()
+# input = Path("./input/day09.txt").read_text()
 lines = input.strip().splitlines()
 input = [([int(x) for x in i.split(" ")]) for i in lines]
 
@@ -40,17 +49,6 @@ total = 0
 
 for l in input:
     layers = find_layers(l)
-    total += incr_layers(layers)
+    total += decr_layers(layers)
 
 print("total=", total)
-
-exit()
-# print([len(x) for x in input])
-max = min(19, len(input[0]))
-# print("max=", max)
-polys = [scipy.interpolate.lagrange(range(0, max), x[:max]) for x in input]
-results = [round(p(target)) for p in polys]
-print("input=", input)
-print("polys=", polys)
-print("results=", results)
-print(sum(results))
