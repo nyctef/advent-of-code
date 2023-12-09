@@ -66,6 +66,8 @@ fn calc_taylor_series_at_1_for_x(layers: &[Vec<i64>], x: i64) -> f64 {
 }
 
 fn calc_taylor_series_derivative_at_1(layers: &[Vec<i64>]) -> f64 {
+    // we assume we've skipped the first layer of the original sequence.
+
     if layers.len() == 0 {
         // just a constant sequence
         return 0 as f64;
@@ -78,6 +80,8 @@ fn calc_taylor_series_derivative_at_1(layers: &[Vec<i64>]) -> f64 {
         // just an approximation, but pretty sure it's correct for quadratics
         return (layers[0][1] + layers[0][0]) as f64 / 2_f64;
     }
+
+    // let mut total =
 
     0_f64
 }
@@ -133,6 +137,15 @@ fn calc_taylor_series_for_quadratic_sequence() {
     );
 }
 #[test]
+fn calc_taylor_series_for_quadratic_sequence_2() {
+    let input = vec![3, 3, 5, 9];
+    let series = (0..6)
+        .map(|x| calc_taylor_series_at_1_for_x(&extract_layers(&input), x) as i64)
+        .collect_vec();
+    assert_eq!(series, vec![3, 3, 5, 9, 15, 23]);
+}
+
+#[test]
 fn calc_taylor_series_for_cubic_sequence() {
     let input = vec![10, 13, 16, 21, 30];
     assert_eq!(
@@ -158,8 +171,42 @@ fn calc_taylor_series_derivative_for_quadratic_sequence() {
     );
 }
 #[test]
+fn calc_taylor_series_derivative_for_quadratic_sequence_2() {
+    let input = vec![3, 3, 5, 9];
+    assert_eq!(
+        calc_taylor_series_derivative_at_1(&extract_layers(&input)[1..]),
+        1_f64
+    );
+}
+#[test]
 fn calc_taylor_series_derivative_for_cubic_sequence() {
     let input = vec![10, 13, 16, 21, 30];
+
+    // this sequence splits into the following layers:
+    // [10, 13, 16, 21, 30],
+    //   [3, 3, 5, 9,],
+    //     [0, 2, 4],
+    //      [2, 2]
+    // the value of the top sequence at index 1 depends on (its own?) derivative
+    // let's start over
+    //
+    // the taylor series for the bottom layer [2,2] is f(x) = f(a=1) = 2
+    // the taylor series for the third layer [0, 2, 4] with a=1 is
+    //   f(x) = f(a) + f'(a)/1(x-a)
+    //        = 2 + 2/1(x-1)
+    //        = 2x
+    // the taylor series for the second layer [3, 3, ...] with a=1 is
+    //   f(x) = f(a) + f'(a)/1(x-a) + f''(a)/2!(x-a)^2
+    //        = 3 + 1?(x-1) + 2/2(x-1)^2
+    //        = 3 + x - 1 + (x^2 - 2x + 1)
+    //        = 2 + x + x^2 - 2x + 1
+    //        = 3 -x + x^2
+    //        => [3, 3, 5, 9 ...]
+    // the derivative of the above series for the second layer with a=1 is
+    //  f'(x) = f'(a) + f''(a)/1!(x-a)
+    //        = 1 + 2(x-1) = 2x - 1
+    //        => for the next part we only need the derivative at x=a=1 though so a lot of terms cancel out
+
     assert_eq!(
         calc_taylor_series_derivative_at_1(&extract_layers(&input)[1..]),
         todo!() as f64
