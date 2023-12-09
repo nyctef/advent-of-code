@@ -102,6 +102,30 @@ fn extract_layers_for_cubic_sequence() {
         ]
     )
 }
+#[test]
+fn calc_taylor_series_for_linear_sequence() {
+    let input = vec![0, 3, 6, 9, 12];
+    assert_eq!(
+        calc_taylor_series_at_1_for_x(&extract_layers(&input), 5),
+        15_f64
+    );
+}
+#[test]
+fn calc_taylor_series_for_quadratic_sequence() {
+    let input = vec![1, 3, 6, 10, 15];
+    assert_eq!(
+        calc_taylor_series_at_1_for_x(&extract_layers(&input), 5),
+        21_f64
+    );
+}
+#[test]
+fn calc_taylor_series_for_cubic_sequence() {
+    let input = vec![10, 13, 16, 21, 30];
+    assert_eq!(
+        calc_taylor_series_at_1_for_x(&extract_layers(&input), 5),
+        45_f64
+    );
+}
 
 #[test]
 #[ignore]
