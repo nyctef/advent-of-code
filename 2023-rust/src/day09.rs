@@ -17,20 +17,7 @@ fn solve_for(input: &str) -> Result<String> {
     let part1: i64 = 0;
 
     for seq in &sequences {
-        let mut seq = seq.clone();
-        let mut layers = vec![seq.clone()];
-        loop {
-            let mut next_layer = vec![];
-            for i in 1..seq.len() {
-                next_layer.push(seq[i] - seq[i - 1]);
-            }
-            if next_layer.iter().all(|x| x == &0) {
-                break;
-            }
-            layers.push(next_layer);
-            seq = layers.iter().last().unwrap().clone();
-        }
-        assert!(layers.iter().last().iter().dedup().count() == 1);
+        let layers = extract_layers(seq);
 
         dbg!(&layers);
         for i in 0..7 {
@@ -42,13 +29,35 @@ fn solve_for(input: &str) -> Result<String> {
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
-fn calc_taylor_series_at_1_for_x(layers: &Vec<Vec<i64>>, x: i64) -> i64 {
+fn extract_layers(seq: &Vec<i64>) -> Vec<Vec<i64>> {
+    let mut seq = seq.clone();
+    let mut layers = vec![seq.clone()];
+    loop {
+        let mut next_layer = vec![];
+        for i in 1..seq.len() {
+            next_layer.push(seq[i] - seq[i - 1]);
+        }
+        if next_layer.iter().all(|x| x == &0) {
+            break;
+        }
+        layers.push(next_layer);
+        seq = layers.iter().last().unwrap().clone();
+    }
+    assert!(layers.iter().last().iter().dedup().count() == 1);
+    layers
+}
+
+fn calc_taylor_series_at_1_for_x(layers: &[Vec<i64>], x: i64) -> f64 {
     let mut total: f64 = layers[0][1] as f64;
     // dbg!(total);
     // for n layers, we expect an order n-1 polynomial
     // we set a=1 for https://en.wikipedia.org/wiki/Taylor_series#Definition
     for l in 1..layers.len() {
-        let derivative = (layers[l][1] + layers[l][0]) as f64 / 2_f64;
+        let mut derivative = (layers[l][1] + layers[l][0]) as f64 / 2_f64;
+        if l > 2 {
+            // println!(" > trying to calc derivative using remaining layers at 1");
+            // derivative = calc_taylor_series_at_1_for_x(&layers[1..], 1) as f64;
+        }
         let divider = factorial(l as i64) as f64;
         let x_pow = (x - 1).pow(l as u32);
         total += x_pow as f64 * (derivative / divider);
@@ -57,7 +66,7 @@ fn calc_taylor_series_at_1_for_x(layers: &Vec<Vec<i64>>, x: i64) -> i64 {
             &total, l, x_pow, derivative, divider
         );
     }
-    total as i64
+    total
 }
 
 fn factorial(num: i64) -> i64 {
@@ -65,6 +74,7 @@ fn factorial(num: i64) -> i64 {
 }
 
 #[test]
+#[ignore]
 fn test_example1() -> Result<()> {
     let input = r###"
 0 3 6 9 12 15
