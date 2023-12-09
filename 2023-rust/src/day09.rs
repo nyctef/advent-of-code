@@ -206,6 +206,11 @@ fn calc_taylor_series_derivative_for_cubic_sequence() {
     //  f'(x) = f'(a) + f''(a)/1!(x-a)
     //        = 1 + 2(x-1) = 2x - 1
     //        => for the next part we only need the derivative at x=a=1 though so a lot of terms cancel out
+    // the derivative of the taylor series for the first layer with a=1 is:
+    //  f'(x) = ...
+    // the taylor series for the first layer [10, 13, 16...] with a=1 is
+    //   f(x) = f(a) + f'(a)/1(x-a) + f''(a)/2!(x-a)^2 + f'''(a)/3!(x-a)^3
+    //        = 13 + ...
 
     assert_eq!(
         calc_taylor_series_derivative_at_1(&extract_layers(&input)[1..]),
