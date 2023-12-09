@@ -74,6 +74,36 @@ fn factorial(num: i64) -> i64 {
 }
 
 #[test]
+fn extract_layers_for_linear_sequence() {
+    let input = vec![0, 3, 6, 9, 12];
+    assert_eq!(
+        extract_layers(&input),
+        vec![vec![0, 3, 6, 9, 12], vec![3, 3, 3, 3]]
+    );
+}
+#[test]
+fn extract_layers_for_quadratic_sequence() {
+    let input = vec![1, 3, 6, 10, 15];
+    assert_eq!(
+        extract_layers(&input),
+        vec![vec![1, 3, 6, 10, 15], vec![2, 3, 4, 5], vec![1, 1, 1,]]
+    );
+}
+#[test]
+fn extract_layers_for_cubic_sequence() {
+    let input = vec![10, 13, 16, 21, 30];
+    assert_eq!(
+        extract_layers(&input),
+        vec![
+            vec![10, 13, 16, 21, 30],
+            vec![3, 3, 5, 9,],
+            vec![0, 2, 4],
+            vec![2, 2]
+        ]
+    )
+}
+
+#[test]
 #[ignore]
 fn test_example1() -> Result<()> {
     let input = r###"
