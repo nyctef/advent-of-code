@@ -69,6 +69,30 @@ fn calc_taylor_series_at_1_for_x(layers: &[Vec<i64>], x: i64) -> f64 {
     total
 }
 
+fn calc_taylor_series_derivative_at_1_for_x(layers: &[Vec<i64>], x: i64) -> f64 {
+    // let mut total: f64 = layers[0][1] as f64;
+    // // dbg!(total);
+    // // for n layers, we expect an order n-1 polynomial
+    // // we set a=1 for https://en.wikipedia.org/wiki/Taylor_series#Definition
+    // for l in 1..layers.len() {
+    //     let mut derivative = (layers[l][1] + layers[l][0]) as f64 / 2_f64;
+    //     if l > 2 {
+    //         // println!(" > trying to calc derivative using remaining layers at 1");
+    //         // derivative = calc_taylor_series_at_1_for_x(&layers[1..], 1) as f64;
+    //     }
+    //     let divider = factorial(l as i64) as f64;
+    //     let x_pow = (x - 1).pow(l as u32);
+    //     total += x_pow as f64 * (derivative / divider);
+    //     println!(
+    //         "got total {} after computing pow {} (x-1)^pow={} derivative={} divider = {}",
+    //         &total, l, x_pow, derivative, divider
+    //     );
+    // }
+    // total
+
+    0_f64
+}
+
 fn factorial(num: i64) -> i64 {
     (1..=num).product()
 }
@@ -102,6 +126,7 @@ fn extract_layers_for_cubic_sequence() {
         ]
     )
 }
+
 #[test]
 fn calc_taylor_series_for_linear_sequence() {
     let input = vec![0, 3, 6, 9, 12];
@@ -124,6 +149,31 @@ fn calc_taylor_series_for_cubic_sequence() {
     assert_eq!(
         calc_taylor_series_at_1_for_x(&extract_layers(&input), 5),
         45_f64
+    );
+}
+
+#[test]
+fn calc_taylor_series_derivative_for_linear_sequence() {
+    let input = vec![0, 3, 6, 9, 12];
+    assert_eq!(
+        calc_taylor_series_derivative_at_1_for_x(&extract_layers(&input), 5),
+        3_f64
+    );
+}
+#[test]
+fn calc_taylor_series_derivative_for_quadratic_sequence() {
+    let input = vec![1, 3, 6, 10, 15];
+    assert_eq!(
+        calc_taylor_series_derivative_at_1_for_x(&extract_layers(&input), 5),
+        2.5_f64
+    );
+}
+#[test]
+fn calc_taylor_series_derivative_for_cubic_sequence() {
+    let input = vec![10, 13, 16, 21, 30];
+    assert_eq!(
+        calc_taylor_series_derivative_at_1_for_x(&extract_layers(&input), 5),
+        todo!() as f64
     );
 }
 
