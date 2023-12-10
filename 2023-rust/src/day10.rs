@@ -126,15 +126,23 @@ fn solve_for(input: &str) -> Result<String> {
         let (colliding_tile, loop_pipe) = flood_fill_4_until_collision(&grid, p, &loop_pipes);
         // TODO: this can probably be a index.sub() impl or something
         let collision_direction = RCDirection::from_to(&colliding_tile, &loop_pipe);
-        let loop_direction = exit_directions
-            .get(&loop_pipe)
-            .unwrap_or_else(|| panic!("failed to get loop direction for {}", loop_pipe));
+        let exit_direction = exit_directions.get(&loop_pipe);
+        let entrance_direction = entrance_directions.get(&loop_pipe);
+        // .unwrap_or_else(|| panic!("failed to get loop direction for {}", loop_pipe));
 
         println!(
-            "starting at {}, filled to {} -> {} | with collision direction {} loop direction {}",
-            p, colliding_tile, loop_pipe, &collision_direction, &loop_direction
+            "starting at {}, filled to {} -> {} | with collision direction {} exit direction {:?}",
+            p, colliding_tile, loop_pipe, &collision_direction, &exit_direction
         );
-        if *loop_direction == collision_direction.counterclockwise() {
+        if exit_direction.is_some()
+            && *exit_direction.unwrap() == collision_direction.counterclockwise()
+        {
+            println!("  -> inside!");
+            contained_count += 1;
+            // break;
+        } else if entrance_direction.is_some()
+            && *entrance_direction.unwrap() == collision_direction.counterclockwise()
+        {
             println!("  -> inside!");
             contained_count += 1;
             // break;

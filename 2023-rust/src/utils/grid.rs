@@ -374,6 +374,21 @@ impl RCDirection {
             panic!()
         }
     }
+    pub fn opposite(&self) -> RCDirection {
+        assert!(self.is_unit());
+        // TODO: is there a nicer way to write this?
+        if self == &Self::up() {
+            Self::down()
+        } else if self == &Self::right() {
+            Self::left()
+        } else if self == &Self::down() {
+            Self::up()
+        } else if self == &Self::left() {
+            Self::right()
+        } else {
+            panic!()
+        }
+    }
 
     pub fn is_unit(&self) -> bool {
         (self.rowdiff.abs() == 1) ^ (self.coldiff.abs() == 1)
