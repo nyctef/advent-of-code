@@ -18,6 +18,8 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let mut grid = CharGrid::from_string(input);
 
+    dbg!(grid.height(), grid.width());
+
     let (start_pos, _) = grid
         .enumerate_chars_rc()
         .filter(|(_i, c)| *c == 'S')
@@ -65,11 +67,12 @@ fn solve_for(input: &str) -> Result<String> {
     // TODO: correctly dectect which direction gives is a counterclockwise winding
     // queue.push_back(start_neighbors[0]);
     if grid.height() > 100 {
-        queue.push_back(start_pos.left().unwrap());
-        exit_directions.insert(start_pos, RCDirection::left());
-        exit_directions.insert(start_pos.down(), RCDirection::up());
-        entrance_directions.insert(start_pos, RCDirection::up());
-        entrance_directions.insert(start_pos.left().unwrap(), RCDirection::left());
+        // queue.push_back(start_pos.left().unwrap());
+        queue.push_back(start_pos.down());
+        // exit_directions.insert(start_pos, RCDirection::left());
+        // exit_directions.insert(start_pos.down(), RCDirection::up());
+        // entrance_directions.insert(start_pos, RCDirection::up());
+        // entrance_directions.insert(start_pos.left().unwrap(), RCDirection::left());
     } else {
         queue.push_back(start_pos.down());
         exit_directions.insert(start_pos, RCDirection::down());
@@ -122,18 +125,19 @@ fn solve_for(input: &str) -> Result<String> {
         // flood fill to the nearest loop pipe
         let (colliding_tile, loop_pipe) = flood_fill_4_until_collision(&grid, p, &loop_pipes);
         // TODO: this can probably be a index.sub() impl or something
-        let direction = RCDirection::from_to(&colliding_tile, &loop_pipe);
+        let collision_direction = RCDirection::from_to(&colliding_tile, &loop_pipe);
         let loop_direction = exit_directions
             .get(&loop_pipe)
             .unwrap_or_else(|| panic!("failed to get loop direction for {}", loop_pipe));
 
         println!(
             "starting at {}, filled to {} -> {} | with collision direction {} loop direction {}",
-            p, colliding_tile, loop_pipe, &direction, &loop_direction
+            p, colliding_tile, loop_pipe, &collision_direction, &loop_direction
         );
-        if *loop_direction == direction.counterclockwise() {
+        if *loop_direction == collision_direction.counterclockwise() {
             println!("  -> inside!");
             contained_count += 1;
+            // break;
         }
 
         // for the collision between the flood fill and the loop pipe,
