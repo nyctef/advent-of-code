@@ -77,7 +77,9 @@ fn print_loop_chars(grid: CharGrid, seen: &HashSet<CharGridIndexRC>) {
             print!("\n")
         }
         if seen.contains(&i) {
-            print!("█");
+            print!("\x1b[7m");
+            print!("{}", c);
+            print!("\x1b[0m");
         } else {
             print!("{}", c);
         }
