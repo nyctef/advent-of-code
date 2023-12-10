@@ -72,14 +72,49 @@ fn solve_for(input: &str) -> Result<String> {
     // let inside1 = flood_fill_4(&grid, CharGridIndexRC::new(70, 70), &loop_pipes);
     // outside1.extend(inside1);
 
-    print_loop_chars(grid, &loop_pipes, &outside1);
+    // print_loop_chars(grid, &loop_pipes, &outside1);
 
     // println!("{} {}", seen.len(), seen.len() / 2);
 
+    let mut contained_count = 0;
+    let mut in_loop = false;
+    for (p, c) in grid.enumerate_chars_rc() {
+        if p.col == 0 {
+            // reset tracking for each row
+            in_loop = false;
+            println!();
+        }
+
+        print!(
+            "checking char {} at pos {:?} (in_loop={}) | ",
+            c, p, in_loop
+        );
+
+        if loop_pipes.contains(&p) {
+            if c == '-' {
+                // - doesn't change whether we're in the loop or not
+                println!("following -");
+            } else if in_loop && (c == 'L' || c == 'F') {
+                // if we're inside the loop, then these keep us inside
+                println!("now following {}", c)
+            } else if (!in_loop) && (c == '7' || c == 'J') {
+                // if we're outside the loop, then these don't let  us inside
+                println!("brushing against {}", c)
+            } else {
+                println!("hit loop pipe, flipping");
+                in_loop = !in_loop;
+            }
+        } else if in_loop {
+            println!("\x1b[7mhit space INSIDE loop\x1b[0m");
+            contained_count += 1;
+        } else {
+            println!("hit space outside loop");
+        }
+    }
+
     let part1 = loop_pipes.len() / 2;
-    let part2 = "";
-    // Ok(format!("Part 1: {part1} | Part 2: {part2}"))
-    Ok("".to_string())
+    let part2 = contained_count;
+    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
 fn flood_fill_4(
