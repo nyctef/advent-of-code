@@ -6,6 +6,7 @@ use factorio_blueprint::{
 };
 use itertools::Itertools;
 use noisy_float::types::{R32, R64};
+use rand::seq::SliceRandom;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     iter,
@@ -141,6 +142,7 @@ fn solve_for(input: &str) -> Result<String> {
     };
     let mut entity_id = 1;
 
+    let mut rng = rand::thread_rng();
     for (pos, c) in grid.enumerate_chars_rc() {
         let direction = exit_directions.get(&pos);
 
@@ -152,11 +154,15 @@ fn solve_for(input: &str) -> Result<String> {
             6
         } else if direction == Some(&RCDirection::down()) {
             4
+        } else if c == '-' {
+            *[2, 6].choose(&mut rng).unwrap()
+        } else if c == '|' {
+            *[0, 4].choose(&mut rng).unwrap()
         } else {
-            10
+            *[0, 2, 4, 6].choose(&mut rng).unwrap()
         };
 
-        if dir < 10 {
+        if c != '.' {
             bp.entities.push(new_entity(
                 "transport-belt".to_owned(),
                 NonZeroUsize::new(entity_id).unwrap(),
