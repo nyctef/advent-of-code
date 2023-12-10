@@ -7,6 +7,7 @@ mod day06;
 mod day07;
 mod day08;
 mod day09;
+mod day10;
 mod utils;
 
 use color_eyre::{eyre::Result, Report};
@@ -31,6 +32,7 @@ fn main() -> Result<()> {
         7 => day07::solve(),
         8 => day08::solve(),
         9 => day09::solve(),
+        10 => day10::solve(),
         other => Err(Report::msg(format!("day {other} not implemented yet"))),
     }
 }

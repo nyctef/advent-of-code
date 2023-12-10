@@ -80,12 +80,35 @@ impl CharGrid {
         self.enumerate_chars_rc().map(|(pos, _)| pos)
     }
 
-    pub fn enumerate_chars_rc(&self) -> impl Iterator<Item = (CharGridIndexRC, char)> + '_ {
+    pub fn enumerate_chars_rc(&self) -> impl Iterator<Item = (CharGridIndexRC, char)> + Debug + '_ {
         self.lines.iter().enumerate().flat_map(|(r, line)| {
             line.iter()
                 .enumerate()
                 .map(move |(c, char)| (CharGridIndexRC::new(r, c), *char))
         })
+    }
+
+    pub fn enumerate_4_neighbors(
+        &self,
+        index: CharGridIndexRC,
+    ) -> impl Iterator<Item = (CharGridIndexRC, char)> + Debug + '_ {
+        let mut result = vec![];
+        for n in [index.left(), index.up()] {
+            if let Some(n) = n {
+                result.push((n, self.index(n)));
+            }
+        }
+
+        for n in [index.right(), index.down()] {
+            if self.is_in_bounds(n) {
+                result.push((n, self.index(n)));
+            }
+        }
+        result.into_iter()
+    }
+
+    pub fn is_in_bounds(&self, index: CharGridIndexRC) -> bool {
+        index.row >= 0 && index.row < self.height && index.col >= 0 && index.col < self.width
     }
 
     pub fn enumerate_range_rc(
@@ -187,8 +210,39 @@ impl CharGridIndexRC {
 
     pub fn right(&self) -> CharGridIndexRC {
         CharGridIndexRC {
-            row: self.row,
             col: self.col + 1,
+            ..*self
+        }
+    }
+
+    /// since we can't store negative indexes
+    pub fn left(&self) -> Option<CharGridIndexRC> {
+        if self.col == 0 {
+            None
+        } else {
+            Some(CharGridIndexRC {
+                col: self.col - 1,
+                ..*self
+            })
+        }
+    }
+
+    /// since we can't store negative indexes
+    pub fn up(&self) -> Option<CharGridIndexRC> {
+        if self.row == 0 {
+            None
+        } else {
+            Some(CharGridIndexRC {
+                row: self.row - 1,
+                ..*self
+            })
+        }
+    }
+
+    pub fn down(&self) -> CharGridIndexRC {
+        CharGridIndexRC {
+            row: self.row + 1,
+            ..*self
         }
     }
 }
