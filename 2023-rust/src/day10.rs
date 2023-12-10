@@ -16,7 +16,7 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let grid = CharGrid::from_string(input);
+    let mut grid = CharGrid::from_string(input);
 
     let (start_pos, _) = grid
         .enumerate_chars_rc()
@@ -38,6 +38,22 @@ fn solve_for(input: &str) -> Result<String> {
         start_neighbors.len() == 2,
         "the puzzle says that the starting position isn't ambiguous"
     );
+
+    // TODO: detect what character S should be replaced with
+    // match (
+    //     start_neighbors[0].row - start_pos.row,
+    //     start_neighbors[0].col - start_pos.col,
+    //     start_neighbors[1].row - start_pos.row,
+    //     start_neighbors[1].col - start_pos.col,
+    // ) {
+    //     (a, b, c, d) => panic!("{:?} {:?} {a} {b} {c} {d}", start_pos, start_neighbors),
+    // }
+    // hacks!
+    if grid.height() > 100 {
+        grid.set_index_rc(start_pos, '7');
+    } else {
+        grid.set_index_rc(start_pos, 'F')
+    }
 
     let mut loop_pipes = HashSet::new();
     loop_pipes.insert(start_pos);
@@ -76,11 +92,11 @@ fn solve_for(input: &str) -> Result<String> {
     // println!("{} {}", seen.len(), seen.len() / 2);
 
     let mut contained_count = 0;
-    let mut in_loop = false;
+    let mut in_loop: u8 = 0;
     for (p, c) in grid.enumerate_chars_rc() {
         if p.col == 0 {
             // reset tracking for each row
-            in_loop = false;
+            in_loop = 0;
             println!();
         }
 
@@ -90,20 +106,36 @@ fn solve_for(input: &str) -> Result<String> {
         );
 
         if loop_pipes.contains(&p) {
-            if c == '-' {
-                // - doesn't change whether we're in the loop or not
-                println!("following -");
-            } else if in_loop && (c == 'L' || c == 'F') {
-                // if we're inside the loop, then these keep us inside
-                println!("now following {}", c)
-            } else if (!in_loop) && (c == '7' || c == 'J') {
-                // if we're outside the loop, then these don't let  us inside
-                println!("brushing against {}", c)
-            } else {
-                println!("hit loop pipe, flipping");
-                in_loop = !in_loop;
+            if c == '|' {
+                assert!(in_loop <= 1);
+
+                if in_loop == 0 {
+                    println!("entering |");
+                    in_loop = 1;
+                } else {
+                    println!("exiting |");
+                    in_loop = 0;
+                }
             }
-        } else if in_loop {
+
+            if c == 'F' || c == 'L' {
+                assert!(in_loop <= 1);
+                println!("entering {}", c);
+                in_loop += 1;
+            }
+
+            if c == '7' || c == 'J' {
+                assert!(in_loop > 0);
+
+                println!("exiting {}", c);
+                in_loop -= 1;
+            }
+
+            if c == '-' {
+                assert!(in_loop > 0);
+                println!("following -");
+            }
+        } else if in_loop > 0 {
             println!("\x1b[7mhit space INSIDE loop\x1b[0m");
             contained_count += 1;
         } else {

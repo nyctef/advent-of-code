@@ -150,6 +150,10 @@ impl CharGrid {
         }
     }
 
+    pub fn set_index_rc(&mut self, pos: CharGridIndexRC, new_value: char) {
+        self.lines[pos.row][pos.col] = new_value;
+    }
+
     pub fn enumerate_numbers(&self) -> impl Iterator<Item = (CharGridRange<CharGridIndexRC>, u32)> {
         let mut s = String::new();
         let mut range_start: Option<CharGridIndexRC> = None;
