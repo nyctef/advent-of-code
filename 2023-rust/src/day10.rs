@@ -2,7 +2,7 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     iter,
 };
 
@@ -58,7 +58,20 @@ fn solve_for(input: &str) -> Result<String> {
     let mut loop_pipes = HashSet::new();
     loop_pipes.insert(start_pos);
     let mut queue = VecDeque::new();
-    queue.push_back(start_neighbors[0]);
+    // direction here
+    let mut entrance_directions: HashMap<CharGridIndexRC, RCDirection> = HashMap::new();
+
+    // TODO: correctly dectect which direction gives is a counterclockwise winding
+    // queue.push_back(start_neighbors[0]);
+    if grid.height() > 100 {
+        queue.push_back(start_pos.left().unwrap());
+        entrance_directions.insert(start_pos, RCDirection::up());
+        entrance_directions.insert(start_pos.left().unwrap(), RCDirection::left());
+    } else {
+        queue.push_back(start_pos.down());
+        entrance_directions.insert(start_pos, RCDirection::left());
+        entrance_directions.insert(start_pos.down(), RCDirection::down());
+    }
 
     while !queue.is_empty() {
         let next = queue.pop_front().unwrap();
@@ -70,11 +83,14 @@ fn solve_for(input: &str) -> Result<String> {
             .at_most_one()
             .expect("should be one seen and one unseen");
         if let Some(nc) = next_connection {
+            entrance_directions.insert(*nc, RCDirection::from_to(&next, nc));
             queue.push_back(*nc);
         } else {
             break;
         }
     }
+
+    // dbg!(&entrance_directions);
 
     let mut outside1 = flood_fill_4(&grid, CharGridIndexRC::new(0, 0), &loop_pipes);
     let outside2 = flood_fill_4(
@@ -92,55 +108,30 @@ fn solve_for(input: &str) -> Result<String> {
     // println!("{} {}", seen.len(), seen.len() / 2);
 
     let mut contained_count = 0;
-    let mut in_loop: u8 = 0;
     for (p, c) in grid.enumerate_chars_rc() {
-        if p.col == 0 {
-            // reset tracking for each row
-            in_loop = 0;
-            println!();
-        }
-
-        print!(
-            "checking char {} at pos {:?} (in_loop={}) | ",
-            c, p, in_loop
-        );
-
         if loop_pipes.contains(&p) {
-            if c == '|' {
-                assert!(in_loop <= 1);
-
-                if in_loop == 0 {
-                    println!("entering |");
-                    in_loop = 1;
-                } else {
-                    println!("exiting |");
-                    in_loop = 0;
-                }
-            }
-
-            if c == 'F' || c == 'L' {
-                assert!(in_loop <= 1);
-                println!("entering {}", c);
-                in_loop += 1;
-            }
-
-            if c == '7' || c == 'J' {
-                assert!(in_loop > 0);
-
-                println!("exiting {}", c);
-                in_loop -= 1;
-            }
-
-            if c == '-' {
-                assert!(in_loop > 0);
-                println!("following -");
-            }
-        } else if in_loop > 0 {
-            println!("\x1b[7mhit space INSIDE loop\x1b[0m");
-            contained_count += 1;
-        } else {
-            println!("hit space outside loop");
+            continue;
         }
+
+        // flood fill to the nearest loop pipe
+        let (colliding_tile, loop_pipe) = flood_fill_4_until_collision(&grid, p, &loop_pipes);
+        // TODO: this can probably be a index.sub() impl or something
+        let direction = RCDirection::from_to(&colliding_tile, &loop_pipe);
+        let loop_direction = entrance_directions
+            .get(&loop_pipe)
+            .unwrap_or_else(|| panic!("failed to get loop direction for {}", loop_pipe));
+
+        println!(
+            "starting at {}, filled to {} -> {} | with collision direction {} loop direction {}",
+            p, colliding_tile, loop_pipe, &direction, &loop_direction
+        );
+        if *loop_direction == direction.counterclockwise() {
+            println!("  -> inside!");
+            contained_count += 1;
+        }
+
+        // for the collision between the flood fill and the loop pipe,
+        // compare the
     }
 
     let part1 = loop_pipes.len() / 2;
@@ -148,6 +139,8 @@ fn solve_for(input: &str) -> Result<String> {
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
+// TODO: move to grid struct
+// TODO: replace boundary set with a predicate?
 fn flood_fill_4(
     grid: &CharGrid,
     start: CharGridIndexRC,
@@ -168,6 +161,32 @@ fn flood_fill_4(
     }
 
     result
+}
+
+fn flood_fill_4_until_collision(
+    grid: &CharGrid,
+    start: CharGridIndexRC,
+    target: &HashSet<CharGridIndexRC>,
+) -> (CharGridIndexRC, CharGridIndexRC) {
+    let mut seen = HashSet::new();
+    let mut queue = VecDeque::new();
+    queue.push_back(start);
+
+    while let Some(next) = queue.pop_front() {
+        // println!("q{} r{}", queue.len(), result.len());
+        seen.insert(next);
+        for (n, _) in grid.enumerate_4_neighbors(next) {
+            if target.contains(&n) {
+                return (next, n);
+            }
+
+            if grid.is_in_bounds(n) && !seen.contains(&n) {
+                queue.push_front(n);
+            }
+        }
+    }
+
+    panic!("collision not found")
 }
 
 #[allow(dead_code)]

@@ -1,7 +1,7 @@
 use derive_more::Constructor;
 use itertools::Itertools;
 use std::{
-    fmt::Debug,
+    fmt::{Debug, Display},
     ops::{Add, Index, Sub},
 };
 
@@ -286,6 +286,12 @@ impl Index<CharGridIndexRC> for CharGrid {
     }
 }
 
+impl Display for CharGridIndexRC {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("(r{},c{})", self.row, self.col))
+    }
+}
+
 /**
 using our own range type, since rust's isn't really flexible in the way we want
 - https://kaylynn.gay/blog/post/rust_ranges_and_suffering
@@ -304,5 +310,85 @@ impl CharGridRange<CharGridIndexRC> {
             start: self.start - 1,
             end: self.end + 1,
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor)]
+pub struct RCDirection {
+    pub rowdiff: isize,
+    pub coldiff: isize,
+}
+
+impl RCDirection {
+    pub fn up() -> RCDirection {
+        RCDirection {
+            rowdiff: -1,
+            coldiff: 0,
+        }
+    }
+    pub fn down() -> RCDirection {
+        RCDirection {
+            rowdiff: 1,
+            coldiff: 0,
+        }
+    }
+    pub fn left() -> RCDirection {
+        RCDirection {
+            rowdiff: 0,
+            coldiff: -1,
+        }
+    }
+    pub fn right() -> RCDirection {
+        RCDirection {
+            rowdiff: 0,
+            coldiff: 1,
+        }
+    }
+    pub fn clockwise(&self) -> RCDirection {
+        assert!(self.is_unit());
+        // TODO: is there a nicer way to write this?
+        if self == &Self::up() {
+            Self::right()
+        } else if self == &Self::right() {
+            Self::down()
+        } else if self == &Self::down() {
+            Self::left()
+        } else if self == &Self::left() {
+            Self::up()
+        } else {
+            panic!()
+        }
+    }
+    pub fn counterclockwise(&self) -> RCDirection {
+        assert!(self.is_unit());
+        // TODO: is there a nicer way to write this?
+        if self == &Self::up() {
+            Self::left()
+        } else if self == &Self::right() {
+            Self::up()
+        } else if self == &Self::down() {
+            Self::right()
+        } else if self == &Self::left() {
+            Self::down()
+        } else {
+            panic!()
+        }
+    }
+
+    pub fn is_unit(&self) -> bool {
+        (self.rowdiff.abs() == 1) ^ (self.coldiff.abs() == 1)
+    }
+
+    pub fn from_to(start: &CharGridIndexRC, end: &CharGridIndexRC) -> RCDirection {
+        RCDirection {
+            rowdiff: end.row as isize - start.row as isize,
+            coldiff: end.col as isize - start.col as isize,
+        }
+    }
+}
+
+impl Display for RCDirection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("(r{},c{})", self.rowdiff, self.coldiff))
     }
 }
