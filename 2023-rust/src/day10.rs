@@ -43,7 +43,6 @@ fn solve_for(input: &str) -> Result<String> {
     loop_pipes.insert(start_pos);
     let mut queue = VecDeque::new();
     queue.push_back(start_neighbors[0]);
-    queue.push_back(start_neighbors[1]);
 
     while !queue.is_empty() {
         let next = queue.pop_front().unwrap();
