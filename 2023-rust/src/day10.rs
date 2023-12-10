@@ -1,9 +1,15 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
+use factorio_blueprint::{
+    objects::{Blueprint, Color, Entity, EntityNumber, Position},
+    BlueprintCodec,
+};
 use itertools::Itertools;
+use noisy_float::types::{R32, R64};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     iter,
+    num::NonZeroUsize,
 };
 
 pub fn solve() -> Result<()> {
@@ -114,47 +120,110 @@ fn solve_for(input: &str) -> Result<String> {
 
     print_loop_chars(&grid, &loop_pipes, &outside1);
 
-    // println!("{} {}", seen.len(), seen.len() / 2);
+    println!();
+    println!();
+    println!();
 
-    let mut contained_count = 0;
-    for (p, c) in grid.enumerate_chars_rc() {
-        if loop_pipes.contains(&p) {
-            continue;
+    let mut bp = Blueprint {
+        label: "test".to_string(),
+        label_color: Some(Color {
+            r: R32::new(0.0),
+            g: R32::new(0.0),
+            b: R32::new(0.0),
+            a: R32::new(0.0),
+        }),
+        entities: vec![],
+        tiles: vec![],
+        icons: vec![],
+        schedules: vec![],
+        item: "blueprint".to_string(),
+        version: 281479276658688,
+    };
+    let mut entity_id = 1;
+
+    for (pos, c) in grid.enumerate_chars_rc() {
+        let direction = exit_directions.get(&pos);
+
+        let dir = if direction == Some(&RCDirection::right()) {
+            2
+        } else if direction == Some(&RCDirection::up()) {
+            0 // ??
+        } else if direction == Some(&RCDirection::left()) {
+            6
+        } else if direction == Some(&RCDirection::down()) {
+            4
+        } else {
+            10
+        };
+
+        if dir < 10 {
+            bp.entities.push(new_entity(
+                "transport-belt".to_owned(),
+                NonZeroUsize::new(entity_id).unwrap(),
+                Position {
+                    x: R64::new(pos.col as f64),
+                    y: R64::new(pos.row as f64),
+                },
+                dir,
+            ));
+            entity_id += 1;
         }
-
-        // flood fill to the nearest loop pipe
-        let (colliding_tile, loop_pipe) = flood_fill_4_until_collision(&grid, p, &loop_pipes);
-        // TODO: this can probably be a index.sub() impl or something
-        let collision_direction = RCDirection::from_to(&colliding_tile, &loop_pipe);
-        let exit_direction = exit_directions.get(&loop_pipe);
-        let entrance_direction = entrance_directions.get(&loop_pipe);
-        // .unwrap_or_else(|| panic!("failed to get loop direction for {}", loop_pipe));
-
-        println!(
-            "starting at {}, filled to {} -> {} | with collision direction {} exit direction {:?}",
-            p, colliding_tile, loop_pipe, &collision_direction, &exit_direction
-        );
-        if exit_direction.is_some()
-            && *exit_direction.unwrap() == collision_direction.counterclockwise()
-        {
-            println!("  -> inside!");
-            contained_count += 1;
-            // break;
-        } else if entrance_direction.is_some()
-            && *entrance_direction.unwrap() == collision_direction.counterclockwise()
-        {
-            println!("  -> inside!");
-            contained_count += 1;
-            // break;
-        }
-
-        // for the collision between the flood fill and the loop pipe,
-        // compare the
     }
 
-    let part1 = loop_pipes.len() / 2;
-    let part2 = contained_count;
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    println!("serializing blueprint...");
+    println!();
+    println!();
+    println!();
+    println!(
+        "{}",
+        BlueprintCodec::encode_string(&factorio_blueprint::Container::Blueprint(bp))?
+    );
+
+    println!();
+    println!();
+    println!();
+
+    Ok(format!(""))
+}
+
+fn new_entity(
+    name: String,
+    entity_number: EntityNumber,
+    position: Position,
+    direction: u8,
+) -> Entity {
+    Entity {
+        position,
+        name,
+        entity_number,
+
+        direction: Some(direction),
+        orientation: None,
+        connections: None,
+        control_behavior: None,
+        items: None,
+        recipe: None,
+        bar: None,
+        inventory: None,
+        infinity_settings: None,
+        type_: None,
+        input_priority: None,
+        output_priority: None,
+        filter: None,
+        filters: None,
+        filter_mode: None,
+        override_stack_size: None,
+        drop_position: None,
+        pickup_position: None,
+        request_filters: None,
+        request_from_buffers: None,
+        parameters: None,
+        alert_parameters: None,
+        auto_launch: None,
+        variation: None,
+        color: None,
+        station: None,
+    }
 }
 
 // TODO: move to grid struct
