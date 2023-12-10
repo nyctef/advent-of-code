@@ -1,11 +1,10 @@
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    iter,
-};
-
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use std::{
+    collections::{HashSet, VecDeque},
+    iter,
+};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 10)?;
@@ -21,7 +20,7 @@ fn solve_for(input: &str) -> Result<String> {
 
     let (start_pos, _) = grid
         .enumerate_chars_rc()
-        .filter(|(i, c)| *c == 'S')
+        .filter(|(_i, c)| *c == 'S')
         .exactly_one()
         .expect("S");
 
@@ -30,7 +29,7 @@ fn solve_for(input: &str) -> Result<String> {
     // dbg!(&neighbors);
 
     let mut start_neighbors = vec![];
-    for (n, nc) in start_neighbor_candidates {
+    for (n, _nc) in start_neighbor_candidates {
         if get_connections(&grid, n).iter().contains(&start_pos) {
             start_neighbors.push(n);
         }
@@ -40,19 +39,19 @@ fn solve_for(input: &str) -> Result<String> {
         "the puzzle says that the starting position isn't ambiguous"
     );
 
-    let mut seen = HashSet::new();
-    seen.insert(start_pos);
+    let mut loop_pipes = HashSet::new();
+    loop_pipes.insert(start_pos);
     let mut queue = VecDeque::new();
     queue.push_back(start_neighbors[0]);
     queue.push_back(start_neighbors[1]);
 
     while !queue.is_empty() {
         let next = queue.pop_front().unwrap();
-        seen.insert(next);
+        loop_pipes.insert(next);
         let connections = &get_connections(&grid, next);
         let next_connection = connections
             .iter()
-            .filter(|x| !seen.contains(x))
+            .filter(|x| !loop_pipes.contains(x))
             .at_most_one()
             .expect("should be one seen and one unseen");
         if let Some(nc) = next_connection {
@@ -62,21 +61,61 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
-    print_loop_chars(grid, &seen);
+    let mut outside1 = flood_fill_4(&grid, CharGridIndexRC::new(0, 0), &loop_pipes);
+    let outside2 = flood_fill_4(
+        &grid,
+        CharGridIndexRC::new(0, grid.width() - 1),
+        &loop_pipes,
+    );
+    outside1.extend(outside2);
+
+    // let inside1 = flood_fill_4(&grid, CharGridIndexRC::new(70, 70), &loop_pipes);
+    // outside1.extend(inside1);
+
+    print_loop_chars(grid, &loop_pipes, &outside1);
 
     // println!("{} {}", seen.len(), seen.len() / 2);
 
-    let part1 = seen.len() / 2;
+    let part1 = loop_pipes.len() / 2;
     let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    // Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    Ok("".to_string())
 }
 
-fn print_loop_chars(grid: CharGrid, seen: &HashSet<CharGridIndexRC>) {
+fn flood_fill_4(
+    grid: &CharGrid,
+    start: CharGridIndexRC,
+    boundaries: &HashSet<CharGridIndexRC>,
+) -> HashSet<CharGridIndexRC> {
+    let mut result = HashSet::new();
+    let mut queue = VecDeque::new();
+    queue.push_back(start);
+
+    while let Some(next) = queue.pop_front() {
+        // println!("q{} r{}", queue.len(), result.len());
+        result.insert(next);
+        for (n, _) in grid.enumerate_4_neighbors(next) {
+            if grid.is_in_bounds(n) && !result.contains(&n) && !boundaries.contains(&n) {
+                queue.push_front(n);
+            }
+        }
+    }
+
+    result
+}
+
+fn print_loop_chars(
+    grid: CharGrid,
+    seen: &HashSet<CharGridIndexRC>,
+    outside: &HashSet<CharGridIndexRC>,
+) {
     for (i, c) in grid.enumerate_chars_rc() {
         if i.col == 0 {
             print!("\n")
         }
-        if seen.contains(&i) {
+        if outside.contains(&i) {
+            print!(" ");
+        } else if seen.contains(&i) {
             print!("\x1b[7m");
             print!("{}", c);
             print!("\x1b[0m");
