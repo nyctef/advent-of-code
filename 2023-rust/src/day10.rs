@@ -62,11 +62,26 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
+    print_loop_chars(grid, &seen);
+
     // println!("{} {}", seen.len(), seen.len() / 2);
 
     let part1 = seen.len() / 2;
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+}
+
+fn print_loop_chars(grid: CharGrid, seen: &HashSet<CharGridIndexRC>) {
+    for (i, c) in grid.enumerate_chars_rc() {
+        if i.col == 0 {
+            print!("\n")
+        }
+        if seen.contains(&i) {
+            print!("█");
+        } else {
+            print!("{}", c);
+        }
+    }
 }
 
 fn get_connections(grid: &CharGrid, pos: CharGridIndexRC) -> Vec<CharGridIndexRC> {
