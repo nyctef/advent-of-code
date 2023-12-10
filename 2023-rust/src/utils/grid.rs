@@ -108,7 +108,8 @@ impl CharGrid {
     }
 
     pub fn is_in_bounds(&self, index: CharGridIndexRC) -> bool {
-        index.row >= 0 && index.row < self.height && index.col >= 0 && index.col < self.width
+        // we know that row/col are >= 0 because they're stored as unsigned types
+        index.row < self.height && index.col < self.width
     }
 
     pub fn enumerate_range_rc(

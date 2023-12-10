@@ -30,6 +30,7 @@ fn parse_input(input: &str) -> (Vec<char>, HashMap<String, (String, String)>) {
     (instructions, network)
 }
 
+#[allow(dead_code)]
 fn solve_part_1(input: &str) -> Result<String> {
     let mut step_count = 0;
 

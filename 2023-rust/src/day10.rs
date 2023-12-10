@@ -139,6 +139,7 @@ fn flood_fill_4(
     result
 }
 
+#[allow(dead_code)]
 fn print_loop_chars(
     grid: CharGrid,
     seen: &HashSet<CharGridIndexRC>,
