@@ -18,17 +18,24 @@ fn solve_for(input: &str) -> Result<String> {
     for line in grid1.lines() {
         expanded_rows_grid.append_str_row(&line);
         if line.chars().all(|c| c == '.') {
-            expanded_rows_grid.append_str_row(&line);
+            for _ in 0..(1_000_000 - 1) {
+                expanded_rows_grid.append_str_row(&line);
+            }
         }
     }
     for col in expanded_rows_grid.cols() {
         expanded_cols_grid.append_chars_col(&col);
         if col.iter().all(|c| *c == '.') {
-            expanded_cols_grid.append_chars_col(&col);
+            for _ in 0..(1_000_000 - 1) {
+                expanded_cols_grid.append_chars_col(&col);
+            }
         }
     }
 
-    let galaxies = expanded_cols_grid.enumerate_chars_rc().filter(|(_p, c)| *c == '#').collect_vec();
+    let galaxies = expanded_cols_grid
+        .enumerate_chars_rc()
+        .filter(|(_p, c)| *c == '#')
+        .collect_vec();
     let mut total_distance = 0;
     for g1 in &galaxies {
         for g2 in &galaxies {
