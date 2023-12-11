@@ -435,6 +435,10 @@ impl RCDirection {
             coldiff: end.col as isize - start.col as isize,
         }
     }
+
+    pub fn manhattan_abs(&self) -> usize {
+        self.rowdiff.abs() as usize + self.coldiff.abs() as usize
+    }
 }
 
 impl Display for RCDirection {

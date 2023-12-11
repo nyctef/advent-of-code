@@ -21,19 +21,23 @@ fn solve_for(input: &str) -> Result<String> {
             expanded_rows_grid.append_str_row(&line);
         }
     }
-    dbg!(&expanded_rows_grid);
     for col in expanded_rows_grid.cols() {
-        dbg!(&col);
         expanded_cols_grid.append_chars_col(&col);
         if col.iter().all(|c| *c == '.') {
             expanded_cols_grid.append_chars_col(&col);
         }
     }
 
-    dbg!(&expanded_cols_grid);
+    let galaxies = expanded_cols_grid.enumerate_chars_rc().filter(|(_p, c)| *c == '#').collect_vec();
+    let mut total_distance = 0;
+    for g1 in &galaxies {
+        for g2 in &galaxies {
+            let distance = RCDirection::from_to(&g1.0, &g2.0);
+            total_distance += distance.manhattan_abs();
+        }
+    }
 
-    todo!();
-    let part1 = "";
+    let part1 = total_distance / 2;
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
