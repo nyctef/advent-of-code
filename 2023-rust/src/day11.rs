@@ -13,40 +13,45 @@ pub fn solve() -> Result<()> {
 
 fn solve_for(input: &str) -> Result<String> {
     let grid1 = CharGrid::from_string(input);
-    let mut expanded_rows_grid = CharGrid::empty();
-    let mut expanded_cols_grid = CharGrid::empty();
-    for line in grid1.lines() {
-        expanded_rows_grid.append_str_row(&line);
+    let mut expanded_lines = vec![];
+    let mut expanded_cols = vec![];
+    for (l, line) in grid1.lines().enumerate() {
         if line.chars().all(|c| c == '.') {
-            for _ in 0..(1_000_000 - 1) {
-                expanded_rows_grid.append_str_row(&line);
-            }
+            expanded_lines.push(l);
         }
     }
-    for col in expanded_rows_grid.cols() {
-        expanded_cols_grid.append_chars_col(&col);
+    for (c, col) in grid1.cols().enumerate() {
         if col.iter().all(|c| *c == '.') {
-            for _ in 0..(1_000_000 - 1) {
-                expanded_cols_grid.append_chars_col(&col);
-            }
+            expanded_cols.push(c);
         }
     }
 
-    let galaxies = expanded_cols_grid
-        .enumerate_chars_rc()
-        .filter(|(_p, c)| *c == '#')
-        .collect_vec();
+    let mut galaxies = vec![];
+
+    let expansion_factor = 1_000_000 - 1;
+    for (p, c) in grid1.enumerate_chars_rc() {
+        if c != '#' {
+            continue;
+        }
+        let num_expanded_lines = expanded_lines.iter().filter(|el| **el < p.row).count();
+        let num_expanded_cols = expanded_cols.iter().filter(|el| **el < p.col).count();
+
+        galaxies.push(CharGridIndexRC::new(
+            p.row + num_expanded_lines * expansion_factor,
+            p.col + num_expanded_cols * expansion_factor,
+        ));
+    }
+
     let mut total_distance = 0;
     for g1 in &galaxies {
         for g2 in &galaxies {
-            let distance = RCDirection::from_to(&g1.0, &g2.0);
+            let distance = RCDirection::from_to(&g1, &g2);
             total_distance += distance.manhattan_abs();
         }
     }
 
-    let part1 = total_distance / 2;
-    let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    let result = total_distance / 2;
+    Ok(format!("Part 2: {result}"))
 }
 
 #[test]
@@ -65,6 +70,6 @@ fn test_example1() -> Result<()> {
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 374 | Part 2: ", result);
+    assert_eq!("1030", result);
     Ok(())
 }
