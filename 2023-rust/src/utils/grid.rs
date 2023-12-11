@@ -43,6 +43,14 @@ impl CharGrid {
         }
     }
 
+    pub fn empty() -> CharGrid {
+        CharGrid {
+            width: 0,
+            height: 0,
+            lines: vec![],
+        }
+    }
+
     pub fn from_string(input: &str) -> CharGrid {
         Self::new(
             input
@@ -64,6 +72,10 @@ impl CharGrid {
 
     pub fn lines(&self) -> impl Iterator<Item = String> + '_ {
         self.lines.iter().map(|l| l.iter().collect::<String>())
+    }
+
+    pub fn cols(&self) -> impl Iterator<Item = Vec<char>> + '_ + Debug {
+        (0..self.width).map(|i| self.lines.iter().map(|l| l[i]).collect_vec())
     }
 
     pub fn index_rc(&self, row: usize, col: usize) -> char {
@@ -187,6 +199,29 @@ impl CharGrid {
         }
 
         result.into_iter()
+    }
+
+    pub fn append_str_row(&mut self, new_row: &str) {
+        if self.width == 0 {
+            self.width = new_row.len();
+        } else {
+            assert!(self.width == new_row.len());
+        }
+        self.height += 1;
+        self.lines.push(new_row.chars().collect_vec());
+    }
+
+    pub fn append_chars_col(&mut self, new_col: &[char]) {
+        if self.height == 0 {
+            self.height = new_col.len();
+            self.lines = vec![vec![]; self.height];
+        } else {
+            assert!(new_col.len() == self.height);
+        }
+        self.width += 1;
+        for i in 0..self.lines.len() {
+            self.lines[i].push(new_col[i]);
+        }
     }
 }
 
