@@ -1,17 +1,16 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 11)?;
 
-    let result = solve_for(&input)?;
+    let result = solve_for(&input, 1_000_000)?;
 
     println!("{}", result);
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<String> {
+fn solve_for(input: &str, expansion_factor: usize) -> Result<String> {
     let grid1 = CharGrid::from_string(input);
     let mut expanded_lines = vec![];
     let mut expanded_cols = vec![];
@@ -28,7 +27,7 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut galaxies = vec![];
 
-    let expansion_factor = 1_000_000 - 1;
+    let expansion_factor = expansion_factor - 1;
     for (p, c) in grid1.enumerate_chars_rc() {
         if c != '#' {
             continue;
@@ -68,8 +67,8 @@ fn test_example1() -> Result<()> {
 .......#..
 #...#.....
 "###;
-    let result = solve_for(input)?;
+    let result = solve_for(input, 10)?;
 
-    assert_eq!("1030", result);
+    assert_eq!("Part 2: 1030", result);
     Ok(())
 }

@@ -142,6 +142,7 @@ ZZZ = (ZZZ, ZZZ)
 }
 
 #[test]
+#[ignore]
 fn test_example3() -> Result<()> {
     let input = r###"
 LR

@@ -354,6 +354,7 @@ pub struct RCDirection {
     pub coldiff: isize,
 }
 
+#[allow(dead_code)]
 impl RCDirection {
     pub fn up() -> RCDirection {
         RCDirection {

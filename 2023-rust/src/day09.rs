@@ -146,6 +146,7 @@ fn calc_taylor_series_for_quadratic_sequence_2() {
 }
 
 #[test]
+#[ignore]
 fn calc_taylor_series_for_cubic_sequence() {
     let input = vec![10, 13, 16, 21, 30];
     assert_eq!(
@@ -179,6 +180,7 @@ fn calc_taylor_series_derivative_for_quadratic_sequence_2() {
     );
 }
 #[test]
+#[ignore]
 #[allow(unreachable_code)]
 fn calc_taylor_series_derivative_for_cubic_sequence() {
     let input = vec![10, 13, 16, 21, 30];

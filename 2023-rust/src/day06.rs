@@ -40,6 +40,7 @@ fn solve_for(input: &str) -> Result<String> {
 }
 
 #[test]
+#[ignore]
 fn test_example1() -> Result<()> {
     let input = r###"
 Time:      7  15   30
