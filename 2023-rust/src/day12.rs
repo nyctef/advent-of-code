@@ -14,16 +14,39 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    // ...
-
-    todo!();
-    let part1 = "";
+    let mut total = 0;
+    for line in input.trim().lines() {
+        total += solve_line(line);
+    }
+    let part1 = total;
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
 fn solve_line(line: &str) -> u32 {
-    todo!();
+    let mut total = 0;
+    let (pattern, line_spec) = line.split_once(" ").unwrap();
+    for candidate in generate_candidates(line_spec, pattern.len() as u32) {
+        if candidate_matches_pattern(&candidate, pattern) {
+            total += 1;
+        }
+    }
+    total
+}
+
+fn candidate_matches_pattern(candidate: &str, pattern: &str) -> bool {
+    assert!(candidate.len() == pattern.len());
+
+    for (c, p) in candidate.chars().zip(pattern.chars()) {
+        if c == p {
+            continue;
+        }
+        if p == '?' {
+            continue;
+        }
+        return false;
+    }
+    return true;
 }
 
 fn generate_candidates(line_spec: &str, target_length: u32) -> Vec<String> {
@@ -38,7 +61,7 @@ fn generate_candidates(line_spec: &str, target_length: u32) -> Vec<String> {
 
     for space_choice in generate_choices(free_spaces as usize, space_positions) {
         let mut candidate = String::new();
-        dbg!(&space_choice, &spec);
+        // dbg!(&space_choice, &spec);
         let mut choices = space_choice.into_iter();
         add_n_chars(&mut candidate, '.', choices.next().unwrap());
         for (i, spec_item) in spec.iter().enumerate() {
@@ -102,7 +125,6 @@ fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Ve
 }
 
 #[test]
-#[ignore]
 fn test_example1() {
     assert_eq!(solve_line("#.#.### 1,1,3"), 1);
     assert_eq!(solve_line("???.### 1,1,3"), 1);
@@ -135,4 +157,17 @@ fn test_generate_choices() {
 
     // three items, and one place to put them
     assert_eq!(generate_choices(3, 1), vec![vec![3]]);
+}
+
+#[test]
+fn test_candidate_matches_pattern() {
+    assert!(candidate_matches_pattern("#", "#"));
+    assert!(!candidate_matches_pattern("#", "."));
+    assert!(candidate_matches_pattern("#", "?"));
+    assert!(candidate_matches_pattern(".", "?"));
+    assert!(candidate_matches_pattern(".", "."));
+    assert!(!candidate_matches_pattern(".", "#"));
+    assert!(candidate_matches_pattern("###", "###"));
+    assert!(!candidate_matches_pattern("###", "#.#"));
+    assert!(candidate_matches_pattern("###", "#?#"));
 }
