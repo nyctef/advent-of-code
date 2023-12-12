@@ -60,13 +60,13 @@ fn generate_partial_candidate(spec: &[u32], st: &SearchState) -> String {
     result
 }
 
-fn solve_line(line: &str) -> u32 {
-    let mut total = 0;
+fn solve_line(line: &str) -> u64 {
+    let mut total:u64 = 0;
     let (pattern, line_spec) = line.split_once(" ").unwrap();
     println!("p: {} ls: {}", &pattern, &line_spec);
     let spec = all_numbers(line_spec);
-    let mut solution_cache: HashMap<(String, Vec<u32>), u32> = HashMap::new();
-    total += solve_spec(pattern, spec, &mut solution_cache);
+    let mut solution_cache: HashMap<(String, Vec<u32>), u64> = HashMap::new();
+    total += solve_spec(pattern, spec, false, &mut solution_cache);
 
     // for candidate in generate_candidates(&spec, pattern.len() as u32) {
     //     if candidate_matches_pattern(&candidate, pattern) {
@@ -79,14 +79,11 @@ fn solve_line(line: &str) -> u32 {
 fn solve_spec(
     pattern: &str,
     spec: Vec<u32>,
-    solution_cache: &mut HashMap<(String, Vec<u32>), u32>,
-) -> u32 {
-    let mut total = 0;
+    space_at_beginning_required: bool,
+    solution_cache: &mut HashMap<(String, Vec<u32>), u64>,
+) -> u64 {
+    let mut total:u64 = 0;
     let mut seen: HashSet<SearchState> = HashSet::new();
-    let mut q: VecDeque<SearchState> = VecDeque::new();
-    q.push_front(SearchState {
-        space_choices: vec![],
-    });
 
     if spec.is_empty() {
         return if pattern.chars().all(|c| c == '.' || c == '?') {
@@ -104,69 +101,69 @@ fn solve_spec(
 
     let mut counter: u64 = 0;
 
-    while let Some(next) = q.pop_front() {
-        counter += 1;
-        if counter % 100_000 == 0 {
-            // println!("count: {} next: {:?}", counter, next);
-        }
-        // let start = if next.space_choices.is_empty() { 0 } else { 1 };
+    counter += 1;
+    if counter % 100_000 == 0 {
+        // println!("count: {} next: {:?}", counter, next);
+    }
+    // let start = if next.space_choices.is_empty() { 0 } else { 1 };
+    let next = SearchState { space_choices: vec![] };
 
-        let consumed_so_far = next.space_choices.iter().sum::<u32>();
-        let choices_made_so_far = next.space_choices.len();
-        if choices_made_so_far + 1 > space_positions {
+    let consumed_so_far = next.space_choices.iter().sum::<u32>();
+    let choices_made_so_far = next.space_choices.len();
+    if choices_made_so_far + 1 > space_positions {
+        return total;
+    }
+    let spaces_remaining = free_spaces - consumed_so_far as i32;
+
+    // dbg!(spaces_remaining);
+
+    let start = if space_at_beginning_required { 1 } else { 0 };
+    for i in start..=spaces_remaining {
+        let n2 = next.and(i as u32);
+
+        if seen.contains(&n2) {
             continue;
         }
-        let spaces_remaining = free_spaces - consumed_so_far as i32;
+        seen.insert(n2.clone());
 
-        // dbg!(spaces_remaining);
-
-        for i in 0..=spaces_remaining {
-            let n2 = next.and(i as u32);
-
-            if seen.contains(&n2) {
-                continue;
-            }
-            seen.insert(n2.clone());
-
-            let candidate = generate_partial_candidate(&spec, &n2);
-            if candidate.len() > pattern.len() {
-                continue;
-            }
-            let matches = candidate_matches_pattern(&candidate, pattern);
-            if matches {
-                println!(
-                    "c: {} | n2: {} | m: {}",
-                    candidate,
-                    n2.space_choices.iter().map(|x| format!("{}", x)).join(","),
-                    matches
-                );
-            }
-            // dbg!(&spec, &n2, &candidate);
-            if matches {
-                if candidate.len() == pattern.len() {
-                    // println!("FULL MATCH {}", candidate);
-                    total += 1;
+        let mut candidate = generate_partial_candidate(&spec, &n2);
+        if candidate.len() > pattern.len() {
+            continue;
+        }
+        let matches = candidate_matches_pattern(&candidate, pattern);
+        if matches && false {
+            println!(
+                "c: {} | n2: {} | m: {}",
+                candidate,
+                n2.space_choices.iter().map(|x| format!("{}", x)).join(","),
+                matches
+            );
+        }
+        // dbg!(&spec, &n2, &candidate);
+        if matches {
+            if candidate.len() == pattern.len() {
+                // println!("FULL MATCH {}", candidate);
+                total += 1;
+            } else {
+                // p: ?### c: ### -> can't allow a fourth # to match, so don't skip a char
+                // p: .??. c: .#  -> can't allow a # at the third char, so offset by one before
+                //                   continuing
+                let next_space_at_beginning_required =
+                    (candidate.len() < pattern.len() && candidate.ends_with("#"));
+                let offset = candidate.len();
+                let new_pattern = pattern[offset..].to_string();
+                let new_spec = spec.iter().skip(1).copied().collect_vec();
+                // println!("recursing to {} {:?}", &new_pattern, &new_spec);
+                let k = (new_pattern.clone(), new_spec.clone());
+                let cached = solution_cache.get(&k);
+                if let Some(st) = cached {
+                    // println!("t: {} | got {} cached subtotal", total, st);
+                    total += st;
                 } else {
-                    let offset = if candidate.ends_with("#") {
-                        // need an extra space before we can match the next set of springs
-                        candidate.len() + 1
-                    } else {
-                        candidate.len()
-                    };
-                    let new_pattern = pattern[offset..].to_string();
-                    let new_spec = spec.iter().skip(1).copied().collect_vec();
-                    println!("recursing to {} {:?}", &new_pattern, &new_spec);
-                    let k = (new_pattern.clone(), new_spec.clone());
-                    let cached = solution_cache.get(&k);
-                    if let Some(st) = cached {
-                        println!("t: {} | got {} cached subtotal", total, st);
-                        total += st;
-                    } else {
-                        let subtotal = solve_spec(&new_pattern, new_spec, solution_cache);
-                        println!("t: {} | got {} calculated subtotal", total, subtotal);
-                        solution_cache.insert(k, subtotal);
-                        total += subtotal;
-                    }
+                    let subtotal = solve_spec(&new_pattern, new_spec, next_space_at_beginning_required, solution_cache);
+                    // println!("t: {} | got {} calculated subtotal", total, subtotal);
+                    solution_cache.insert(k, subtotal);
+                    total += subtotal;
                 }
             }
         }
