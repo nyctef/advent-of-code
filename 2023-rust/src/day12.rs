@@ -2,7 +2,10 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 #[allow(unused_imports)]
 use itertools::{intersperse, repeat_n, Itertools};
-use std::{collections::{HashSet, VecDeque}, iter};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    iter,
+};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 12)?;
@@ -42,7 +45,11 @@ impl SearchState {
 fn generate_partial_candidate(spec: &[u32], st: &SearchState) -> String {
     let mut result = String::new();
     let mut first = true;
-    for (space, spring) in st.space_choices.iter().zip(spec.iter().chain(iter::repeat(&0))) {
+    for (space, spring) in st
+        .space_choices
+        .iter()
+        .zip(spec.iter().chain(iter::repeat(&0)))
+    {
         add_n_chars(&mut result, '.', *space as usize);
         if !first {
             add_n_chars(&mut result, '.', 1);
@@ -58,11 +65,36 @@ fn solve_line(line: &str) -> u32 {
     let (pattern, line_spec) = line.split_once(" ").unwrap();
     println!("p: {} ls: {}", &pattern, &line_spec);
     let spec = all_numbers(line_spec);
+    let mut solution_cache: HashMap<(String, Vec<u32>), u32> = HashMap::new();
+    total += solve_spec(pattern, spec, &mut solution_cache);
+
+    // for candidate in generate_candidates(&spec, pattern.len() as u32) {
+    //     if candidate_matches_pattern(&candidate, pattern) {
+    //         total += 1;
+    //     }
+    // }
+    total
+}
+
+fn solve_spec(
+    pattern: &str,
+    spec: Vec<u32>,
+    solution_cache: &mut HashMap<(String, Vec<u32>), u32>,
+) -> u32 {
+    let mut total = 0;
     let mut seen: HashSet<SearchState> = HashSet::new();
     let mut q: VecDeque<SearchState> = VecDeque::new();
     q.push_front(SearchState {
         space_choices: vec![],
     });
+
+    if spec.is_empty() {
+        return if pattern.chars().all(|c| c == '.') {
+            1
+        } else {
+            0
+        };
+    }
 
     let target_length = pattern.len() as u32;
     let minimum_spaces = (spec.len() - 1) as u32;
@@ -70,7 +102,13 @@ fn solve_line(line: &str) -> u32 {
     let free_spaces: i32 = target_length as i32 - min_candidate_length as i32;
     let space_positions = spec.len() + 1;
 
+    let mut counter: u64 = 0;
+
     while let Some(next) = q.pop_front() {
+        counter += 1;
+        if counter % 100_000 == 0 {
+            // println!("count: {} next: {:?}", counter, next);
+        }
         // let start = if next.space_choices.is_empty() { 0 } else { 1 };
 
         let consumed_so_far = next.space_choices.iter().sum::<u32>();
@@ -94,24 +132,35 @@ fn solve_line(line: &str) -> u32 {
             if candidate.len() > pattern.len() {
                 continue;
             }
-            println!("c: {} | n2: {}", candidate, n2.space_choices.iter().map(|x| format!("{}", x)).join(","));
+            println!(
+                "c: {} | n2: {}",
+                candidate,
+                n2.space_choices.iter().map(|x| format!("{}", x)).join(",")
+            );
             // dbg!(&spec, &n2, &candidate);
             if candidate_matches_pattern(&candidate, pattern) {
                 if candidate.len() == pattern.len() {
                     // println!("FULL MATCH {}", candidate);
                     total += 1;
                 } else {
-                    q.push_front(n2);
+                    let new_pattern = pattern[candidate.len()..].to_string();
+                    let new_spec = spec.iter().skip(1).copied().collect_vec();
+                    println!("recursing to {} {:?}", &new_pattern, &new_spec);
+                    let k = (new_pattern.clone(), new_spec.clone());
+                    let cached = solution_cache.get(&k);
+                    if let Some(st) = cached {
+                        println!("t: {} | got {} cached subtotal", total, st);
+                        total += st;
+                    } else {
+                        let subtotal = solve_spec(&new_pattern, new_spec, solution_cache);
+                        solution_cache.insert(k, subtotal);
+                        total += subtotal;
+                    }
                 }
             }
         }
     }
 
-    // for candidate in generate_candidates(&spec, pattern.len() as u32) {
-    //     if candidate_matches_pattern(&candidate, pattern) {
-    //         total += 1;
-    //     }
-    // }
     total
 }
 
