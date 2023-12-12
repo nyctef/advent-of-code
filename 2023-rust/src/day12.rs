@@ -1,8 +1,7 @@
-use std::collections::VecDeque;
-
 use crate::utils::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
+use itertools::{Itertools, intersperse, repeat_n};
+use std::{collections::VecDeque, task::Wake};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 12)?;
@@ -16,7 +15,10 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let mut total = 0;
     for line in input.trim().lines() {
-        total += solve_line(line);
+        let unfolded = &unfold(line);
+        println!("{}", unfolded);
+        total += solve_line(unfolded);
+        print!(".");
     }
     let part1 = total;
     let part2 = "";
@@ -85,6 +87,7 @@ fn add_n_chars(target: &mut String, chr: char, n: usize) {
 }
 
 fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Vec<usize>> {
+    println!("generate_choices sa{} ta{}", spaces_available, targets_available);
     if targets_available <= 0 {
         return vec![];
     }
@@ -170,4 +173,23 @@ fn test_candidate_matches_pattern() {
     assert!(candidate_matches_pattern("###", "###"));
     assert!(!candidate_matches_pattern("###", "#.#"));
     assert!(candidate_matches_pattern("###", "#?#"));
+}
+
+fn unfold(input: &str) -> String {
+    let (pattern, line_spec) = input.split_once(" ").unwrap();
+    let mut result = String::new();
+    for x in intersperse(repeat_n(pattern, 5), "?") {
+        result.push_str(x);
+    }
+    result.push(' ');
+    for x in intersperse(repeat_n(line_spec, 5), ",") {
+        result.push_str(x);
+    }
+    result
+        
+}
+
+#[test]
+fn test_unfold() {
+    assert_eq!(unfold(".# 1"), ".#?.#?.#?.#?.# 1,1,1,1,1");
 }
