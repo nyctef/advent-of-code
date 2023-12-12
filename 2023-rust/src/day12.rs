@@ -31,8 +31,34 @@ fn generate_candidates(line_spec: &str, target_length: u32) -> Vec<String> {
     let minimum_spaces = (spec.len() - 1) as u32;
     let min_candidate_length: u32 = spec.iter().sum::<u32>() + minimum_spaces;
     let free_spaces: i32 = target_length as i32 - min_candidate_length as i32;
+    let space_positions = spec.len() + 1;
     assert!(free_spaces >= 0);
-    vec![]
+
+    let mut result = Vec::new();
+
+    for space_choice in generate_choices(free_spaces as usize, space_positions) {
+        let mut candidate = String::new();
+        dbg!(&space_choice, &spec);
+        let mut choices = space_choice.into_iter();
+        add_n_chars(&mut candidate, '.', choices.next().unwrap());
+        for (i, spec_item) in spec.iter().enumerate() {
+            add_n_chars(&mut candidate, '#', *spec_item as usize);
+            if i != spec.len() - 1 {
+                add_n_chars(&mut candidate, '.', 1);
+            }
+            add_n_chars(&mut candidate, '.', choices.next().unwrap());
+        }
+
+        result.push(candidate);
+    }
+    result
+}
+
+fn add_n_chars(target: &mut String, chr: char, n: usize) {
+    // todo: is there a builtin for this?
+    for _ in 0..n {
+        target.push(chr);
+    }
 }
 
 fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Vec<usize>> {
@@ -41,7 +67,7 @@ fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Ve
     }
 
     let mut result = vec![];
-    let mut q:VecDeque<Vec<usize>> = VecDeque::new();
+    let mut q: VecDeque<Vec<usize>> = VecDeque::new();
     q.push_front(vec![]);
     while let Some(next) = q.pop_front() {
         let consumed_so_far = next.iter().sum::<usize>();
@@ -65,13 +91,12 @@ fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Ve
             q.push_front(next2);
             continue;
         }
-        
+
         for next_choice in 0..=spaces_remaining {
             let mut next2 = next.clone();
             next2.push(next_choice);
             q.push_front(next2);
         }
-
     }
     result
 }
