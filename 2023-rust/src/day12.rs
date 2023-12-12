@@ -16,7 +16,7 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let mut total = 0;
     for line in input.trim().lines() {
-        // let line = &unfold(line);
+        let line = &unfold(line);
         let line_score = solve_line(line);
         println!("{} -> {}", line, line_score);
         total += line_score;
@@ -56,6 +56,7 @@ fn generate_partial_candidate(spec: &[u32], st: &SearchState) -> String {
 fn solve_line(line: &str) -> u32 {
     let mut total = 0;
     let (pattern, line_spec) = line.split_once(" ").unwrap();
+    println!("p: {} ls: {}", &pattern, &line_spec);
     let spec = all_numbers(line_spec);
     let mut seen: HashSet<SearchState> = HashSet::new();
     let mut q: VecDeque<SearchState> = VecDeque::new();
@@ -79,7 +80,7 @@ fn solve_line(line: &str) -> u32 {
         }
         let spaces_remaining = free_spaces - consumed_so_far as i32;
 
-        dbg!(spaces_remaining);
+        // dbg!(spaces_remaining);
 
         for i in 0..=spaces_remaining {
             let n2 = next.and(i as u32);
@@ -91,13 +92,13 @@ fn solve_line(line: &str) -> u32 {
 
             let candidate = generate_partial_candidate(&spec, &n2);
             if candidate.len() > pattern.len() {
-                // TODO: can we catch this earlier?
                 continue;
             }
-            dbg!(&spec, &n2, &candidate);
+            println!("c: {} | n2: {}", candidate, n2.space_choices.iter().map(|x| format!("{}", x)).join(","));
+            // dbg!(&spec, &n2, &candidate);
             if candidate_matches_pattern(&candidate, pattern) {
                 if candidate.len() == pattern.len() {
-                    println!("FULL MATCH {}", candidate);
+                    // println!("FULL MATCH {}", candidate);
                     total += 1;
                 } else {
                     q.push_front(n2);
