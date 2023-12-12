@@ -2,7 +2,7 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 #[allow(unused_imports)]
 use itertools::{intersperse, repeat_n, Itertools};
-use std::collections::{HashSet, VecDeque};
+use std::{collections::{HashSet, VecDeque}, iter};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 12)?;
@@ -42,7 +42,7 @@ impl SearchState {
 fn generate_partial_candidate(spec: &[u32], st: &SearchState) -> String {
     let mut result = String::new();
     let mut first = true;
-    for (space, spring) in st.space_choices.iter().zip(spec.iter()) {
+    for (space, spring) in st.space_choices.iter().zip(spec.iter().chain(iter::repeat(&0))) {
         add_n_chars(&mut result, '.', *space as usize);
         if !first {
             add_n_chars(&mut result, '.', 1);
@@ -74,8 +74,7 @@ fn solve_line(line: &str) -> u32 {
 
         let consumed_so_far = next.space_choices.iter().sum::<u32>();
         let choices_made_so_far = next.space_choices.len();
-        if choices_made_so_far > space_positions {
-            // catch this earlier too?
+        if choices_made_so_far + 1 > space_positions {
             continue;
         }
         let spaces_remaining = free_spaces - consumed_so_far as i32;
