@@ -89,7 +89,7 @@ fn solve_spec(
     });
 
     if spec.is_empty() {
-        return if pattern.chars().all(|c| c == '.') {
+        return if pattern.chars().all(|c| c == '.' || c == '?') {
             1
         } else {
             0
@@ -132,18 +132,28 @@ fn solve_spec(
             if candidate.len() > pattern.len() {
                 continue;
             }
-            println!(
-                "c: {} | n2: {}",
-                candidate,
-                n2.space_choices.iter().map(|x| format!("{}", x)).join(",")
-            );
+            let matches = candidate_matches_pattern(&candidate, pattern);
+            if matches {
+                println!(
+                    "c: {} | n2: {} | m: {}",
+                    candidate,
+                    n2.space_choices.iter().map(|x| format!("{}", x)).join(","),
+                    matches
+                );
+            }
             // dbg!(&spec, &n2, &candidate);
-            if candidate_matches_pattern(&candidate, pattern) {
+            if matches {
                 if candidate.len() == pattern.len() {
                     // println!("FULL MATCH {}", candidate);
                     total += 1;
                 } else {
-                    let new_pattern = pattern[candidate.len()..].to_string();
+                    let offset = if candidate.ends_with("#") {
+                        // need an extra space before we can match the next set of springs
+                        candidate.len() + 1
+                    } else {
+                        candidate.len()
+                    };
+                    let new_pattern = pattern[offset..].to_string();
                     let new_spec = spec.iter().skip(1).copied().collect_vec();
                     println!("recursing to {} {:?}", &new_pattern, &new_spec);
                     let k = (new_pattern.clone(), new_spec.clone());
@@ -153,6 +163,7 @@ fn solve_spec(
                         total += st;
                     } else {
                         let subtotal = solve_spec(&new_pattern, new_spec, solution_cache);
+                        println!("t: {} | got {} calculated subtotal", total, subtotal);
                         solution_cache.insert(k, subtotal);
                         total += subtotal;
                     }
@@ -161,6 +172,7 @@ fn solve_spec(
         }
     }
 
+    // println!("returning t: {}", total);
     total
 }
 
@@ -257,6 +269,7 @@ fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Ve
 fn test_example1() {
     // assert_eq!(solve_line("#.#.### 1,1,3"), 1);
     // assert_eq!(solve_line("???.### 1,1,3"), 1);
+    assert_eq!(solve_line("?###? 3"), 1);
     assert_eq!(solve_line(".??..??...?##. 1,1,3"), 4);
     assert_eq!(solve_line("?###???????? 3,2,1"), 10);
 }
