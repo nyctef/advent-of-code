@@ -1,7 +1,8 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
-use itertools::{Itertools, intersperse, repeat_n};
-use std::{collections::VecDeque, task::Wake};
+#[allow(unused_imports)]
+use itertools::{intersperse, repeat_n, Itertools};
+use std::collections::VecDeque;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 12)?;
@@ -15,20 +16,43 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let mut total = 0;
     for line in input.trim().lines() {
-        let unfolded = &unfold(line);
-        println!("{}", unfolded);
-        total += solve_line(unfolded);
-        print!(".");
+        // let line = &unfold(line);
+        let line_score = solve_line(line);
+        println!("{} -> {}", line, line_score);
+        total += line_score;
     }
     let part1 = total;
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+struct SearchState {
+    space_choices: Vec<u32>,
+}
+
+impl SearchState {
+    fn and(&self, n: u32) -> SearchState {
+        let mut res = self.clone();
+        res.space_choices.push(n);
+        res
+    }
+}
+
+fn generate_partial_candidate(spec: &[u32], st: &SearchState) -> String {
+    let mut result = String::new();
+    for (space, spring) in st.space_choices.iter().zip(spec.iter()) {
+        add_n_chars(&mut result, '.', *space as usize);
+        add_n_chars(&mut result, '#', *spring as usize);
+    }
+    result
+}
+
 fn solve_line(line: &str) -> u32 {
     let mut total = 0;
     let (pattern, line_spec) = line.split_once(" ").unwrap();
-    for candidate in generate_candidates(line_spec, pattern.len() as u32) {
+    let spec = all_numbers(line_spec);
+    for candidate in generate_candidates(&spec, pattern.len() as u32) {
         if candidate_matches_pattern(&candidate, pattern) {
             total += 1;
         }
@@ -51,8 +75,7 @@ fn candidate_matches_pattern(candidate: &str, pattern: &str) -> bool {
     return true;
 }
 
-fn generate_candidates(line_spec: &str, target_length: u32) -> Vec<String> {
-    let spec = all_numbers(line_spec);
+fn generate_candidates(spec: &[u32], target_length: u32) -> Vec<String> {
     let minimum_spaces = (spec.len() - 1) as u32;
     let min_candidate_length: u32 = spec.iter().sum::<u32>() + minimum_spaces;
     let free_spaces: i32 = target_length as i32 - min_candidate_length as i32;
@@ -87,7 +110,7 @@ fn add_n_chars(target: &mut String, chr: char, n: usize) {
 }
 
 fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Vec<usize>> {
-    println!("generate_choices sa{} ta{}", spaces_available, targets_available);
+    // println!("generate_choices sa{} ta{}", spaces_available, targets_available);
     if targets_available <= 0 {
         return vec![];
     }
@@ -124,6 +147,7 @@ fn generate_choices(spaces_available: usize, targets_available: usize) -> Vec<Ve
             q.push_front(next2);
         }
     }
+    // println!("choices: {}", &result.len());
     result
 }
 
@@ -136,13 +160,19 @@ fn test_example1() {
 }
 
 #[test]
-fn test_generate_candidates() {
-    assert_eq!(generate_candidates("1,1,3", 7), vec!["#.#.###"]);
-    assert_eq!(
-        generate_candidates("1,1,3", 8),
-        vec![".#.#.###", "#..#.###", "#.#..###", "#.#.###.",]
-    );
+fn test_example2() {
+    assert_eq!(solve_line(&unfold("???.### 1,1,3")), 1);
+    assert_eq!(solve_line(&unfold(".??..??...?##. 1,1,3")), 16384);
 }
+
+// #[test]
+// fn test_generate_candidates() {
+//     assert_eq!(generate_candidates("1,1,3", 7), vec!["#.#.###"]);
+//     assert_eq!(
+//         generate_candidates("1,1,3", 8),
+//         vec![".#.#.###", "#..#.###", "#.#..###", "#.#.###.",]
+//     );
+// }
 
 #[test]
 fn test_generate_choices() {
@@ -186,7 +216,6 @@ fn unfold(input: &str) -> String {
         result.push_str(x);
     }
     result
-        
 }
 
 #[test]
