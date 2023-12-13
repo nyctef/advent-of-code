@@ -31,33 +31,32 @@ fn solve_for(input: &str) -> Result<String> {
 fn solve_for_pattern(input: &str) -> u32 {
     let grid = CharGrid::from_string(input);
     for r in 0..grid.height() - 1 {
-        // println!("testing row {r}");
-        if is_row_mirror(&grid, r) {
+        let row_score = score_row_mirror(&grid, r);
+        println!("testing row {r}: got score {row_score}");
+        if row_score == 1 {
             return (r as u32 + 1) * 100;
         }
     }
     for c in 0..grid.width() - 1 {
         // println!("testing col {c}");
-        if is_col_mirror(&grid, c) {
+        if score_col_mirror(&grid, c) == 1 {
             return (c as u32 + 1);
         }
     }
     panic!("no mirrors found");
 }
 
-fn is_row_mirror(grid: &CharGrid, start: usize) -> bool {
+fn score_row_mirror(grid: &CharGrid, start: usize) -> u32 {
     // l -> above, r -> below
     let mut l = start;
     let mut r = start + 1;
     let all_lines = grid.lines().collect_vec();
+    let mut score = 0;
     while l >= 0 && r < grid.height() {
-        //         println!(
-        //           "comparing lines {}:{} and {}:{}",
-        //         l, all_lines[l], r, all_lines[r]
-        //   );
-        if all_lines[l] != all_lines[r] {
-            return false;
+        for (lc, rc) in all_lines[l].chars().zip(all_lines[r].chars()) {
+            if lc != rc { score += 1 }
         }
+
 
         // l -= 1;
         if l == 0 {
@@ -66,20 +65,17 @@ fn is_row_mirror(grid: &CharGrid, start: usize) -> bool {
         l -= 1;
         r += 1;
     }
-    return true;
+    score
 }
 
-fn is_col_mirror(grid: &CharGrid, start: usize) -> bool {
+fn score_col_mirror(grid: &CharGrid, start: usize) -> u32 {
     let mut l = start;
     let mut r = start + 1;
     let all_cols = grid.cols().collect_vec();
+    let mut score = 0;
     while l >= 0 && r < grid.width() {
-        //println!(
-        //    "comparing cols {}:{:?} and {}:{:?}",
-        //    l, all_cols[l], r, all_cols[r]
-        //);
-        if all_cols[l] != all_cols[r] {
-            return false;
+        for (lc, rc) in all_cols[l].iter().zip(all_cols[r].iter()) {
+            if lc != rc { score += 1 }
         }
 
         // l -= 1;
@@ -89,7 +85,7 @@ fn is_col_mirror(grid: &CharGrid, start: usize) -> bool {
         l -= 1;
         r += 1;
     }
-    return true;
+    score
 }
 
 #[test]
