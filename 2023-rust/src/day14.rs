@@ -151,6 +151,6 @@ O.#..O.#.#
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 136 | Part 2: ", result);
+    assert_eq!("load: 64", result);
     Ok(())
 }
