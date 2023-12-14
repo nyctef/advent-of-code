@@ -5,6 +5,7 @@ use std::{
     ops::{Add, Index, Sub},
 };
 
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct CharGrid {
     width: usize,
     height: usize,
