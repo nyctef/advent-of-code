@@ -31,7 +31,22 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
         true
     }
 
+
     pub fn pop(&mut self) -> Option<T> {
         self.queue.pop_front()
+    }
+}
+
+pub trait SearchExt<T> {
+    fn push_opt(&mut self, entry: Option<T>) -> bool;
+}
+
+impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> SearchExt<T> for Search<T> {
+    fn push_opt(&mut self, entry: Option<T>) -> bool {
+        if let Some(entry) = entry {
+            self.push(entry);
+            return true;
+        }
+        false
     }
 }

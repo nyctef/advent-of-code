@@ -61,9 +61,7 @@ fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
                     if next.direction == RCDirection::left()
                         || next.direction == RCDirection::right()
                     {
-                        if pos.up().is_some() {
-                            q.push(Beam::new(pos.up().unwrap(), RCDirection::up()));
-                        }
+                        q.push_opt(pos.up().map(|p| Beam::new(p, RCDirection::up())));
                         q.push(Beam::new(pos.down(), RCDirection::down()));
                         break;
                     }
@@ -72,9 +70,7 @@ fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
                 '-' => {
                     if next.direction == RCDirection::up() || next.direction == RCDirection::down()
                     {
-                        if pos.left().is_some() {
-                            q.push(Beam::new(pos.left().unwrap(), RCDirection::left()));
-                        }
+                        q.push_opt(pos.left().map(|p| Beam::new(p, RCDirection::left())));
                         q.push(Beam::new(pos.right(), RCDirection::right()));
                         break;
                     }
@@ -82,14 +78,10 @@ fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
                 }
                 '/' => {
                     if next.direction == RCDirection::right() {
-                        if pos.up().is_some() {
-                            q.push(Beam::new(pos.up().unwrap(), RCDirection::up()));
-                        }
+                        q.push_opt(pos.up().map(|p| Beam::new(p, RCDirection::up())));
                     }
                     if next.direction == RCDirection::down() {
-                        if pos.left().is_some() {
-                            q.push(Beam::new(pos.left().unwrap(), RCDirection::left()));
-                        }
+                        q.push_opt(pos.left().map(|p| Beam::new(p, RCDirection::left())));
                     }
                     if next.direction == RCDirection::up() {
                         q.push(Beam::new(pos.right(), RCDirection::right()));
@@ -101,14 +93,10 @@ fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
                 }
                 '\\' => {
                     if next.direction == RCDirection::left() {
-                        if pos.up().is_some() {
-                            q.push(Beam::new(pos.up().unwrap(), RCDirection::up()));
-                        }
+                        q.push_opt(pos.up().map(|p| Beam::new(p, RCDirection::up())));
                     }
                     if next.direction == RCDirection::up() {
-                        if pos.left().is_some() {
-                            q.push(Beam::new(pos.left().unwrap(), RCDirection::left()));
-                        }
+                        q.push_opt(pos.left().map(|p| Beam::new(p, RCDirection::left())));
                     }
                     if next.direction == RCDirection::down() {
                         q.push(Beam::new(pos.right(), RCDirection::right()));
