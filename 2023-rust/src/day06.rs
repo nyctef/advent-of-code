@@ -14,7 +14,7 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let races = input
         .trim()
-        .replace(" ", "")
+        .replace(' ', "")
         .lines()
         .map(|l| l.split_once(':').unwrap().1)
         .map(all_numbers_u64)

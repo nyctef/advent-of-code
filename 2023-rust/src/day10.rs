@@ -134,14 +134,10 @@ fn solve_for(input: &str) -> Result<String> {
             "starting at {}, filled to {} -> {} | with collision direction {} exit direction {:?}",
             p, colliding_tile, loop_pipe, &collision_direction, &exit_direction
         );
-        if exit_direction.is_some()
-            && *exit_direction.unwrap() == collision_direction.counterclockwise()
-        {
-            println!("  -> inside!");
-            contained_count += 1;
-            // break;
-        } else if entrance_direction.is_some()
-            && *entrance_direction.unwrap() == collision_direction.counterclockwise()
+        if (exit_direction.is_some()
+            && *exit_direction.unwrap() == collision_direction.counterclockwise())
+            || (entrance_direction.is_some()
+                && *entrance_direction.unwrap() == collision_direction.counterclockwise())
         {
             println!("  -> inside!");
             contained_count += 1;
@@ -215,7 +211,7 @@ fn print_loop_chars(
 ) {
     for (i, c) in grid.enumerate_chars_rc() {
         if i.col == 0 {
-            print!("\n")
+            println!()
         }
         if outside.contains(&i) {
             print!(" ");
@@ -254,7 +250,7 @@ fn get_connections(grid: &CharGrid, pos: CharGridIndexRC) -> Vec<CharGridIndexRC
             .iter()
             .filter_map(|x| *x)
             .collect_vec(),
-        'F' => [pos.down(), pos.right()].iter().map(|x| *x).collect_vec(),
+        'F' => [pos.down(), pos.right()].iter().copied().collect_vec(),
         _ => panic!("don't know how to handle char {}", char),
     }
 }

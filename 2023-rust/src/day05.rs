@@ -40,7 +40,7 @@ impl Range {
             return None;
         }
         Some(Range {
-            start: start,
+            start,
             len: end - start,
         })
     }
@@ -114,7 +114,7 @@ impl Map {
                 return mapping.map(val);
             }
         }
-        return val;
+        val
     }
 
     fn map_range(&self, val: Range) -> Vec<Range> {
@@ -127,8 +127,7 @@ impl Map {
                 .iter()
                 .flat_map(|r| {
                     let overlap = mapping.source.overlap(&val);
-                    if overlap.is_some() {
-                        let overlap = overlap.unwrap();
+                    if let Some(overlap) = overlap {
                         let mapped_overlap = Range {
                             start: mapping.map(overlap.start),
                             len: overlap.len,
@@ -139,9 +138,7 @@ impl Map {
                         result.push(mapped_overlap);
                     }
 
-                    let remaining = r.remainder(&mapping.source);
-                    // println!("{remaining:?} is left - throwing back in the bucket");
-                    remaining
+                    r.remainder(&mapping.source)
                 })
                 .collect_vec()
         }
@@ -152,10 +149,10 @@ impl Map {
 }
 
 fn parse_map(input: &str) -> Map {
-    let (name_line, map_lines) = input.split_once("\n").unwrap();
+    let (name_line, map_lines) = input.split_once('\n').unwrap();
     let mappings = map_lines
         .trim()
-        .split("\n")
+        .split('\n')
         .map(|l| {
             let nums = all_numbers_u64(l);
             Mapping {
@@ -179,11 +176,9 @@ fn parse_map(input: &str) -> Map {
 fn solve_for(input: &str) -> Result<String> {
     let input = input.trim();
     let (seedsline, mapslines) = input.split_once("\n\n").unwrap();
-    let (_, seedsline) = seedsline.split_once(" ").unwrap();
+    let (_, seedsline) = seedsline.split_once(' ').unwrap();
     let seed_ranges = all_numbers_u64(seedsline)
-        // .iter()
         .chunks(2)
-        .into_iter()
         .map(|x| Range {
             start: x[0],
             len: x[1],
@@ -193,14 +188,14 @@ fn solve_for(input: &str) -> Result<String> {
     let maps = mapslines
         .trim()
         .split("\n\n")
-        .map(|ll| parse_map(ll))
+        .map(parse_map)
         .collect_vec();
 
     // dbg!(&seed_ranges, &maps);
 
     let mut resulting_locations: Vec<Range> = vec![];
-    for i in 0..seed_ranges.len() {
-        let mut current_ranges = vec![seed_ranges[i]];
+    for seed_range in seed_ranges {
+        let mut current_ranges = vec![seed_range];
         for map in &maps {
             // println!("next iteration for map {} {:?}", map.name, current_ranges);
             current_ranges = current_ranges

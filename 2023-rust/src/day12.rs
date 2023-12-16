@@ -62,7 +62,7 @@ fn generate_partial_candidate(spec: &[u32], st: &SearchState) -> String {
 
 fn solve_line(line: &str) -> u64 {
     let mut total: u64 = 0;
-    let (pattern, line_spec) = line.split_once(" ").unwrap();
+    let (pattern, line_spec) = line.split_once(' ').unwrap();
     println!("p: {} ls: {}", &pattern, &line_spec);
     let spec = all_numbers(line_spec);
     let mut solution_cache: HashMap<(String, Vec<u32>), u64> = HashMap::new();
@@ -133,7 +133,8 @@ fn solve_spec(
             continue;
         }
         let matches = candidate_matches_pattern(&candidate, pattern);
-        if matches && false {
+        /*
+        if matches {
             println!(
                 "c: {} | n2: {} | m: {}",
                 candidate,
@@ -141,6 +142,7 @@ fn solve_spec(
                 matches
             );
         }
+        */
         // dbg!(&spec, &n2, &candidate);
         if matches {
             if candidate.len() == pattern.len() {
@@ -151,7 +153,7 @@ fn solve_spec(
                 // p: .??. c: .#  -> can't allow a # at the third char, so offset by one before
                 //                   continuing
                 let next_space_at_beginning_required =
-                    candidate.len() < pattern.len() && candidate.ends_with("#");
+                    candidate.len() < pattern.len() && candidate.ends_with('#');
                 let offset = candidate.len();
                 let new_pattern = pattern[offset..].to_string();
                 let new_spec = spec.iter().skip(1).copied().collect_vec();
@@ -190,7 +192,7 @@ fn candidate_matches_pattern(candidate: &str, pattern: &str) -> bool {
         }
         return false;
     }
-    return true;
+    true
 }
 
 fn add_n_chars(target: &mut String, chr: char, n: usize) {
@@ -229,7 +231,7 @@ fn test_candidate_matches_pattern() {
 }
 
 fn unfold(input: &str) -> String {
-    let (pattern, line_spec) = input.split_once(" ").unwrap();
+    let (pattern, line_spec) = input.split_once(' ').unwrap();
     let mut result = String::new();
     for x in intersperse(repeat_n(pattern, 5), "?") {
         result.push_str(x);

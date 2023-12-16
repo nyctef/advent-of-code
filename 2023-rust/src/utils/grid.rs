@@ -106,10 +106,8 @@ impl CharGrid {
         index: CharGridIndexRC,
     ) -> impl Iterator<Item = (CharGridIndexRC, char)> + Debug + '_ {
         let mut result = vec![];
-        for n in [index.left(), index.up()] {
-            if let Some(n) = n {
-                result.push((n, self.index(n)));
-            }
+        for n in [index.left(), index.up()].into_iter().flatten() {
+            result.push((n, self.index(n)));
         }
 
         for n in [index.right(), index.down()] {
@@ -220,8 +218,8 @@ impl CharGrid {
             assert!(new_col.len() == self.height);
         }
         self.width += 1;
-        for i in 0..self.lines.len() {
-            self.lines[i].push(new_col[i]);
+        for (i, c) in new_col.iter().enumerate() {
+            self.lines[i].push(*c);
         }
     }
 }
@@ -451,7 +449,7 @@ impl RCDirection {
     }
 
     pub fn manhattan_abs(&self) -> usize {
-        self.rowdiff.abs() as usize + self.coldiff.abs() as usize
+        self.rowdiff.unsigned_abs() + self.coldiff.unsigned_abs()
     }
 }
 

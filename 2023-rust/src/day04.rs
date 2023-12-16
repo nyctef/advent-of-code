@@ -26,9 +26,7 @@ fn solve_for(input: &str) -> Result<String> {
             let winners: HashSet<_> = HashSet::from_iter(winners);
             let have: HashSet<_> = HashSet::from_iter(have);
             let in_common: HashSet<_> = winners.intersection(&have).collect();
-            let match_count = in_common.len() as u32;
-
-            match_count
+            in_common.len() as u32
         })
         .collect_vec();
 

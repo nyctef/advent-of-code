@@ -44,7 +44,7 @@ fn solve_for(input: &str, expansion_factor: usize) -> Result<String> {
     let mut total_distance = 0;
     for g1 in &galaxies {
         for g2 in &galaxies {
-            let distance = RCDirection::from_to(&g1, &g2);
+            let distance = RCDirection::from_to(g1, g2);
             total_distance += distance.manhattan_abs();
         }
     }

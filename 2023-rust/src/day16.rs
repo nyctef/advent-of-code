@@ -1,8 +1,7 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
-use itertools::Itertools;
-use std::collections::{HashSet, VecDeque};
+use std::collections::HashSet;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 16)?;

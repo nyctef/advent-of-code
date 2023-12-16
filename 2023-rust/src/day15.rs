@@ -14,26 +14,24 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let input = input.trim().replace("\n", "");
-    let instructions = input.split(",").collect_vec();
+    let input = input.trim().replace('\n', "");
+    let instructions = input.split(',').collect_vec();
 
     let mut boxes: HashMap<u8, Vec<(String, u32)>> = HashMap::new();
 
     for instruction in &instructions {
         let instruction = *instruction;
 
-        if instruction.ends_with("-") {
-            let label = &instruction[..instruction.len() - 1];
-
+        if let Some(label) = instruction.strip_suffix('-') {
             let box_ = aoc_hash(label);
-            let entry = boxes.entry(box_).or_insert(vec![]);
+            let entry = boxes.entry(box_).or_default();
 
             entry.retain(|(l, _f)| l != label);
-        } else if instruction.contains("=") {
+        } else if instruction.contains('=') {
             let (label, f) = instruction.split_once('=').unwrap();
 
             let box_ = aoc_hash(label);
-            let entry = boxes.entry(box_).or_insert(vec![]);
+            let entry = boxes.entry(box_).or_default();
             let new_value = (label.to_owned(), f.parse().unwrap());
 
             if let Some(i) = entry.iter().position(|(lb, _f)| lb == label) {
@@ -62,7 +60,7 @@ fn solve_for(input: &str) -> Result<String> {
 }
 
 fn aoc_hash(entry: &str) -> u8 {
-    let mut hash = 0 as u8;
+    let mut hash = 0_u8;
     for c in entry.chars() {
         hash = hash.wrapping_add(c as u8);
         hash = hash.wrapping_mul(17);

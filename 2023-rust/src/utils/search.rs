@@ -31,7 +31,6 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
         true
     }
 
-
     pub fn pop(&mut self) -> Option<T> {
         self.queue.pop_front()
     }

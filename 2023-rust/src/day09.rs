@@ -13,7 +13,7 @@ pub fn solve() -> Result<()> {
 
 fn solve_for(input: &str) -> Result<String> {
     let input = input.trim().lines();
-    let sequences = input.map(|l| all_numbers_i64(l)).collect_vec();
+    let sequences = input.map(all_numbers_i64).collect_vec();
     let part1: i64 = 0;
 
     for seq in &sequences {
@@ -29,9 +29,9 @@ fn solve_for(input: &str) -> Result<String> {
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
-fn extract_layers(seq: &Vec<i64>) -> Vec<Vec<i64>> {
-    let mut seq = seq.clone();
-    let mut layers = vec![seq.clone()];
+fn extract_layers(seq: &[i64]) -> Vec<Vec<i64>> {
+    let mut seq = seq.to_vec();
+    let mut layers = vec![seq.to_vec()];
     loop {
         let mut next_layer = vec![];
         for i in 1..seq.len() {
@@ -68,7 +68,7 @@ fn calc_taylor_series_at_1_for_x(layers: &[Vec<i64>], x: i64) -> f64 {
 fn calc_taylor_series_derivative_at_1(layers: &[Vec<i64>]) -> f64 {
     // we assume we've skipped the first layer of the original sequence.
 
-    if layers.len() == 0 {
+    if layers.is_empty() {
         // just a constant sequence
         return 0 as f64;
     }

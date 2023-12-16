@@ -17,9 +17,9 @@ fn parse_input(input: &str) -> (Vec<char>, HashMap<String, (String, String)>) {
     let (instructions, network) = input.trim().split_once("\n\n").unwrap();
     let instructions = instructions.chars().collect_vec();
     let network = network.lines().map(|l| {
-        let (name, nodes) = l.split_once("=").unwrap();
+        let (name, nodes) = l.split_once('=').unwrap();
         let name = name.trim();
-        let nodes = nodes.replace("(", "").replace(")", "");
+        let nodes = nodes.replace(['(', ')'], "");
         let (left_node, right_node) = nodes.split_once(", ").unwrap();
         (
             name.to_string(),
@@ -66,7 +66,7 @@ fn solve_part_2(input: &str) -> Result<String> {
     let mut current_node_names = vec![];
     let mut current_nodes = vec![];
     for (k, v) in network.iter() {
-        if k.ends_with("A") {
+        if k.ends_with('A') {
             current_node_names.push(k);
             current_nodes.push(v);
         }
@@ -81,7 +81,7 @@ fn solve_part_2(input: &str) -> Result<String> {
         let mut current_node_name = current_node_names[i];
         let mut current_node = current_nodes[i];
         loop {
-            if current_node_name.ends_with("Z") {
+            if current_node_name.ends_with('Z') {
                 break;
             }
             step_count += 1;
