@@ -16,11 +16,28 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let grid = CharGrid::from_string(input);
 
+    let mut scores = vec![];
+    for c in 0..grid.width() {
+        let starting_beam = Beam::new(CharGridIndexRC::new(0, c), RCDirection::down());
+        scores.push(simulate(&grid, starting_beam));
+        let starting_beam = Beam::new(CharGridIndexRC::new(grid.height() - 1, c), RCDirection::up());
+        scores.push(simulate(&grid, starting_beam));
+    }
+    for r in 0..grid.height() {
+        let starting_beam = Beam::new(CharGridIndexRC::new(r, 0), RCDirection::right());
+        scores.push(simulate(&grid, starting_beam));
+        let starting_beam = Beam::new(CharGridIndexRC::new(r, grid.width() - 1), RCDirection::left());
+        scores.push(simulate(&grid, starting_beam));
+    }
+    let part2 = scores.iter().max().unwrap();
+    Ok(format!("Part 2: {part2}"))
+}
+
+fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
     let mut seen_beams = HashSet::new();
     let mut energized_tiles = HashSet::new();
     let mut q = VecDeque::new();
 
-    let starting_beam = Beam::new(CharGridIndexRC::new(0, 0), RCDirection::right());
     seen_beams.insert(starting_beam);
     q.push_front(starting_beam);
 
@@ -30,7 +47,7 @@ fn solve_for(input: &str) -> Result<String> {
         }
     };
 
-    dbg!(&grid);
+    // dbg!(&grid);
 
     while let Some(next) = q.pop_front() {
         // dbg!(next);
@@ -158,6 +175,7 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
+    /*
     for (p, c) in grid.enumerate_chars_rc() {
         if p.col == 0 { println!(); }
         if energized_tiles.contains(&p) {
@@ -167,10 +185,9 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
     println!();
+    */
 
-    let part1 = energized_tiles.len();
-    let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    energized_tiles.len()
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Constructor, Hash)]
