@@ -24,13 +24,23 @@ fn solve_for(input: &str) -> Result<String> {
     seen_beams.insert(starting_beam);
     q.push_front(starting_beam);
 
+    let q_push = |q: &mut VecDeque<_>, seen_beams: &HashSet<_>, b| {
+        if !seen_beams.contains(&b) {
+            q.push_front(b);
+        }
+    };
+
+    dbg!(&grid);
+
     while let Some(next) = q.pop_front() {
+        // dbg!(next);
+        seen_beams.insert(next);
         let mut pos = next.start;
-        energized_tiles.insert(pos);
         loop {
             if !grid.is_in_bounds(pos) {
                 break;
             }
+            energized_tiles.insert(pos);
             match grid[pos] {
                 '.' => {}
                 '|' => {
@@ -38,9 +48,17 @@ fn solve_for(input: &str) -> Result<String> {
                         || next.direction == RCDirection::right()
                     {
                         if pos.up().is_some() {
-                            q.push_front(Beam::new(pos.up().unwrap(), RCDirection::up()));
+                            q_push(
+                                &mut q,
+                                &seen_beams,
+                                Beam::new(pos.up().unwrap(), RCDirection::up()),
+                            );
                         }
-                        q.push_front(Beam::new(pos.down(), RCDirection::down()));
+                        q_push(
+                            &mut q,
+                            &seen_beams,
+                            Beam::new(pos.down(), RCDirection::down()),
+                        );
                         break;
                     }
                     // otherwise it just behaves like '.'
@@ -49,9 +67,17 @@ fn solve_for(input: &str) -> Result<String> {
                     if next.direction == RCDirection::up() || next.direction == RCDirection::down()
                     {
                         if pos.left().is_some() {
-                            q.push_front(Beam::new(pos.left().unwrap(), RCDirection::left()));
+                            q_push(
+                                &mut q,
+                                &seen_beams,
+                                Beam::new(pos.left().unwrap(), RCDirection::left()),
+                            );
                         }
-                        q.push_front(Beam::new(pos.right(), RCDirection::right()));
+                        q_push(
+                            &mut q,
+                            &seen_beams,
+                            Beam::new(pos.right(), RCDirection::right()),
+                        );
                         break;
                     }
                     // otherwise it just behaves like '.'
@@ -59,38 +85,70 @@ fn solve_for(input: &str) -> Result<String> {
                 '/' => {
                     if next.direction == RCDirection::right() {
                         if pos.up().is_some() {
-                            q.push_front(Beam::new(pos.up().unwrap(), RCDirection::up()));
+                            q_push(
+                                &mut q,
+                                &seen_beams,
+                                Beam::new(pos.up().unwrap(), RCDirection::up()),
+                            );
                         }
                     }
                     if next.direction == RCDirection::down() {
                         if pos.left().is_some() {
-                            q.push_front(Beam::new(pos.left().unwrap(), RCDirection::left()));
+                            q_push(
+                                &mut q,
+                                &seen_beams,
+                                Beam::new(pos.left().unwrap(), RCDirection::left()),
+                            );
                         }
                     }
                     if next.direction == RCDirection::up() {
-                        q.push_front(Beam::new(pos.right(), RCDirection::right()));
+                        q_push(
+                            &mut q,
+                            &seen_beams,
+                            Beam::new(pos.right(), RCDirection::right()),
+                        );
                     }
                     if next.direction == RCDirection::left() {
-                        q.push_front(Beam::new(pos.down(), RCDirection::down()));
+                        q_push(
+                            &mut q,
+                            &seen_beams,
+                            Beam::new(pos.down(), RCDirection::down()),
+                        );
                     }
                     break;
                 }
                 '\\' => {
                     if next.direction == RCDirection::left() {
                         if pos.up().is_some() {
-                            q.push_front(Beam::new(pos.up().unwrap(), RCDirection::up()));
+                            q_push(
+                                &mut q,
+                                &seen_beams,
+                                Beam::new(pos.up().unwrap(), RCDirection::up()),
+                            );
                         }
                     }
                     if next.direction == RCDirection::up() {
                         if pos.left().is_some() {
-                            q.push_front(Beam::new(pos.left().unwrap(), RCDirection::left()));
+                            q_push(
+                                &mut q,
+                                &seen_beams,
+                                Beam::new(pos.left().unwrap(), RCDirection::left()),
+                            );
                         }
                     }
                     if next.direction == RCDirection::down() {
-                        q.push_front(Beam::new(pos.right(), RCDirection::right()));
+                        q_push(
+                            &mut q,
+                            &seen_beams,
+                            Beam::new(pos.right(), RCDirection::right()),
+                        );
                     }
                     if next.direction == RCDirection::right() {
-                        q.push_front(Beam::new(pos.down(), RCDirection::down()));
+                        q_push(
+                            &mut q,
+                            &seen_beams,
+                            Beam::new(pos.down(), RCDirection::down()),
+                        );
                     }
                     break;
                 }
@@ -99,6 +157,16 @@ fn solve_for(input: &str) -> Result<String> {
             pos = pos + next.direction;
         }
     }
+
+    for (p, c) in grid.enumerate_chars_rc() {
+        if p.col == 0 { println!(); }
+        if energized_tiles.contains(&p) {
+            print!("#");
+        } else {
+            print!("{c}");
+        }
+    }
+    println!();
 
     let part1 = energized_tiles.len();
     let part2 = "";
