@@ -311,6 +311,18 @@ impl Sub<usize> for CharGridIndexRC {
     }
 }
 
+impl Add<RCDirection> for CharGridIndexRC {
+    type Output = CharGridIndexRC;
+
+    fn add(self, rhs: RCDirection) -> Self::Output {
+        Self {
+            // todo: is it confusing that we don't actually go negative here?
+            col: (self.col as isize).saturating_add(rhs.coldiff) as usize,
+            row: (self.row as isize).saturating_add(rhs.rowdiff) as usize,
+        }
+    }
+}
+
 impl Index<CharGridIndexRC> for CharGrid {
     type Output = char;
 
@@ -349,7 +361,7 @@ impl CharGridRange<CharGridIndexRC> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor, Hash)]
 pub struct RCDirection {
     pub rowdiff: isize,
     pub coldiff: isize,
