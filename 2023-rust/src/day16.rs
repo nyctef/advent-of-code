@@ -20,13 +20,19 @@ fn solve_for(input: &str) -> Result<String> {
     for c in 0..grid.width() {
         let starting_beam = Beam::new(CharGridIndexRC::new(0, c), RCDirection::down());
         scores.push(simulate(&grid, starting_beam));
-        let starting_beam = Beam::new(CharGridIndexRC::new(grid.height() - 1, c), RCDirection::up());
+        let starting_beam = Beam::new(
+            CharGridIndexRC::new(grid.height() - 1, c),
+            RCDirection::up(),
+        );
         scores.push(simulate(&grid, starting_beam));
     }
     for r in 0..grid.height() {
         let starting_beam = Beam::new(CharGridIndexRC::new(r, 0), RCDirection::right());
         scores.push(simulate(&grid, starting_beam));
-        let starting_beam = Beam::new(CharGridIndexRC::new(r, grid.width() - 1), RCDirection::left());
+        let starting_beam = Beam::new(
+            CharGridIndexRC::new(r, grid.width() - 1),
+            RCDirection::left(),
+        );
         scores.push(simulate(&grid, starting_beam));
     }
     let part2 = scores.iter().max().unwrap();
@@ -34,24 +40,15 @@ fn solve_for(input: &str) -> Result<String> {
 }
 
 fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
-    let mut seen_beams = HashSet::new();
     let mut energized_tiles = HashSet::new();
-    let mut q = VecDeque::new();
+    let mut q = Search::new_dfs();
 
-    seen_beams.insert(starting_beam);
-    q.push_front(starting_beam);
-
-    let q_push = |q: &mut VecDeque<_>, seen_beams: &HashSet<_>, b| {
-        if !seen_beams.contains(&b) {
-            q.push_front(b);
-        }
-    };
+    q.push(starting_beam);
 
     // dbg!(&grid);
 
-    while let Some(next) = q.pop_front() {
+    while let Some(next) = q.pop() {
         // dbg!(next);
-        seen_beams.insert(next);
         let mut pos = next.start;
         loop {
             if !grid.is_in_bounds(pos) {
@@ -65,17 +62,9 @@ fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
                         || next.direction == RCDirection::right()
                     {
                         if pos.up().is_some() {
-                            q_push(
-                                &mut q,
-                                &seen_beams,
-                                Beam::new(pos.up().unwrap(), RCDirection::up()),
-                            );
+                            q.push(Beam::new(pos.up().unwrap(), RCDirection::up()));
                         }
-                        q_push(
-                            &mut q,
-                            &seen_beams,
-                            Beam::new(pos.down(), RCDirection::down()),
-                        );
+                        q.push(Beam::new(pos.down(), RCDirection::down()));
                         break;
                     }
                     // otherwise it just behaves like '.'
@@ -84,17 +73,9 @@ fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
                     if next.direction == RCDirection::up() || next.direction == RCDirection::down()
                     {
                         if pos.left().is_some() {
-                            q_push(
-                                &mut q,
-                                &seen_beams,
-                                Beam::new(pos.left().unwrap(), RCDirection::left()),
-                            );
+                            q.push(Beam::new(pos.left().unwrap(), RCDirection::left()));
                         }
-                        q_push(
-                            &mut q,
-                            &seen_beams,
-                            Beam::new(pos.right(), RCDirection::right()),
-                        );
+                        q.push(Beam::new(pos.right(), RCDirection::right()));
                         break;
                     }
                     // otherwise it just behaves like '.'
@@ -102,70 +83,38 @@ fn simulate(grid: &CharGrid, starting_beam: Beam) -> usize {
                 '/' => {
                     if next.direction == RCDirection::right() {
                         if pos.up().is_some() {
-                            q_push(
-                                &mut q,
-                                &seen_beams,
-                                Beam::new(pos.up().unwrap(), RCDirection::up()),
-                            );
+                            q.push(Beam::new(pos.up().unwrap(), RCDirection::up()));
                         }
                     }
                     if next.direction == RCDirection::down() {
                         if pos.left().is_some() {
-                            q_push(
-                                &mut q,
-                                &seen_beams,
-                                Beam::new(pos.left().unwrap(), RCDirection::left()),
-                            );
+                            q.push(Beam::new(pos.left().unwrap(), RCDirection::left()));
                         }
                     }
                     if next.direction == RCDirection::up() {
-                        q_push(
-                            &mut q,
-                            &seen_beams,
-                            Beam::new(pos.right(), RCDirection::right()),
-                        );
+                        q.push(Beam::new(pos.right(), RCDirection::right()));
                     }
                     if next.direction == RCDirection::left() {
-                        q_push(
-                            &mut q,
-                            &seen_beams,
-                            Beam::new(pos.down(), RCDirection::down()),
-                        );
+                        q.push(Beam::new(pos.down(), RCDirection::down()));
                     }
                     break;
                 }
                 '\\' => {
                     if next.direction == RCDirection::left() {
                         if pos.up().is_some() {
-                            q_push(
-                                &mut q,
-                                &seen_beams,
-                                Beam::new(pos.up().unwrap(), RCDirection::up()),
-                            );
+                            q.push(Beam::new(pos.up().unwrap(), RCDirection::up()));
                         }
                     }
                     if next.direction == RCDirection::up() {
                         if pos.left().is_some() {
-                            q_push(
-                                &mut q,
-                                &seen_beams,
-                                Beam::new(pos.left().unwrap(), RCDirection::left()),
-                            );
+                            q.push(Beam::new(pos.left().unwrap(), RCDirection::left()));
                         }
                     }
                     if next.direction == RCDirection::down() {
-                        q_push(
-                            &mut q,
-                            &seen_beams,
-                            Beam::new(pos.right(), RCDirection::right()),
-                        );
+                        q.push(Beam::new(pos.right(), RCDirection::right()));
                     }
                     if next.direction == RCDirection::right() {
-                        q_push(
-                            &mut q,
-                            &seen_beams,
-                            Beam::new(pos.down(), RCDirection::down()),
-                        );
+                        q.push(Beam::new(pos.down(), RCDirection::down()));
                     }
                     break;
                 }
