@@ -137,7 +137,7 @@ struct Beam {
 
 #[test]
 fn test_example1() -> Result<()> {
-    let input = r###"
+    let input = r"
 .|...\....
 |.-.\.....
 .....|-...
@@ -148,7 +148,7 @@ fn test_example1() -> Result<()> {
 .-.-/..|..
 .|....-|.\
 ..//.|....
-"###;
+";
     let result = solve_for(input)?;
 
     assert_eq!("Part 1: 46 | Part 2: 51", result);

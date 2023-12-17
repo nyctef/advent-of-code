@@ -1,10 +1,9 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
-use itertools::Itertools;
+
 use std::{
     cmp::{self, Ordering},
-    collections::{HashMap, HashSet},
 };
 
 pub fn solve() -> Result<()> {

@@ -59,7 +59,7 @@ impl<T: std::fmt::Debug + Clone, K: Eq + PartialEq + Hash, S: Clone + Copy + Par
     pub fn push(&mut self, entry: T) -> bool {
         let key = (self.get_key)(&entry);
         let score = (self.get_score)(&entry);
-        let bests = self.best_scores.entry(key).or_insert(vec![]);
+        let bests = self.best_scores.entry(key).or_default();
         if bests.iter().any(|b| b <= &score) {
             // we've already reached this position with an equal or better score, so skip
             self.discard_count += 1;
