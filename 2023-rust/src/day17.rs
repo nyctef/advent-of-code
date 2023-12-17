@@ -85,9 +85,6 @@ fn solve_for(input: &str) -> Result<String> {
             }
         }
 
-        // prioritise getting down to the end first, so that we have a baseline
-        // score to eliminate other paths with
-        candidates.sort_by_key(|c| cmp::Reverse((c.pos.row, c.pos.col)));
         for c in candidates {
             let min_cost_to_end =
                 c.loss as usize + RCDirection::from_to(&c.pos, &target).manhattan_abs();
