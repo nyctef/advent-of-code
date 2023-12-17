@@ -1,11 +1,11 @@
-use std::{
-    cmp::{self, Ordering},
-    collections::{HashMap, HashSet},
-};
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
+use std::{
+    cmp::{self, Ordering},
+    collections::{HashMap, HashSet},
+};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 17)?;
@@ -44,7 +44,6 @@ fn solve_for(input: &str) -> Result<String> {
     println!("probable max score: {}", probable_limit);
     let mut best = probable_limit;
 
-    let mut bests: HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
 
     while let Some(next) = search.pop() {
         if next.pos == target && next.speed >= 4 && next.loss < best {
@@ -99,28 +98,18 @@ fn solve_for(input: &str) -> Result<String> {
                 continue;
             }
 
-            let e = bests.entry((c.pos, c.dir)).or_default();
-            if e.iter().any(|x|  x.0 == c.speed && x.1 <= c.loss) {
-                // we've already reached this position with an equal or better score, so skip
-                continue;
-            } else {
-                let value = (c.speed, c.loss);
-                e.push(value);
-                // only retain scores that aren't strictly worse than the one we've just added
-                e.retain(|e2| !(e2.0 == value.0 && e2.1 > value.1));
-                assert!(!e.is_empty());
-            }
             search.push(c);
         }
     }
 
+    let bests = search.get_best_scores();
     let mut next_best = best;
     let mut current_tile = target;
     let mut path_tiles = HashSet::new();
     let mut tile_losses_per_tile: HashMap<CharGridIndexRC, Vec<u32>> = HashMap::new();
     for (bk, bv) in bests {
         let e = tile_losses_per_tile.entry(bk.0).or_default();
-        e.extend(bv.iter().map(|x| x.1));
+        e.extend(bv.iter().map(|x| x));
     }
 
     'outer: while next_best > 0 {

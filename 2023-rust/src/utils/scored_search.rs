@@ -12,7 +12,9 @@ use std::hash::Hash;
 /// by default the score is minimized
 pub struct ScoredSearch<T, K, S> {
     queue: VecDeque<T>,
-    best_scores: HashMap<K, S>,
+    best_scores: HashMap<K, Vec<S>>,
+    // TODO: might be able to remove need for Box<...> here if we just
+    // make this one big function rather than storing these funcs in a struct
     get_key: Box<dyn Fn(&T) -> K>,
     get_score: Box<dyn Fn(&T) -> S>,
     dfs: bool,
@@ -55,13 +57,18 @@ impl<T: std::fmt::Debug + Clone, K: Eq + PartialEq + Hash, S: Clone + Copy + Par
     }
 
     pub fn push(&mut self, entry: T) -> bool {
-        /*
-        if !self.queue.is_empty()) &&  self.queue.iter().all(|x| x <= &entry) {
-            self.discard_count += 1;
+        let key = (self.get_key)(&entry);
+        let score = (self.get_score)(&entry);
+        let bests = self.best_scores.entry(key).or_insert(vec![]);
+        if bests.iter().any(|b| b <= &score) {
+            // we've already reached this position with an equal or better score, so skip
             return false;
+        } else {
+            bests.push(score);
+            // only retain scores that aren't strictly worse than the one we've just added
+            // this makes future score checks faster since we have to check against fewer items
+            bests.retain(|b| !(b > &score));
         }
-        self.insert_count += 1;
-        */
 
         if self.dfs {
             self.queue.push_front(entry);
@@ -82,6 +89,12 @@ impl<T: std::fmt::Debug + Clone, K: Eq + PartialEq + Hash, S: Clone + Copy + Par
             self.insert_count,
             self.queue.len()
         )
+    }
+
+    pub fn get_best_scores(&self) -> &HashMap<K, Vec<S>> {
+        // TODO: move more logic for reconstructing the path into here
+        // probably easiest if we build up a lookup of "previous" nodes for each state
+        &self.best_scores
     }
 }
 
