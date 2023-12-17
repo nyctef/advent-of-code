@@ -1,28 +1,30 @@
 use std::collections::{HashSet, VecDeque};
+use std::hash::Hash;
 
-#[derive(Debug)]
-pub struct Search<T> {
+pub struct Search<T, K> {
     queue: VecDeque<T>,
-    seen: HashSet<T>,
+    seen: HashSet<K>,
+    get_key: Box<dyn Fn(&T) -> K>,
     dfs: bool,
 }
 
-impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
-    pub fn new_dfs() -> Search<T> {
+impl<T: std::fmt::Debug + Clone, K: PartialEq + Eq + Hash> Search<T, K> {
+    pub fn new_dfs(get_key: impl Fn(&T) -> K + 'static) -> Search<T, K> {
         Search {
             queue: VecDeque::new(),
             seen: HashSet::new(),
+            get_key: Box::new(get_key),
             dfs: true,
         }
     }
 
     pub fn push(&mut self, entry: T) -> bool {
-        if self.seen.contains(&entry) {
+        if self.seen.contains(&(self.get_key)(&entry)) {
             return false;
         }
         // todo: some workaround like https://github.com/rust-lang/rust/issues/60896 to avoid the
         // double lookup here?
-        self.seen.insert(entry.clone());
+        self.seen.insert((self.get_key)(&entry));
         if self.dfs {
             self.queue.push_front(entry);
         } else {
@@ -36,16 +38,3 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
     }
 }
 
-pub trait SearchExt<T> {
-    fn push_opt(&mut self, entry: Option<T>) -> bool;
-}
-
-impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> SearchExt<T> for Search<T> {
-    fn push_opt(&mut self, entry: Option<T>) -> bool {
-        if let Some(entry) = entry {
-            self.push(entry);
-            return true;
-        }
-        false
-    }
-}
