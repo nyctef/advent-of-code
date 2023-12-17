@@ -102,63 +102,6 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
-    let bests = search.get_best_scores();
-    let mut next_best = best;
-    let mut current_tile = target;
-    let mut path_tiles = HashSet::new();
-    let mut tile_losses_per_tile: HashMap<CharGridIndexRC, Vec<u32>> = HashMap::new();
-    for (bk, bv) in bests {
-        let e = tile_losses_per_tile.entry(bk.0).or_default();
-        e.extend(bv.iter().map(|x| x));
-    }
-
-    'outer: while next_best > 0 {
-        path_tiles.insert(current_tile);
-        let this_tile_score: u32 = grid[current_tile].to_digit(10).unwrap();
-        // println!(
-        //     "ct {:?} ({}) with overall current score {}",
-        //     &current_tile, &this_tile_score, &next_best
-        // );
-        // println!(
-        //     "looking for a tile with score {}",
-        //     next_best - this_tile_score
-        // );
-        for (n, _) in grid.enumerate_4_neighbors(current_tile) {
-            let tile_losses = tile_losses_per_tile
-                .get(&n)
-                .into_iter()
-                .flatten()
-                .collect_vec();
-            // println!(
-            //     "considering tile {:?} with best losses {:?}",
-            //     &n, &tile_losses
-            // );
-            for l in tile_losses {
-                if *l == next_best - this_tile_score {
-                    current_tile = n;
-                    next_best = *l;
-                    continue 'outer;
-                }
-            }
-        }
-        // TODO: shouldn't hit this
-        break 'outer;
-    }
-
-    for (p, c) in grid.enumerate_chars_rc() {
-        if p.col == 0 {
-            println!();
-        }
-        if path_tiles.contains(&p) {
-            print!("#");
-        } else if tile_losses_per_tile.contains_key(&p) {
-            print!("?");
-        } else {
-            print!("{c}");
-        }
-    }
-    println!();
-
     println!("final best: {}", best);
     Ok(format!("best: {}", best))
 }
