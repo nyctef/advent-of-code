@@ -6,6 +6,7 @@ use std::{
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
+use itertools::Itertools;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 17)?;
@@ -105,7 +106,7 @@ fn solve_for(input: &str) -> Result<String> {
                 let value = (c.speed, c.loss);
                 e.push(value);
                 // only retain scores that aren't strictly worse than the one we've just added
-                e.retain(|e2| !(e2 > &value));
+                e.retain(|e2| !(e2.0 > value.0 && e2.1 > value.1));
             }
             search.push(c);
         }
@@ -118,29 +119,27 @@ fn solve_for(input: &str) -> Result<String> {
     'outer: while next_best > 0 {
         path_tiles.insert(current_tile);
         let this_tile_score: u32 = grid[current_tile].to_string().parse().unwrap();
-        dbg!(&next_best, &current_tile, &this_tile_score);
+        // println!("ct {:?} ({}) with overall current score {}", &current_tile, &this_tile_score, &next_best);
+        // println!("looking for a tile with score {}", next_best - this_tile_score);
         for (n, _) in grid.enumerate_4_neighbors(current_tile) {
-            let d = RCDirection::from_to(&current_tile, &n).opposite();
-            let tile_loss = *bests
-                .get(&(n, d))
+            let tile_losses = RCDirection::four()
                 .into_iter()
-                .flatten()
-                .map(|(_, l)| l)
-                .min()
-                .unwrap_or(&999);
-
-            dbg!(&n, &tile_loss);
-            if tile_loss == next_best - this_tile_score {
-                current_tile = n;
-                next_best = tile_loss;
-                continue 'outer;
+                .flat_map(|d| bests.get(&(n, d)).into_iter().flatten().map(|(_, l)| *l))
+                .collect_vec();
+            // println!("considering tile {:?} with best losses {:?}", &n, &tile_losses);
+            for l in tile_losses {
+                if l == next_best - this_tile_score {
+                    current_tile = n;
+                    next_best = l;
+                    continue 'outer;
+                }
             }
         }
         // TODO: shouldn't hit this
         break 'outer;
     }
-    
-    let considered_tiles:HashSet<_> = bests.keys().map(|(p, _d)| p).collect();
+
+    let considered_tiles: HashSet<_> = bests.keys().map(|(p, _d)| p).collect();
 
     for (p, c) in grid.enumerate_chars_rc() {
         if p.col == 0 {
