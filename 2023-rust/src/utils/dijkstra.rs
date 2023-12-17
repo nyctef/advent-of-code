@@ -5,7 +5,6 @@ use std::hash::Hash;
 
 /// T: the state type
 /// K: a unique key for the state for looking up scores
-/// S: the type of the score (distance)
 ///
 pub struct Dijkstra<T, K> {
     queue: BinaryHeap<Reverse<T>>,
@@ -43,6 +42,10 @@ impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> 
             }
             count += 1;
             if is_target_state(&current_state) {
+                // dijkstra relies on the assumption that if we always took
+                // the smallest step from the lowest-cost node, then if
+                // we reach the destination then we must have taken
+                // the shortest path.
                 return current_state;
             }
             let candidates = get_next_candidates(current_state);
@@ -51,12 +54,18 @@ impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> 
                 match e {
                     Entry::Occupied(mut o) => {
                         if &c < o.get() {
+                            // we've seen this state before, but now
+                            // we have a shorter path to it
                             o.insert(c.clone());
                         } else {
+                            // we have a better or equal path to this
+                            // state, so skip this candidate
                             continue;
                         }
                     }
                     Entry::Vacant(v) => {
+                        // we haven't seen this state before, so
+                        // we record the state as-is
                         v.insert(c.clone());
                     }
                 }
