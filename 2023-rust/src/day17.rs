@@ -37,6 +37,16 @@ fn solve_for(input: &str) -> Result<String> {
     let theoretical_max_states = grid.width() * grid.height() * 4 * 10;
     println!("max states: {}", theoretical_max_states);
     let target = CharGridIndexRC::new(grid.height() - 1, grid.width() - 1);
+    // it's going to be hard to get worse than going straight along the top
+    // edge, then straight along the right edge and hitting a 9 on every tile.
+    //
+    // the optimal solution will weave back and forth a bit, so it covers
+    // more tiles than this worst case, but the only reason to do that
+    // is because it has a lower overall cost than just going directly.
+    //
+    // this upper bound really helps speed up DFS since it means we can reject
+    // tons and tons of paths that are worse than this bound, but it doesn't
+    // help so much with a BFS approach.
     let probable_limit = ((grid.width() + grid.height()) * 9) as u32;
     println!("probable max score: {}", probable_limit);
 
