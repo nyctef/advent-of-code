@@ -41,13 +41,14 @@ fn solve_for(input: &str) -> Result<String> {
     let mut seen_tiles = HashSet::new();
     let mut count: u64 = 0;
     let target = CharGridIndexRC::new(grid.height() - 1, grid.width() - 1);
-    let mut best: State = State::new(target, RCDirection::right(), 999999999, 2);
+    let probable_limit = (grid.width() + grid.height() * 9) as u32;
+    let mut best = probable_limit;
 
     let mut bests:HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
 
     while let Some(next) = search.pop() {
-        if next.pos == target && next < best {
-            best = next.clone();
+        if next.pos == target && next.loss < best {
+            best = next.loss;
         }
         if count % 1_000_000 == 0 {
             println!("{}", search.debug_info());
@@ -93,7 +94,7 @@ fn solve_for(input: &str) -> Result<String> {
         candidates.sort_by_key(|c| cmp::Reverse((c.pos.row, c.pos.col)));
         for c in candidates {
             let min_cost_to_end = c.loss as usize + RCDirection::from_to(&c.pos, &target).manhattan_abs();
-            if min_cost_to_end > best.loss as usize {
+            if min_cost_to_end > best as usize {
                 // assuming every tile between here and the target was 1, we still wouldn't
                 // be able to beat the current best score
                 continue;
@@ -125,7 +126,7 @@ fn solve_for(input: &str) -> Result<String> {
     }
     println!();
 
-    let part1 = best.loss;
+    let part1 = best;
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
