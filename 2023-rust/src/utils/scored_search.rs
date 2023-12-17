@@ -1,6 +1,4 @@
-use std::collections::{hash_map::Entry, HashMap, HashSet, VecDeque};
-
-use itertools::Itertools;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 pub struct ScoredSearch<T> {
@@ -10,9 +8,7 @@ pub struct ScoredSearch<T> {
     insert_count: u64,
 }
 
-impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone + PartialOrd>
-    ScoredSearch<T>
-{
+impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone + PartialOrd> ScoredSearch<T> {
     pub fn new_dfs() -> ScoredSearch<T> {
         ScoredSearch {
             queue: VecDeque::new(),
@@ -43,7 +39,6 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone + PartialOrd>
         // todo: this clone should be avoidable
         self.queue.pop_front().map(|x| x.clone())
     }
-
 
     pub fn debug_info(&self) -> String {
         format!(

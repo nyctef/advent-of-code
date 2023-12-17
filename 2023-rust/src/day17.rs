@@ -1,12 +1,11 @@
 use std::{
-    cmp::{self, Ordering, Reverse},
-    collections::{hash_map::Entry, HashMap, HashSet},
+    cmp::{self, Ordering},
+    collections::{HashMap, HashSet},
 };
 
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
-use itertools::Itertools;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 17)?;
@@ -98,7 +97,7 @@ fn solve_for(input: &str) -> Result<String> {
                 continue;
             }
 
-            let mut e = bests.entry((c.pos, c.dir)).or_default();
+            let e = bests.entry((c.pos, c.dir)).or_default();
             if e.iter().any(|x| x.0 <= c.speed && x.1 <= c.loss) {
                 // we've already reached this position with an equal or better score, so skip
                 continue;
@@ -122,7 +121,13 @@ fn solve_for(input: &str) -> Result<String> {
         dbg!(&next_best, &current_tile, &this_tile_score);
         for (n, _) in grid.enumerate_4_neighbors(current_tile) {
             let d = RCDirection::from_to(&current_tile, &n).opposite();
-            let tile_loss = *bests.get(&(n, d)).into_iter().flatten().map(|(_, l)| l).min().unwrap_or(&999);
+            let tile_loss = *bests
+                .get(&(n, d))
+                .into_iter()
+                .flatten()
+                .map(|(_, l)| l)
+                .min()
+                .unwrap_or(&999);
 
             dbg!(&n, &tile_loss);
             if tile_loss == next_best - this_tile_score {
@@ -148,9 +153,7 @@ fn solve_for(input: &str) -> Result<String> {
     // */
     println!();
 
-    let part1 = best;
     println!("final best: {}", best);
-    let part2 = "";
     Ok(format!("best: {}", best))
 }
 
