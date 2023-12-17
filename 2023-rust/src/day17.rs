@@ -22,8 +22,8 @@ fn solve_for(input: &str) -> Result<String> {
     let grid = CharGrid::from_string(input);
     let mut search = ScoredSearch::new_dfs();
 
-    let right_cost: u32 = grid.index_rc(0, 1).to_string().parse().unwrap();
-    let down_cost: u32 = grid.index_rc(1, 0).to_string().parse().unwrap();
+    let right_cost: u32 = grid.index_rc(0, 1).to_digit(10).unwrap();
+    let down_cost: u32 = grid.index_rc(1, 0).to_digit(10).unwrap();
     search.push(State::new(
         CharGridIndexRC::new(0, 1),
         RCDirection::right(),
@@ -48,14 +48,6 @@ fn solve_for(input: &str) -> Result<String> {
     let mut bests: HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
 
     while let Some(next) = search.pop() {
-        let distance_to_target = RCDirection::from_to(&next.pos, &target).manhattan_abs();
-        /* TODO: not sure about this exactly (is it even necessary?)
-        if distance_to_target < 4 {
-            if (next.speed as usize) < (4-distance_to_target) {
-                continue;
-            }
-        }
-        */
         if next.pos == target && next.speed >= 4 && next.loss < best {
             println!("reached end with speed {} and loss {}", next.speed, next.loss);
             println!("dir: {}", next.dir);
@@ -71,7 +63,7 @@ fn solve_for(input: &str) -> Result<String> {
             let n2p = next.pos + next.dir;
             let n2s = next.speed + 1;
             if grid.is_in_bounds(n2p) {
-                let n2c: u32 = next.loss + grid[n2p].to_string().parse::<u32>().unwrap();
+                let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
                 candidates.push(State::new(n2p, next.dir, n2c, n2s));
             }
         }
@@ -81,7 +73,7 @@ fn solve_for(input: &str) -> Result<String> {
             let n2p = next.pos + n2d;
             if grid.is_in_bounds(n2p) {
                 let n2s = 1;
-                let n2c: u32 = next.loss + grid[n2p].to_string().parse::<u32>().unwrap();
+                let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
                 candidates.push(State::new(n2p, n2d, n2c, n2s));
             }
         }
@@ -91,7 +83,7 @@ fn solve_for(input: &str) -> Result<String> {
             let n2p = next.pos + n2d;
             if grid.is_in_bounds(n2p) {
                 let n2s = 1;
-                let n2c: u32 = next.loss + grid[n2p].to_string().parse::<u32>().unwrap();
+                let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
                 candidates.push(State::new(n2p, n2d, n2c, n2s));
             }
         }
@@ -117,7 +109,7 @@ fn solve_for(input: &str) -> Result<String> {
                 e.push(value);
                 // only retain scores that aren't strictly worse than the one we've just added
                 e.retain(|e2| !(e2.0 == value.0 && e2.1 > value.1));
-                assert!(e.len() > 0);
+                assert!(!e.is_empty());
             }
             search.push(c);
         }
@@ -125,22 +117,16 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut next_best = best;
     let mut current_tile = target;
-    // /*
     let mut path_tiles = HashSet::new();
     let mut tile_losses_per_tile: HashMap<CharGridIndexRC, Vec<u32>> = HashMap::new();
-    // dbg!(&bests);
     for (bk, bv) in bests {
         let e = tile_losses_per_tile.entry(bk.0).or_default();
         e.extend(bv.iter().map(|x| x.1));
     }
 
-    //        bests
-    //       .iter()
-    //      .map(|(k, v)| (k.0, v.iter().map(|l| l.1).collect_vec()))
-    //     .collect();
     'outer: while next_best > 0 {
         path_tiles.insert(current_tile);
-        let this_tile_score: u32 = grid[current_tile].to_string().parse().unwrap();
+        let this_tile_score: u32 = grid[current_tile].to_digit(10).unwrap();
         println!(
             "ct {:?} ({}) with overall current score {}",
             &current_tile, &this_tile_score, &next_best
@@ -183,7 +169,6 @@ fn solve_for(input: &str) -> Result<String> {
             print!("{c}");
         }
     }
-    // */
     println!();
 
     println!("final best: {}", best);

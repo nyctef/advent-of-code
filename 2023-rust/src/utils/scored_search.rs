@@ -36,8 +36,7 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone + PartialOrd>
     }
 
     pub fn pop(&mut self) -> Option<T> {
-        // todo: this clone should be avoidable
-        self.queue.pop_front().map(|x| x.clone())
+        self.queue.pop_front()
     }
 
     pub fn debug_info(&self) -> String {
