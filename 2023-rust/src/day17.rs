@@ -1,6 +1,6 @@
 use std::{
     cmp::{self, Ordering, Reverse},
-    collections::{HashMap, HashSet, hash_map::Entry},
+    collections::{hash_map::Entry, HashMap, HashSet},
 };
 
 use crate::utils::*;
@@ -29,12 +29,14 @@ fn solve_for(input: &str) -> Result<String> {
         CharGridIndexRC::new(0, 1),
         RCDirection::right(),
         right_cost,
-        2,
+        1,
     ));
-    search.push(
-        State::new(CharGridIndexRC::new(1, 0), RCDirection::down(),
-        down_cost, 2),
-    );
+    search.push(State::new(
+        CharGridIndexRC::new(1, 0),
+        RCDirection::down(),
+        down_cost,
+        1,
+    ));
 
     let theoretical_max_states = grid.width() * grid.height() * 4 * 3;
     println!("max states: {}", theoretical_max_states);
@@ -45,7 +47,7 @@ fn solve_for(input: &str) -> Result<String> {
     println!("probable max score: {}", probable_limit);
     let mut best = probable_limit;
 
-    let mut bests:HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
+    let mut bests: HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
 
     while let Some(next) = search.pop() {
         if next.pos == target && next.loss < best {
@@ -93,7 +95,8 @@ fn solve_for(input: &str) -> Result<String> {
         // score to eliminate other paths with
         candidates.sort_by_key(|c| cmp::Reverse((c.pos.row, c.pos.col)));
         for c in candidates {
-            let min_cost_to_end = c.loss as usize + RCDirection::from_to(&c.pos, &target).manhattan_abs();
+            let min_cost_to_end =
+                c.loss as usize + RCDirection::from_to(&c.pos, &target).manhattan_abs();
             if min_cost_to_end > best as usize {
                 // assuming every tile between here and the target was 1, we still wouldn't
                 // be able to beat the current best score
