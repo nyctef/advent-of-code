@@ -7,14 +7,20 @@ pub struct ScoredSearch<T, S> {
     queue: VecDeque<T>,
     seen: HashMap<T, S>,
     dfs: bool,
+    discard_count: u64,
+    insert_count: u64,
 }
 
-impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Copy> ScoredSearch<T, S> {
+impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Copy>
+    ScoredSearch<T, S>
+{
     pub fn new_dfs() -> ScoredSearch<T, S> {
         ScoredSearch {
             queue: VecDeque::new(),
             seen: HashMap::new(),
             dfs: true,
+            discard_count: 0,
+            insert_count: 0,
         }
     }
 
@@ -26,6 +32,7 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Cop
                 // TODO: let min/max be configurable
                 if o.get() < &score {
                     // we've already hit this state with a better score, so abort this search
+                    self.discard_count += 1;
                     return false;
                 }
                 o.insert(score);
@@ -35,6 +42,7 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Cop
                 v.insert(score);
             }
         }
+        self.insert_count += 1;
 
         if self.dfs {
             self.queue.push_front(entry);
@@ -50,7 +58,22 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Cop
     }
 
     pub fn get_scores_matching(&self, predicate: impl Fn(&T) -> bool) -> Vec<S> {
-        self.seen.iter().filter(|(t, _s)| predicate(*t)).map(|(_t, s)| s).copied().collect_vec()
+        self.seen
+            .iter()
+            .filter(|(t, _s)| predicate(*t))
+            .map(|(_t, s)| s)
+            .copied()
+            .collect_vec()
+    }
+
+    pub fn debug_info(&self) -> String {
+        format!(
+            "dsc: {} ins: {} len: {} seen: {}",
+            self.discard_count,
+            self.insert_count,
+            self.queue.len(),
+            self.seen.len()
+        )
     }
 }
 

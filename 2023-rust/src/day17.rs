@@ -34,9 +34,17 @@ fn solve_for(input: &str) -> Result<String> {
         down_cost,
     );
 
+    let theoretical_max_states = grid.width() * grid.height() * 4 * 3;
+    println!("max: {}", theoretical_max_states);
     let mut seen_tiles = HashSet::new();
+    let mut count:u64 = 0;
     while let Some((next, next_score)) = search.pop() {
+        count += 1;
+        if count % 100_000 == 0 {
+            println!("{}", search.debug_info());
+        }
         seen_tiles.insert(next.pos);
+        let mut candidates = vec![];
         {
             // continue forward
             let n2p = next.pos + next.dir;
@@ -44,7 +52,7 @@ fn solve_for(input: &str) -> Result<String> {
             if grid.is_in_bounds(n2p) {
                 let n2c: u32 = next_score + grid[n2p].to_string().parse::<u32>().unwrap();
                 if n2s < 4 {
-                    search.push(State::new(n2p, next.dir, n2s), n2c);
+                    candidates.push((State::new(n2p, next.dir, n2s), n2c));
                 }
             }
         }
@@ -55,7 +63,7 @@ fn solve_for(input: &str) -> Result<String> {
             if grid.is_in_bounds(n2p) {
                 let n2s = 1;
                 let n2c: u32 = next_score + grid[n2p].to_string().parse::<u32>().unwrap();
-                search.push(State::new(n2p, n2d, n2s), n2c);
+                candidates.push((State::new(n2p, n2d, n2s), n2c));
             }
         }
         {
@@ -65,8 +73,15 @@ fn solve_for(input: &str) -> Result<String> {
             if grid.is_in_bounds(n2p) {
                 let n2s = 1;
                 let n2c: u32 = next_score + grid[n2p].to_string().parse::<u32>().unwrap();
-                search.push(State::new(n2p, n2d, n2s), n2c);
+                candidates.push((State::new(n2p, n2d, n2s), n2c));
             }
+        }
+
+        // push lower-cost states to the queue first, since that'll give better bounds for later
+        // states (helps in theory but doesn't seem to matter in practice yet)
+        // candidates.sort_by_key(|c| c.1);
+        for c in candidates {
+            search.push(c.0, c.1);
         }
     }
 
