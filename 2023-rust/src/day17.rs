@@ -2,7 +2,6 @@ use std::{
     cmp::{self, Ordering},
     collections::{HashMap, HashSet},
 };
-
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
@@ -20,7 +19,7 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     // TODO: maybe a DigitGrid for this puzzle?
     let grid = CharGrid::from_string(input);
-    let mut search = ScoredSearch::new_bfs();
+    let mut search = ScoredSearch::new_bfs(|s: &State| (s.pos, s.dir, s.speed), |s| s.loss);
 
     let right_cost: u32 = grid.index_rc(0, 1).to_digit(10).unwrap();
     let down_cost: u32 = grid.index_rc(1, 0).to_digit(10).unwrap();
