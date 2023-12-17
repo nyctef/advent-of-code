@@ -62,8 +62,10 @@ impl<T: std::fmt::Debug + Clone, K: Eq + PartialEq + Hash, S: Clone + Copy + Par
         let bests = self.best_scores.entry(key).or_insert(vec![]);
         if bests.iter().any(|b| b <= &score) {
             // we've already reached this position with an equal or better score, so skip
+            self.discard_count += 1;
             return false;
         } else {
+            self.insert_count += 1;
             bests.push(score);
             // only retain scores that aren't strictly worse than the one we've just added
             // this makes future score checks faster since we have to check against fewer items
