@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 
@@ -67,9 +68,10 @@ impl<T: std::fmt::Debug + Clone, K: Eq + PartialEq + Hash, S: Clone + Copy + Par
         } else {
             self.insert_count += 1;
             bests.push(score);
-            // only retain scores that aren't strictly worse than the one we've just added
-            // this makes future score checks faster since we have to check against fewer items
-            bests.retain(|b| !(b > &score));
+            // only retain scores that aren't strictly worse than the one we've just added.
+            // this makes future score checks faster since we have to check against fewer items.
+            // detail: we keep `b` if `b` is Less, Equal or None (incomparable) compared to `score`
+            bests.retain(|b| b.partial_cmp(&score) != Some(Ordering::Greater));
         }
 
         if self.dfs {
