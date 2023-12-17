@@ -41,14 +41,24 @@ fn solve_for(input: &str) -> Result<String> {
     println!("max states: {}", theoretical_max_states);
     let mut count: u64 = 0;
     let target = CharGridIndexRC::new(grid.height() - 1, grid.width() - 1);
-    let probable_limit = (grid.width() + grid.height() * 9) as u32;
+    let probable_limit = ((grid.width() + grid.height()) * 9) as u32;
     println!("probable max score: {}", probable_limit);
     let mut best = probable_limit;
 
     let mut bests: HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
 
     while let Some(next) = search.pop() {
+        let distance_to_target = RCDirection::from_to(&next.pos, &target).manhattan_abs();
+        /* TODO: not sure about this exactly (is it even necessary?)
+        if distance_to_target < 4 {
+            if (next.speed as usize) < (4-distance_to_target) {
+                continue;
+            }
+        }
+        */
         if next.pos == target && next.speed >= 4 && next.loss < best {
+            println!("reached end with speed {} and loss {}", next.speed, next.loss);
+            println!("dir: {}", next.dir);
             best = next.loss;
         }
         if count % 1_000_000 == 0 {
@@ -56,7 +66,7 @@ fn solve_for(input: &str) -> Result<String> {
         }
         count += 1;
         let mut candidates = vec![];
-        if next.speed <= 9 {
+        if next.speed < 10 {
             // continue forward
             let n2p = next.pos + next.dir;
             let n2s = next.speed + 1;
@@ -99,14 +109,15 @@ fn solve_for(input: &str) -> Result<String> {
             }
 
             let e = bests.entry((c.pos, c.dir)).or_default();
-            if e.iter().any(|x| x.0 <= c.speed && x.1 <= c.loss) {
+            if e.iter().any(|x| /* x.0 <= c.speed &&*/ x.1 <= c.loss) {
                 // we've already reached this position with an equal or better score, so skip
                 continue;
             } else {
                 let value = (c.speed, c.loss);
                 e.push(value);
                 // only retain scores that aren't strictly worse than the one we've just added
-                e.retain(|e2| !(e2.0 > value.0 && e2.1 > value.1));
+                e.retain(|e2| !(/*e2.0 > value.0 &&*/ e2.1 > value.1));
+                assert!(e.len() > 0);
             }
             search.push(c);
         }
@@ -116,21 +127,42 @@ fn solve_for(input: &str) -> Result<String> {
     let mut current_tile = target;
     // /*
     let mut path_tiles = HashSet::new();
+    let mut tile_losses_per_tile: HashMap<CharGridIndexRC, Vec<u32>> = HashMap::new();
+    // dbg!(&bests);
+    for (bk, bv) in bests {
+        let e = tile_losses_per_tile.entry(bk.0).or_default();
+        e.extend(bv.iter().map(|x| x.1));
+    }
+
+    //        bests
+    //       .iter()
+    //      .map(|(k, v)| (k.0, v.iter().map(|l| l.1).collect_vec()))
+    //     .collect();
     'outer: while next_best > 0 {
         path_tiles.insert(current_tile);
         let this_tile_score: u32 = grid[current_tile].to_string().parse().unwrap();
-        // println!("ct {:?} ({}) with overall current score {}", &current_tile, &this_tile_score, &next_best);
-        // println!("looking for a tile with score {}", next_best - this_tile_score);
+        println!(
+            "ct {:?} ({}) with overall current score {}",
+            &current_tile, &this_tile_score, &next_best
+        );
+        println!(
+            "looking for a tile with score {}",
+            next_best - this_tile_score
+        );
         for (n, _) in grid.enumerate_4_neighbors(current_tile) {
-            let tile_losses = RCDirection::four()
+            let tile_losses = tile_losses_per_tile
+                .get(&n)
                 .into_iter()
-                .flat_map(|d| bests.get(&(n, d)).into_iter().flatten().map(|(_, l)| *l))
+                .flatten()
                 .collect_vec();
-            // println!("considering tile {:?} with best losses {:?}", &n, &tile_losses);
+            println!(
+                "considering tile {:?} with best losses {:?}",
+                &n, &tile_losses
+            );
             for l in tile_losses {
-                if l == next_best - this_tile_score {
+                if *l == next_best - this_tile_score {
                     current_tile = n;
-                    next_best = l;
+                    next_best = *l;
                     continue 'outer;
                 }
             }
@@ -139,15 +171,13 @@ fn solve_for(input: &str) -> Result<String> {
         break 'outer;
     }
 
-    let considered_tiles: HashSet<_> = bests.keys().map(|(p, _d)| p).collect();
-
     for (p, c) in grid.enumerate_chars_rc() {
         if p.col == 0 {
             println!();
         }
         if path_tiles.contains(&p) {
             print!("#");
-        } else if considered_tiles.contains(&p) {
+        } else if tile_losses_per_tile.contains_key(&p) {
             print!("?");
         } else {
             print!("{c}");
