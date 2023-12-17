@@ -2,7 +2,7 @@ use std::cmp::max;
 use std::cmp::min;
 use std::ops;
 
-use crate::aoc_util::*;
+use crate::util::*;
 use color_eyre::eyre::Result;
 use color_eyre::Report;
 use regex::Regex;

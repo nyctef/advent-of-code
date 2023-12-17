@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::aoc_util::*;
+use crate::util::*;
 use crate::intcode::IntCode;
 use crate::intcode::MachineState;
 use color_eyre::eyre::Result;

@@ -1,5 +1,5 @@
 use crate::{
-    aoc_util::*,
+    util::*,
     intcode::{IntCode, MachineState},
 };
 use color_eyre::eyre::Result;

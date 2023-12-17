@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::aoc_util::*;
+use crate::util::*;
 use crate::intcode::IntCode;
 use crate::intcode::MachineState;
 use crate::intcode::TInt;

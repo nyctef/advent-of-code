@@ -4,7 +4,7 @@ use std::hash::Hash;
 
 use itertools::Itertools;
 
-use crate::aoc_util::*;
+use crate::util::*;
 use color_eyre::eyre::Result;
 
 pub fn solve() -> Result<()> {

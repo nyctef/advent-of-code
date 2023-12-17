@@ -3,7 +3,7 @@ use std::{
     vec,
 };
 
-use crate::aoc_util::*;
+use crate::util::*;
 use color_eyre::eyre::Result;
 use itertools::{chain, repeat_n, Itertools};
 

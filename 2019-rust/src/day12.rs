@@ -1,4 +1,4 @@
-use crate::aoc_util::*;
+use crate::util::*;
 use color_eyre::eyre::Result;
 use color_eyre::Report;
 use itertools::chain;

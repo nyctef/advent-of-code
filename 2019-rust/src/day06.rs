@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::aoc_util::*;
+use crate::util::*;
 use color_eyre::eyre::Result;
 
 pub fn solve() -> Result<()> {
