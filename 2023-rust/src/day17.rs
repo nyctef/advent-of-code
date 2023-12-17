@@ -36,7 +36,7 @@ fn solve_for(input: &str) -> Result<String> {
         1,
     ));
 
-    let theoretical_max_states = grid.width() * grid.height() * 4 * 3;
+    let theoretical_max_states = grid.width() * grid.height() * 4 * 10;
     println!("max states: {}", theoretical_max_states);
     let mut count: u64 = 0;
     let target = CharGridIndexRC::new(grid.height() - 1, grid.width() - 1);
