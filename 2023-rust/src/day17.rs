@@ -68,8 +68,6 @@ fn next_candidates(current: State, grid: &CharGrid) -> Vec<State> {
             // turn left
             let next_dir = current.dir.counterclockwise();
             candidates.push(State::new(current_tile, next_dir, cost));
-        }
-        if speed >= 4 {
             // turn right
             let next_dir = current.dir.clockwise();
             candidates.push(State::new(current_tile, next_dir, cost));
