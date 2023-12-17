@@ -1,5 +1,5 @@
 use std::{
-    cmp::Reverse,
+    cmp::{self, Reverse},
     collections::{HashMap, HashSet},
 };
 
@@ -37,11 +37,16 @@ fn solve_for(input: &str) -> Result<String> {
     let theoretical_max_states = grid.width() * grid.height() * 4 * 3;
     println!("max: {}", theoretical_max_states);
     let mut seen_tiles = HashSet::new();
-    let mut count:u64 = 0;
+    let mut count: u64 = 0;
     while let Some((next, next_score)) = search.pop() {
         count += 1;
-        if count % 100_000 == 0 {
+        if count % 1_000_000 == 0 {
             println!("{}", search.debug_info());
+            let best_scores = search.get_scores_matching(|s| {
+                s.pos == CharGridIndexRC::new(grid.height() - 1, grid.width() - 1)
+            });
+            let best = best_scores.iter().min();
+            println!("best: {:?}", best);
         }
         seen_tiles.insert(next.pos);
         let mut candidates = vec![];
@@ -77,9 +82,9 @@ fn solve_for(input: &str) -> Result<String> {
             }
         }
 
-        // push lower-cost states to the queue first, since that'll give better bounds for later
-        // states (helps in theory but doesn't seem to matter in practice yet)
-        // candidates.sort_by_key(|c| c.1);
+        // prioritise getting down to the end first, so that we have a baseline
+        // score to eliminate other paths with
+        candidates.sort_by_key(|c| cmp::Reverse((c.0.pos.row, c.0.pos.col)));
         for c in candidates {
             search.push(c.0, c.1);
         }
