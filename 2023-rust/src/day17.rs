@@ -37,11 +37,12 @@ fn solve_for(input: &str) -> Result<String> {
     );
 
     let theoretical_max_states = grid.width() * grid.height() * 4 * 3;
-    println!("max: {}", theoretical_max_states);
+    println!("max states: {}", theoretical_max_states);
     let mut seen_tiles = HashSet::new();
     let mut count: u64 = 0;
     let target = CharGridIndexRC::new(grid.height() - 1, grid.width() - 1);
     let probable_limit = (grid.width() + grid.height() * 9) as u32;
+    println!("probable max score: {}", probable_limit);
     let mut best = probable_limit;
 
     let mut bests:HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
@@ -51,8 +52,7 @@ fn solve_for(input: &str) -> Result<String> {
             best = next.loss;
         }
         if count % 1_000_000 == 0 {
-            println!("{}", search.debug_info());
-            println!("best: {:?}", best);
+            println!("{} best: {}", search.debug_info(), best);
         }
         count += 1;
         seen_tiles.insert(next.pos);
@@ -127,6 +127,7 @@ fn solve_for(input: &str) -> Result<String> {
     println!();
 
     let part1 = best;
+    println!("final best: {}", best);
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
