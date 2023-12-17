@@ -391,6 +391,11 @@ impl RCDirection {
             coldiff: 1,
         }
     }
+
+    pub fn four() -> Vec<RCDirection> {
+        vec![Self::right(), Self::up(), Self::left(), Self::down()]
+    }
+
     pub fn clockwise(&self) -> RCDirection {
         assert!(self.is_unit());
         // TODO: is there a nicer way to write this?

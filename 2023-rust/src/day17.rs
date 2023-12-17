@@ -24,7 +24,6 @@ fn solve_for(input: &str) -> Result<String> {
 
     let right_cost: u32 = grid.index_rc(0, 1).to_string().parse().unwrap();
     let down_cost: u32 = grid.index_rc(1, 0).to_string().parse().unwrap();
-    // todo: should initial speed be 1 or 2?
     search.push(State::new(
         CharGridIndexRC::new(0, 1),
         RCDirection::right(),
@@ -40,7 +39,6 @@ fn solve_for(input: &str) -> Result<String> {
 
     let theoretical_max_states = grid.width() * grid.height() * 4 * 3;
     println!("max states: {}", theoretical_max_states);
-    let mut seen_tiles = HashSet::new();
     let mut count: u64 = 0;
     let target = CharGridIndexRC::new(grid.height() - 1, grid.width() - 1);
     let probable_limit = (grid.width() + grid.height() * 9) as u32;
@@ -50,27 +48,24 @@ fn solve_for(input: &str) -> Result<String> {
     let mut bests: HashMap<(CharGridIndexRC, RCDirection), Vec<(u8, u32)>> = HashMap::new();
 
     while let Some(next) = search.pop() {
-        if next.pos == target && next.loss < best {
+        if next.pos == target && next.speed >= 4 && next.loss < best {
             best = next.loss;
         }
         if count % 1_000_000 == 0 {
             println!("{} best: {}", search.debug_info(), best);
         }
         count += 1;
-        seen_tiles.insert(next.pos);
         let mut candidates = vec![];
-        {
+        if next.speed <= 9 {
             // continue forward
             let n2p = next.pos + next.dir;
             let n2s = next.speed + 1;
             if grid.is_in_bounds(n2p) {
                 let n2c: u32 = next.loss + grid[n2p].to_string().parse::<u32>().unwrap();
-                if n2s < 4 {
-                    candidates.push(State::new(n2p, next.dir, n2c, n2s));
-                }
+                candidates.push(State::new(n2p, next.dir, n2c, n2s));
             }
         }
-        {
+        if next.speed >= 4 {
             // turn left
             let n2d = next.dir.counterclockwise();
             let n2p = next.pos + n2d;
@@ -80,7 +75,7 @@ fn solve_for(input: &str) -> Result<String> {
                 candidates.push(State::new(n2p, n2d, n2c, n2s));
             }
         }
-        {
+        if next.speed >= 4 {
             // turn right
             let n2d = next.dir.clockwise();
             let n2p = next.pos + n2d;
@@ -117,22 +112,46 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
+    let mut next_best = best;
+    let mut current_tile = target;
+    // /*
+    let mut path_tiles = HashSet::new();
+    'outer: while next_best > 0 {
+        path_tiles.insert(current_tile);
+        let this_tile_score: u32 = grid[current_tile].to_string().parse().unwrap();
+        dbg!(&next_best, &current_tile, &this_tile_score);
+        for (n, _) in grid.enumerate_4_neighbors(current_tile) {
+            let d = RCDirection::from_to(&current_tile, &n).opposite();
+            let tile_loss = *bests.get(&(n, d)).into_iter().flatten().map(|(_, l)| l).min().unwrap_or(&999);
+
+            dbg!(&n, &tile_loss);
+            if tile_loss == next_best - this_tile_score {
+                current_tile = n;
+                next_best = tile_loss;
+                continue 'outer;
+            }
+        }
+        // TODO: shouldn't hit this
+        break 'outer;
+    }
+
     for (p, c) in grid.enumerate_chars_rc() {
         if p.col == 0 {
             println!();
         }
-        if seen_tiles.contains(&p) {
+        if path_tiles.contains(&p) {
             print!("#");
         } else {
             print!("{c}");
         }
     }
+    // */
     println!();
 
     let part1 = best;
     println!("final best: {}", best);
     let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    Ok(format!("best: {}", best))
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Constructor)]
@@ -206,6 +225,22 @@ fn test_example1() -> Result<()> {
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 102 | Part 2: ", result);
+    assert_eq!("best: 94", result);
+    Ok(())
+}
+
+#[test]
+fn test_example2() -> Result<()> {
+    let input = r###"
+111111111111
+999999999991
+999999999991
+999999999991
+999999999991
+"###;
+
+    let result = solve_for(input)?;
+
+    assert_eq!("best: 71", result);
     Ok(())
 }
