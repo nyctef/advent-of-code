@@ -49,8 +49,8 @@ fn solve_for(input: &str) -> Result<String> {
 
     while let Some(next) = search.pop() {
         if next.pos == target && next.speed >= 4 && next.loss < best {
-            println!("reached end with speed {} and loss {}", next.speed, next.loss);
-            println!("dir: {}", next.dir);
+            // println!("reached end with speed {} and loss {}", next.speed, next.loss);
+            // println!("dir: {}", next.dir);
             best = next.loss;
         }
         if count % 1_000_000 == 0 {
@@ -127,24 +127,24 @@ fn solve_for(input: &str) -> Result<String> {
     'outer: while next_best > 0 {
         path_tiles.insert(current_tile);
         let this_tile_score: u32 = grid[current_tile].to_digit(10).unwrap();
-        println!(
-            "ct {:?} ({}) with overall current score {}",
-            &current_tile, &this_tile_score, &next_best
-        );
-        println!(
-            "looking for a tile with score {}",
-            next_best - this_tile_score
-        );
+        // println!(
+        //     "ct {:?} ({}) with overall current score {}",
+        //     &current_tile, &this_tile_score, &next_best
+        // );
+        // println!(
+        //     "looking for a tile with score {}",
+        //     next_best - this_tile_score
+        // );
         for (n, _) in grid.enumerate_4_neighbors(current_tile) {
             let tile_losses = tile_losses_per_tile
                 .get(&n)
                 .into_iter()
                 .flatten()
                 .collect_vec();
-            println!(
-                "considering tile {:?} with best losses {:?}",
-                &n, &tile_losses
-            );
+            // println!(
+            //     "considering tile {:?} with best losses {:?}",
+            //     &n, &tile_losses
+            // );
             for l in tile_losses {
                 if *l == next_best - this_tile_score {
                     current_tile = n;
