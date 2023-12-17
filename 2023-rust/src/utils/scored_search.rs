@@ -8,11 +8,21 @@ pub struct ScoredSearch<T> {
     insert_count: u64,
 }
 
+#[allow(dead_code)]
 impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone + PartialOrd> ScoredSearch<T> {
     pub fn new_dfs() -> ScoredSearch<T> {
         ScoredSearch {
             queue: VecDeque::new(),
             dfs: true,
+            discard_count: 0,
+            insert_count: 0,
+        }
+    }
+
+    pub fn new_bfs() -> ScoredSearch<T> {
+        ScoredSearch {
+            queue: VecDeque::new(),
+            dfs: false,
             discard_count: 0,
             insert_count: 0,
         }

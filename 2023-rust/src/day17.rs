@@ -20,7 +20,7 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     // TODO: maybe a DigitGrid for this puzzle?
     let grid = CharGrid::from_string(input);
-    let mut search = ScoredSearch::new_dfs();
+    let mut search = ScoredSearch::new_bfs();
 
     let right_cost: u32 = grid.index_rc(0, 1).to_digit(10).unwrap();
     let down_cost: u32 = grid.index_rc(1, 0).to_digit(10).unwrap();
