@@ -3,46 +3,33 @@ use std::collections::{hash_map::Entry, HashMap, HashSet, VecDeque};
 use itertools::Itertools;
 
 #[derive(Debug)]
-pub struct ScoredSearch<T, S> {
+pub struct ScoredSearch<T> {
     queue: VecDeque<T>,
-    seen: HashMap<T, S>,
     dfs: bool,
     discard_count: u64,
     insert_count: u64,
 }
 
-impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Copy>
-    ScoredSearch<T, S>
+impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone + PartialOrd>
+    ScoredSearch<T>
 {
-    pub fn new_dfs() -> ScoredSearch<T, S> {
+    pub fn new_dfs() -> ScoredSearch<T> {
         ScoredSearch {
             queue: VecDeque::new(),
-            seen: HashMap::new(),
             dfs: true,
             discard_count: 0,
             insert_count: 0,
         }
     }
 
-    pub fn push(&mut self, entry: T, score: S) -> bool {
-        let score_entry = self.seen.entry(entry.clone());
-
-        match score_entry {
-            Entry::Occupied(mut o) => {
-                // TODO: let min/max be configurable
-                if o.get() < &score {
-                    // we've already hit this state with a better score, so abort this search
-                    self.discard_count += 1;
-                    return false;
-                }
-                o.insert(score);
-            }
-            Entry::Vacant(v) => {
-                // we haven't seen this state before, so this score is the best so far
-                v.insert(score);
-            }
+    pub fn push(&mut self, entry: T) -> bool {
+        /*
+        if !self.queue.is_empty()) &&  self.queue.iter().all(|x| x <= &entry) {
+            self.discard_count += 1;
+            return false;
         }
         self.insert_count += 1;
+        */
 
         if self.dfs {
             self.queue.push_front(entry);
@@ -52,27 +39,18 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Cop
         true
     }
 
-    pub fn pop(&mut self) -> Option<(T, S)> {
+    pub fn pop(&mut self) -> Option<T> {
         // todo: this clone should be avoidable
-        self.queue.pop_front().map(|x| (x.clone(), self.seen[&x]))
+        self.queue.pop_front().map(|x| x.clone())
     }
 
-    pub fn get_scores_matching(&self, predicate: impl Fn(&T) -> bool) -> Vec<S> {
-        self.seen
-            .iter()
-            .filter(|(t, _s)| predicate(*t))
-            .map(|(_t, s)| s)
-            .copied()
-            .collect_vec()
-    }
 
     pub fn debug_info(&self) -> String {
         format!(
-            "dsc: {} ins: {} len: {} seen: {}",
+            "dsc: {} ins: {} len: {}",
             self.discard_count,
             self.insert_count,
-            self.queue.len(),
-            self.seen.len()
+            self.queue.len()
         )
     }
 }
