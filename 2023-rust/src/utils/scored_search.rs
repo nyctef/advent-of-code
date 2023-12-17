@@ -10,7 +10,7 @@ use std::hash::Hash;
 /// state might have several "best" scores. This is suboptimal if
 /// the score is actually Ord, but makes the algorithm more flexible
 ///
-/// by default the score is minimized
+/// by default the score is minimized (TODO: rename score to cost to make this clear)
 pub struct ScoredSearch<T, K, S> {
     queue: VecDeque<T>,
     best_scores: HashMap<K, Vec<S>>,
@@ -24,8 +24,11 @@ pub struct ScoredSearch<T, K, S> {
 }
 
 #[allow(dead_code)]
-impl<T: std::fmt::Debug + Clone, K: Eq + PartialEq + Hash, S: Clone + Copy + PartialOrd>
-    ScoredSearch<T, K, S>
+impl<
+        T: std::fmt::Debug + Clone,
+        K: Eq + PartialEq + Hash,
+        S: std::fmt::Debug + Clone + Copy + PartialOrd,
+    > ScoredSearch<T, K, S>
 {
     pub fn new_dfs(
         get_key: impl Fn(&T) -> K + 'static,
@@ -55,6 +58,45 @@ impl<T: std::fmt::Debug + Clone, K: Eq + PartialEq + Hash, S: Clone + Copy + Par
             discard_count: 0,
             insert_count: 0,
         }
+    }
+
+    pub fn run(
+        &mut self,
+        get_next_candidates: impl Fn(T) -> Vec<T>,
+        is_target_state: impl Fn(&T) -> bool,
+        max_score: S,
+    ) -> Vec<S> {
+        let mut bests = vec![max_score];
+        let mut count: u64 = 0;
+        while let Some(current_state) = self.pop() {
+            if is_target_state(&current_state) {
+                let score = (self.get_score)(&current_state);
+                if !bests.iter().any(|b| b <= &score) {
+                    bests.push(score);
+                    bests.retain(|b| b.partial_cmp(&score) != Some(Ordering::Greater));
+                }
+            }
+            if count % 1_000_000 == 0 {
+                println!("{} best: {:?}", self.debug_info(), bests);
+            }
+            count += 1;
+            let candidates = get_next_candidates(current_state);
+            for c in candidates {
+                /*
+                let min_cost_to_end =
+                    c.loss as usize + RCDirection::from_to(&c.pos, &target).manhattan_abs();
+                if min_cost_to_end > best as usize {
+                    // assuming every tile between here and the target was 1, we still wouldn't
+                    // be able to beat the current best score
+                    continue;
+                }
+                */
+
+                self.push(c);
+            }
+        }
+        println!("final bests: {:?}", bests);
+        bests
     }
 
     pub fn push(&mut self, entry: T) -> bool {

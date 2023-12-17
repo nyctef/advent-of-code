@@ -1,10 +1,9 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
+use itertools::Itertools;
 
-use std::{
-    cmp::{self, Ordering},
-};
+use std::cmp::{self, Ordering};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 17)?;
@@ -37,69 +36,52 @@ fn solve_for(input: &str) -> Result<String> {
 
     let theoretical_max_states = grid.width() * grid.height() * 4 * 10;
     println!("max states: {}", theoretical_max_states);
-    let mut count: u64 = 0;
     let target = CharGridIndexRC::new(grid.height() - 1, grid.width() - 1);
     let probable_limit = ((grid.width() + grid.height()) * 9) as u32;
     println!("probable max score: {}", probable_limit);
-    let mut best = probable_limit;
 
+    let bests = search.run(
+        |n| next_candidates(n, &grid),
+        |s| s.pos == target && s.speed >= 4,
+        probable_limit,
+    );
+    let best = bests.iter().exactly_one().unwrap();
 
-    while let Some(next) = search.pop() {
-        if next.pos == target && next.speed >= 4 && next.loss < best {
-            // println!("reached end with speed {} and loss {}", next.speed, next.loss);
-            // println!("dir: {}", next.dir);
-            best = next.loss;
-        }
-        if count % 1_000_000 == 0 {
-            println!("{} best: {}", search.debug_info(), best);
-        }
-        count += 1;
-        let mut candidates = vec![];
-        if next.speed < 10 {
-            // continue forward
-            let n2p = next.pos + next.dir;
-            let n2s = next.speed + 1;
-            if grid.is_in_bounds(n2p) {
-                let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
-                candidates.push(State::new(n2p, next.dir, n2c, n2s));
-            }
-        }
-        if next.speed >= 4 {
-            // turn left
-            let n2d = next.dir.counterclockwise();
-            let n2p = next.pos + n2d;
-            if grid.is_in_bounds(n2p) {
-                let n2s = 1;
-                let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
-                candidates.push(State::new(n2p, n2d, n2c, n2s));
-            }
-        }
-        if next.speed >= 4 {
-            // turn right
-            let n2d = next.dir.clockwise();
-            let n2p = next.pos + n2d;
-            if grid.is_in_bounds(n2p) {
-                let n2s = 1;
-                let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
-                candidates.push(State::new(n2p, n2d, n2c, n2s));
-            }
-        }
+    Ok(format!("best: {}", best))
+}
 
-        for c in candidates {
-            let min_cost_to_end =
-                c.loss as usize + RCDirection::from_to(&c.pos, &target).manhattan_abs();
-            if min_cost_to_end > best as usize {
-                // assuming every tile between here and the target was 1, we still wouldn't
-                // be able to beat the current best score
-                continue;
-            }
-
-            search.push(c);
+fn next_candidates(next: State, grid: &CharGrid) -> Vec<State> {
+    let mut candidates = vec![];
+    if next.speed < 10 {
+        // continue forward
+        let n2p = next.pos + next.dir;
+        let n2s = next.speed + 1;
+        if grid.is_in_bounds(n2p) {
+            let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
+            candidates.push(State::new(n2p, next.dir, n2c, n2s));
         }
     }
-
-    println!("final best: {}", best);
-    Ok(format!("best: {}", best))
+    if next.speed >= 4 {
+        // turn left
+        let n2d = next.dir.counterclockwise();
+        let n2p = next.pos + n2d;
+        if grid.is_in_bounds(n2p) {
+            let n2s = 1;
+            let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
+            candidates.push(State::new(n2p, n2d, n2c, n2s));
+        }
+    }
+    if next.speed >= 4 {
+        // turn right
+        let n2d = next.dir.clockwise();
+        let n2p = next.pos + n2d;
+        if grid.is_in_bounds(n2p) {
+            let n2s = 1;
+            let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
+            candidates.push(State::new(n2p, n2d, n2c, n2s));
+        }
+    }
+    candidates
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Constructor)]
