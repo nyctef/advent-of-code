@@ -7,7 +7,7 @@ pub struct ScoredSearch<T, S> {
     dfs: bool,
 }
 
-impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord> ScoredSearch<T, S> {
+impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Copy> ScoredSearch<T, S> {
     pub fn new_dfs() -> ScoredSearch<T, S> {
         ScoredSearch {
             queue: VecDeque::new(),
@@ -21,7 +21,8 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord> Scor
 
         match score_entry {
             Entry::Occupied(mut o) => {
-                if o.get() > &score {
+                // TODO: let min/max be configurable
+                if o.get() < &score {
                     // we've already hit this state with a better score, so abort this search
                     return false;
                 }
@@ -41,8 +42,9 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord> Scor
         true
     }
 
-    pub fn pop(&mut self) -> Option<T> {
-        self.queue.pop_front()
+    pub fn pop(&mut self) -> Option<(T, S)> {
+        // todo: this clone should be avoidable
+        self.queue.pop_front().map(|x| (x.clone(), self.seen[&x]))
     }
 }
 
