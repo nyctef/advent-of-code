@@ -92,12 +92,21 @@ fn solve_for(input: &str) -> Result<String> {
         // score to eliminate other paths with
         candidates.sort_by_key(|c| cmp::Reverse((c.pos.row, c.pos.col)));
         for c in candidates {
+            let min_cost_to_end = c.loss as usize + RCDirection::from_to(&c.pos, &target).manhattan_abs();
+            if min_cost_to_end > best.loss as usize {
+                // assuming every tile between here and the target was 1, we still wouldn't
+                // be able to beat the current best score
+                continue;
+            }
+
             let mut e = bests.entry((c.pos, c.dir)).or_default();
             if e.iter().any(|x| x.0 <= c.speed && x.1 <= c.loss) {
+                // we've already reached this position with an equal or better score, so skip
                 continue;
             } else {
                 let value = (c.speed, c.loss);
                 e.push(value);
+                // only retain scores that aren't strictly worse than the one we've just added
                 e.retain(|e2| !(e2 > &value));
             }
             search.push(c);
