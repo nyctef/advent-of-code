@@ -1,7 +1,6 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
-use itertools::Itertools;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 17)?;
@@ -15,7 +14,7 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     // TODO: maybe a DigitGrid for this puzzle?
     let grid = CharGrid::from_string(input);
-    let mut search = ScoredSearch::new_bfs(|s: &State| (s.pos, s.dir), |s| s.loss);
+    let mut search = Dijkstra::new(|s: &State| (s.pos, s.dir));
 
     search.push(State::new(
         CharGridIndexRC::new(0, 0),
@@ -44,14 +43,12 @@ fn solve_for(input: &str) -> Result<String> {
     let probable_limit = ((grid.width() + grid.height()) * 9) as u32;
     println!("probable max score: {}", probable_limit);
 
-    let bests = search.run(
+    let best = search.run(
         |n| next_candidates(n, &grid),
-        |s| s.pos == target,
-        probable_limit,
+        |s| s.pos == target
     );
-    let best = bests.iter().exactly_one().unwrap();
 
-    Ok(format!("best: {}", best))
+    Ok(format!("best: {}", best.loss))
 }
 
 fn next_candidates(current: State, grid: &CharGrid) -> Vec<State> {
@@ -82,6 +79,16 @@ struct State {
     pos: CharGridIndexRC,
     dir: RCDirection,
     loss: u32,
+}
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.loss.cmp(&other.loss)
+    }
+}
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 #[test]
