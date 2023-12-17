@@ -96,7 +96,9 @@ fn solve_for(input: &str) -> Result<String> {
             if e.iter().any(|x| x.0 <= c.speed && x.1 <= c.loss) {
                 continue;
             } else {
-                e.push((c.speed, c.loss))
+                let value = (c.speed, c.loss);
+                e.push(value);
+                e.retain(|e2| !(e2 > &value));
             }
             search.push(c);
         }
