@@ -1,4 +1,7 @@
-use std::{cmp::Reverse, collections::{HashMap, HashSet}};
+use std::{
+    cmp::Reverse,
+    collections::{HashMap, HashSet},
+};
 
 use crate::utils::*;
 use color_eyre::eyre::Result;
@@ -6,7 +9,7 @@ use derive_more::Constructor;
 use itertools::Itertools;
 
 pub fn solve() -> Result<()> {
-    let input = get_input(2023, 1)?;
+    let input = get_input(2023, 17)?;
 
     let result = solve_for(&input)?;
 
@@ -38,15 +41,39 @@ fn solve_for(input: &str) -> Result<String> {
             // continue forward
             let n2p = next.pos + next.dir;
             let n2s = next.speed + 1;
-            let n2c: u32 = next_score + grid[n2p].to_string().parse::<u32>().unwrap();
-            if n2s < 4 {
-                search.push(State::new(n2p, next.dir, n2s), n2c);
+            if grid.is_in_bounds(n2p) {
+                let n2c: u32 = next_score + grid[n2p].to_string().parse::<u32>().unwrap();
+                if n2s < 4 {
+                    search.push(State::new(n2p, next.dir, n2s), n2c);
+                }
+            }
+        }
+        {
+            // turn left
+            let n2d = next.dir.counterclockwise();
+            let n2p = next.pos + n2d;
+            if grid.is_in_bounds(n2p) {
+                let n2s = 1;
+                let n2c: u32 = next_score + grid[n2p].to_string().parse::<u32>().unwrap();
+                search.push(State::new(n2p, n2d, n2s), n2c);
+            }
+        }
+        {
+            // turn right
+            let n2d = next.dir.clockwise();
+            let n2p = next.pos + n2d;
+            if grid.is_in_bounds(n2p) {
+                let n2s = 1;
+                let n2c: u32 = next_score + grid[n2p].to_string().parse::<u32>().unwrap();
+                search.push(State::new(n2p, n2d, n2s), n2c);
             }
         }
     }
 
     for (p, c) in grid.enumerate_chars_rc() {
-        if p.col == 0 { println!(); }
+        if p.col == 0 {
+            println!();
+        }
         if seen_tiles.contains(&p) {
             print!("#");
         } else {
@@ -55,7 +82,11 @@ fn solve_for(input: &str) -> Result<String> {
     }
     println!();
 
-    let part1 = "";
+    let best_scores = search.get_scores_matching(|s| {
+        s.pos == CharGridIndexRC::new(grid.height() - 1, grid.width() - 1)
+    });
+    println!("p1a {:?}", best_scores);
+    let part1 = best_scores.iter().min().unwrap();
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }

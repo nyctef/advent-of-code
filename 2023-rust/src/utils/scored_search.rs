@@ -1,5 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet, VecDeque};
 
+use itertools::Itertools;
+
 #[derive(Debug)]
 pub struct ScoredSearch<T, S> {
     queue: VecDeque<T>,
@@ -45,6 +47,10 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone, S: Ord + Cop
     pub fn pop(&mut self) -> Option<(T, S)> {
         // todo: this clone should be avoidable
         self.queue.pop_front().map(|x| (x.clone(), self.seen[&x]))
+    }
+
+    pub fn get_scores_matching(&self, predicate: impl Fn(&T) -> bool) -> Vec<S> {
+        self.seen.iter().filter(|(t, _s)| predicate(*t)).map(|(_t, s)| s).copied().collect_vec()
     }
 }
 
