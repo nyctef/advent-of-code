@@ -30,21 +30,6 @@ impl<
         S: std::fmt::Debug + Clone + Copy + PartialOrd,
     > ScoredSearch<T, K, S>
 {
-    pub fn new_dfs(
-        get_key: impl Fn(&T) -> K + 'static,
-        get_score: impl Fn(&T) -> S + 'static,
-    ) -> ScoredSearch<T, K, S> {
-        ScoredSearch {
-            queue: VecDeque::new(),
-            best_scores: HashMap::new(),
-            get_key: Box::new(get_key),
-            get_score: Box::new(get_score),
-            dfs: true,
-            discard_count: 0,
-            insert_count: 0,
-        }
-    }
-
     pub fn new_bfs(
         get_key: impl Fn(&T) -> K + 'static,
         get_score: impl Fn(&T) -> S + 'static,
