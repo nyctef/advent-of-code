@@ -139,6 +139,8 @@ fn solve_for(input: &str) -> Result<String> {
         // TODO: shouldn't hit this
         break 'outer;
     }
+    
+    let considered_tiles:HashSet<_> = bests.keys().map(|(p, _d)| p).collect();
 
     for (p, c) in grid.enumerate_chars_rc() {
         if p.col == 0 {
@@ -146,6 +148,8 @@ fn solve_for(input: &str) -> Result<String> {
         }
         if path_tiles.contains(&p) {
             print!("#");
+        } else if considered_tiles.contains(&p) {
+            print!("?");
         } else {
             print!("{c}");
         }
