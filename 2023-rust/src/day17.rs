@@ -108,19 +108,17 @@ fn solve_for(input: &str) -> Result<String> {
                 continue;
             }
 
-            /*
             let e = bests.entry((c.pos, c.dir)).or_default();
-            if e.iter().any(|x| /* x.0 <= c.speed &&*/ x.1 <= c.loss) {
+            if e.iter().any(|x|  x.0 == c.speed && x.1 <= c.loss) {
                 // we've already reached this position with an equal or better score, so skip
                 continue;
             } else {
                 let value = (c.speed, c.loss);
                 e.push(value);
                 // only retain scores that aren't strictly worse than the one we've just added
-                e.retain(|e2| !(/*e2.0 > value.0 &&*/ e2.1 > value.1));
+                e.retain(|e2| !(e2.0 == value.0 && e2.1 > value.1));
                 assert!(e.len() > 0);
             }
-            */
             search.push(c);
         }
     }
