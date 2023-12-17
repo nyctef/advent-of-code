@@ -3,8 +3,6 @@ use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
 
-use std::cmp::{self, Ordering};
-
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 17)?;
 
@@ -17,21 +15,17 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     // TODO: maybe a DigitGrid for this puzzle?
     let grid = CharGrid::from_string(input);
-    let mut search = ScoredSearch::new_bfs(|s: &State| (s.pos, s.dir, s.speed), |s| s.loss);
+    let mut search = ScoredSearch::new_bfs(|s: &State| (s.pos, s.dir), |s| s.loss);
 
-    let right_cost: u32 = grid.index_rc(0, 1).to_digit(10).unwrap();
-    let down_cost: u32 = grid.index_rc(1, 0).to_digit(10).unwrap();
     search.push(State::new(
-        CharGridIndexRC::new(0, 1),
+        CharGridIndexRC::new(0, 0),
         RCDirection::right(),
-        right_cost,
-        1,
+        0,
     ));
     search.push(State::new(
-        CharGridIndexRC::new(1, 0),
+        CharGridIndexRC::new(0, 0),
         RCDirection::down(),
-        down_cost,
-        1,
+        0,
     ));
 
     let theoretical_max_states = grid.width() * grid.height() * 4 * 10;
@@ -52,7 +46,7 @@ fn solve_for(input: &str) -> Result<String> {
 
     let bests = search.run(
         |n| next_candidates(n, &grid),
-        |s| s.pos == target && s.speed >= 4,
+        |s| s.pos == target,
         probable_limit,
     );
     let best = bests.iter().exactly_one().unwrap();
@@ -60,37 +54,28 @@ fn solve_for(input: &str) -> Result<String> {
     Ok(format!("best: {}", best))
 }
 
-fn next_candidates(next: State, grid: &CharGrid) -> Vec<State> {
+fn next_candidates(current: State, grid: &CharGrid) -> Vec<State> {
     let mut candidates = vec![];
-    if next.speed < 10 {
-        // continue forward
-        let n2p = next.pos + next.dir;
-        let n2s = next.speed + 1;
-        if grid.is_in_bounds(n2p) {
-            let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
-            candidates.push(State::new(n2p, next.dir, n2c, n2s));
+    let mut cost: u32 = current.loss;
+    let mut current_tile = current.pos;
+    for speed in 1..=10 {
+        current_tile = current_tile + current.dir;
+        if !grid.is_in_bounds(current_tile) {
+            break;
+        }
+        cost += grid[current_tile].to_digit(10).unwrap();
+        if speed >= 4 {
+            // turn left
+            let next_dir = current.dir.counterclockwise();
+            candidates.push(State::new(current_tile, next_dir, cost));
+        }
+        if speed >= 4 {
+            // turn right
+            let next_dir = current.dir.clockwise();
+            candidates.push(State::new(current_tile, next_dir, cost));
         }
     }
-    if next.speed >= 4 {
-        // turn left
-        let n2d = next.dir.counterclockwise();
-        let n2p = next.pos + n2d;
-        if grid.is_in_bounds(n2p) {
-            let n2s = 1;
-            let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
-            candidates.push(State::new(n2p, n2d, n2c, n2s));
-        }
-    }
-    if next.speed >= 4 {
-        // turn right
-        let n2d = next.dir.clockwise();
-        let n2p = next.pos + n2d;
-        if grid.is_in_bounds(n2p) {
-            let n2s = 1;
-            let n2c: u32 = next.loss + grid[n2p].to_digit(10).unwrap();
-            candidates.push(State::new(n2p, n2d, n2c, n2s));
-        }
-    }
+    // dbg!(&current.pos, &current_tile, &cost, &candidates);
     candidates
 }
 
@@ -99,51 +84,6 @@ struct State {
     pos: CharGridIndexRC,
     dir: RCDirection,
     loss: u32,
-    speed: u8,
-}
-
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        if self.pos != other.pos || self.dir != other.dir {
-            // can't compare two states that are in different positions
-            return None;
-        }
-
-        /*             loss:
-                       < = >
-                     +--------
-            speed: < | < < #
-                   = | < = >
-                   > | # > >
-
-            - if one/both is (greater/less) or equal, and at least one
-              is strictly (greater/less), then we're (greater/less)
-            - if both are equal then we're equal
-            - if one is (greater/less) and the other is (less/greater),
-              then we can't exactly compare these two states
-        */
-
-        if self.speed == other.speed && self.loss == other.loss {
-            return Some(Ordering::Equal);
-        }
-        if (self.speed < other.speed && self.loss > other.loss)
-            || (self.speed > other.speed && self.loss < other.loss)
-        {
-            // either state could be better, so can't compare
-            return None;
-        }
-        // by now we know we're not equal and we're not incomparable,
-        // so if one or the other property is greater/less then
-        // that's the answer
-        if self.speed < other.speed || self.loss < other.loss {
-            return Some(Ordering::Less);
-        }
-        if self.speed > other.speed || self.loss > other.loss {
-            return Some(Ordering::Greater);
-        }
-        // not sure if we ever hit this case
-        panic!("failed to compare states")
-    }
 }
 
 #[test]
