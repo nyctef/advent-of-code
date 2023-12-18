@@ -20,15 +20,15 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let re = Regex::from_str(r"^(.) (\d+) \((.*)\)$")?;
+    let re = Regex::from_str(r"#(.{5})(.)")?;
     let lines = input
         .trim()
         .lines()
         .map(|l| re.captures(l).unwrap())
-        .map(|c| (c[1].chars().nth(0).unwrap(), c[2].parse::<u32>().unwrap()))
+        .map(|c| (c[2].chars().nth(0).unwrap(), u64::from_str_radix(&c[1], 16).unwrap()))
         .collect_vec();
 
-    // dbg!(&lines);
+    dbg!(&lines);
 
     // let mut grid = XYGrid::new();
     let mut current = XYIndex::new(0, 0);
@@ -40,14 +40,14 @@ fn solve_for(input: &str) -> Result<String> {
 
     for (dir_char, count) in lines {
         let dir = match dir_char {
-            'U' => XYDirection::up(),
-            'L' => XYDirection::left(),
-            'R' => XYDirection::right(),
-            'D' => XYDirection::down(),
+            '3' => XYDirection::up(),
+            '2' => XYDirection::left(),
+            '0' => XYDirection::right(),
+            '1' => XYDirection::down(),
             _ => panic!("unrecognised direction {}", dir_char),
         };
 
-        if dir_char == 'U' || dir_char == 'D' {
+        if dir_char == '3' || dir_char == '1' {
             let x = current.x;
             let ystart = current.y;
             let yend = current.y + (dir.ydiff * count as isize);
@@ -75,14 +75,14 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut holes: u64 = 0;
     for y in min.y..=max.y {
-        println!();
-        println!("checking y={}", y);
+        // println!();
+        // println!("checking y={}", y);
         let mut matching_ranges = updown_ranges
             .iter()
             .filter(|r| y >= r.2 && y <= r.3)
             .collect_vec();
         matching_ranges.sort_by_key(|r| r.1);
-        println!("matching ranges: {:?}", matching_ranges);
+        // println!("matching ranges: {:?}", matching_ranges);
 
         let mut parity = 0;
         let mut updown = ' ';
@@ -106,20 +106,14 @@ fn solve_for(input: &str) -> Result<String> {
                 'M'
             };
             assert!(!(is_range_start && is_range_end));
-            println!(
-                "checking {} range at {} | se: {} | pse: {}",
-                ud, x, is_start_end, prev_was_start_end
-            );
+            // println!( "checking {} range at {} | se: {} | pse: {}", ud, x, is_start_end, prev_was_start_end);
             let prev_was_corner = prev_was_start_end == 'S' || prev_was_start_end == 'E';
             let is_corner = is_start_end == 'S' || is_start_end == 'E';
             if is_corner {
                 corner_count += 1;
             }
             let is_ud_changing = ud != updown;
-            println!(
-                "pwc: {} ic: {} cc: {} iudc: {}",
-                prev_was_corner, is_corner, corner_count, is_ud_changing
-            );
+            // println!( "pwc: {} ic: {} cc: {} iudc: {}", prev_was_corner, is_corner, corner_count, is_ud_changing);
             // if we're outside the shape and we hit anything, then switch
             if (parity == 0)
                 // so remaining checks assume we're inside the shape:
@@ -137,17 +131,17 @@ fn solve_for(input: &str) -> Result<String> {
                     && is_ud_changing
                     && (is_start_end != prev_was_start_end))
             {
-                println!(" changing from {} to {}", updown, ud);
+                // println!(" changing from {} to {}", updown, ud);
                 // TODO: try changing `updown` here to `prev_updown` and always flipping it
                 updown = ud;
                 parity = 1 - parity;
                 if parity == 1 {
-                    println!("  starting a line at {}", x);
+                    // println!("  starting a line at {}", x);
                     // beginning of line to fill
                     x_start = x;
                 } else {
                     let new_holes = (1 + x - x_start) as u64;
-                    println!("  ending a line at {} ({} new holes)", x, new_holes);
+                    // println!("  ending a line at {} ({} new holes)", x, new_holes);
                     // end of line to fill
                     holes += new_holes;
                     x_start = x;
