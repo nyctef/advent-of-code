@@ -381,3 +381,5 @@ U 6 (#xxxxx0)
 }
 
 // TODO: stair-step test (plus shape?)
+// TODO: inverse cityscape ( start with example2 but with two equal indents, then try differently
+// sized indents if that passes)
