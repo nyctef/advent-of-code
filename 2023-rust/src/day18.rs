@@ -87,31 +87,61 @@ fn solve_for(input: &str) -> Result<String> {
         let mut parity = 0;
         let mut updown = ' ';
         let mut x_start = isize::min_value();
+        let mut prev_was_start_end = ' ';
 
-        for (ud, x, _ymin, _ymax) in matching_ranges {
-            println!("checking {} range at {}", ud, x);
-            if *ud != updown {
+        for (ud, x, ymin, ymax) in matching_ranges {
+            // TODO: can't we pattern match these dereferences in the above line?
+            let ud = *ud;
+            let x = *x;
+            let ymin = *ymin;
+            let ymax = *ymax;
+            let is_range_start = (ud == 'U' && y == ymin) || (ud == 'D' && y == ymax);
+            let is_range_end = (ud == 'U' && y == ymax) || (ud == 'D' && y == ymin);
+            let is_start_end = if is_range_start {
+                'S'
+            } else if is_range_end {
+                'E'
+            } else {
+                'M'
+            };
+            assert!(!(is_range_start && is_range_end));
+            println!(
+                "checking {} range at {} | se: {} | pse: {}",
+                ud, x, is_start_end, prev_was_start_end
+            );
+            let prev_was_corner = prev_was_start_end == 'S' || prev_was_start_end == 'E';
+            let is_corner = is_start_end == 'S' || is_start_end == 'E';
+            let is_ud_changing = ud != updown;
+            if (!prev_was_corner && is_ud_changing)
+                || (is_corner && !is_ud_changing && (is_start_end == prev_was_start_end))
+                || (is_corner && is_ud_changing && (is_start_end != prev_was_start_end))
+            {
                 println!(" changing from {} to {}", updown, ud);
-                updown = *ud;
+                updown = ud;
                 parity = 1 - parity;
                 if parity == 1 {
                     println!("  starting a line at {}", x);
                     // beginning of line to fill
-                    x_start = *x;
+                    x_start = x;
                 } else {
-                    let new_holes = (1 + *x - x_start) as u64;
+                    let new_holes = (1 + x - x_start) as u64;
                     println!("  ending a line at {} ({} new holes)", x, new_holes);
                     // end of line to fill
                     holes += new_holes;
-                    x_start = *x;
+                    x_start = x;
                 }
-            } else {
+            }
+
+            /*
+            else {
                 println!(" no change");
-                let new_holes = (*x - x_start) as u64;
+                let new_holes = (x - x_start) as u64;
                 println!("  continuing a line at {} ({} new holes)", x, new_holes);
                 holes += new_holes;
-                x_start = *x;
+                x_start = x;
             }
+            */
+            prev_was_start_end = is_start_end;
         }
     }
 
@@ -276,12 +306,12 @@ U 2 (#7a21e3)
 #[test]
 fn test_example2() -> Result<()> {
     // made up example
-    //   0123456
-    // 0 ####### -> 7
-    // 1 #     # -> 7
-    // 2 # ### # -> 7
-    // 3 # # # # -> 6
-    // 4 ### ### -> 6
+    //    0123456
+    //  0 ####### -> 7
+    // -1 #     # -> 7
+    // -2 # ### # -> 7
+    // -3 # # # # -> 6
+    // -4 ### ### -> 6
     let input = r###"
 R 6 (#xxxxx0)
 D 4 (#xxxxx0)
@@ -297,4 +327,3 @@ U 4 (#xxxxx0)
     assert_eq!("holes: 33", result);
     Ok(())
 }
-
