@@ -3,7 +3,12 @@ use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
 use regex::Regex;
-use std::{collections::HashMap, fmt::Display, ops::Add, str::FromStr};
+use std::{
+    collections::HashMap,
+    fmt::Display,
+    ops::{Add, Mul},
+    str::FromStr,
+};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 18)?;
@@ -25,10 +30,13 @@ fn solve_for(input: &str) -> Result<String> {
 
     // dbg!(&lines);
 
-    let mut grid = XYGrid::new();
+    // let mut grid = XYGrid::new();
     let mut current = XYIndex::new(0, 0);
-    let mut updown = 'o';
-    grid.set(current, 'o');
+    // let mut updown = 'o';
+    // grid.set(current, 'o');
+    let mut updown_ranges = vec![];
+    let mut max = XYIndex::new(0, 0);
+    let mut min = XYIndex::new(0, 0);
 
     for (dir_char, count) in lines {
         let dir = match dir_char {
@@ -38,18 +46,76 @@ fn solve_for(input: &str) -> Result<String> {
             'D' => XYDirection::down(),
             _ => panic!("unrecognised direction {}", dir_char),
         };
+
+        if dir_char == 'U' || dir_char == 'D' {
+            let x = current.x;
+            let ystart = current.y;
+            let yend = current.y + (dir.ydiff * count as isize);
+            let ymin = ystart.min(yend);
+            let ymax = ystart.max(yend);
+            // dbg!(&current, &dir, ystart, yend, ymin, ymax);
+            // println!();
+            updown_ranges.push((dir_char, x, ymin, ymax));
+        }
+
+        /*
         match dir_char {
             'U' => updown = 'U',
             'D' => updown = 'D',
             _ => {}
         };
         grid.set(current, updown);
-        for i in 0..count {
-            current = current + dir;
-            grid.set(current, if i < (count - 1) { dir_char } else { updown });
+        */
+        current = current + (dir * count as isize);
+        max = max.max(&current);
+        min = min.min(&current);
+    }
+
+    // dbg!(&updown_ranges, max, min);
+
+    let mut holes: u64 = 0;
+    for y in min.y..=max.y {
+        // println!("checking y={}", y);
+        let mut matching_ranges = updown_ranges
+            .iter()
+            .filter(|r| y >= r.2 && y <= r.3)
+            .collect_vec();
+        matching_ranges.sort_by_key(|r| r.1);
+        // println!();
+        // println!("matching ranges: {:?}", matching_ranges);
+
+        let mut parity = 0;
+        let mut updown = ' ';
+        let mut x_start = isize::min_value();
+
+        for (ud, x, _ymin, _ymax) in matching_ranges {
+            // println!("checking {} range at {}", ud, x);
+            if *ud != updown {
+                // println!(" changing from {} to {}", updown, ud);
+                updown = *ud;
+                parity = 1 - parity;
+                if parity == 1 {
+                    // println!("  starting a line at {}", x);
+                    // beginning of line to fill
+                    x_start = *x;
+                } else {
+                    let new_holes = (1 + *x - x_start) as u64;
+                    // println!("  ending a line at {} ({} new holes)", x, new_holes);
+                    // end of line to fill
+                    holes += new_holes;
+                    x_start = *x;
+                }
+            } else {
+                // println!(" no change");
+                let new_holes = (*x - x_start) as u64;
+                // println!("  continuing a line at {} ({} new holes)", x, new_holes);
+                holes += new_holes;
+                x_start = *x;
+            }
         }
     }
 
+    /*
     let mut parity = 0;
     let mut updown = ' ';
     let mut prev_y = 99999;
@@ -71,11 +137,10 @@ fn solve_for(input: &str) -> Result<String> {
             }
         }
     }
+    */
 
-    println!("{}", grid);
-    let part1 = grid.point_count();
-    let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    // println!("{}", grid);
+    Ok(format!("holes: {holes}"))
 }
 
 struct XYGrid {
@@ -106,7 +171,9 @@ impl XYGrid {
             .map(|i| (i, self.points.get(&i).copied().unwrap_or(' ')))
     }
 
-    fn point_count(&self) -> usize { self.points.len() }
+    fn point_count(&self) -> usize {
+        self.points.len()
+    }
 }
 
 impl Display for XYGrid {
@@ -172,6 +239,13 @@ impl Add<XYDirection> for XYIndex {
 
     fn add(self, rhs: XYDirection) -> Self::Output {
         XYIndex::new(self.x + rhs.xdiff, self.y + rhs.ydiff)
+    }
+}
+impl Mul<isize> for XYDirection {
+    type Output = XYDirection;
+
+    fn mul(self, rhs: isize) -> Self::Output {
+        XYDirection::new(self.xdiff * rhs, self.ydiff * rhs)
     }
 }
 
