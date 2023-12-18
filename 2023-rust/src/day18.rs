@@ -338,3 +338,40 @@ U 4 (#xxxxx0)
     assert_eq!("holes: 33", result);
     Ok(())
 }
+
+#[test]
+fn test_example3() -> Result<()> {
+    /*
+      taken from a day10 example
+
+       01234567890
+    0  ########### -> 11
+    -1 # ####### # -> 11
+    -2 # #     # # -> 3 + 3 = 6
+    -3 # #     # # -> 3 + 3 = 6
+    -4 # ### ### # -> 5 + 5 = 10
+    -5 #   # #   # -> 5 + 5 = 10
+    -6 ##### ##### -> 5 + 5 = 10
+
+    */
+    let input = r###"
+R 10 (#xxxxx0)
+D 6 (#xxxxx0)
+L 4 (#xxxxx0)
+U 2 (#xxxxx0)
+R 2 (#xxxxx0)
+U 3 (#xxxxx0)
+L 6 (#xxxxx0)
+D 3 (#xxxxx0)
+R 2 (#xxxxx0)
+D 2 (#xxxxx0)
+L 4 (#xxxxx0)
+U 6 (#xxxxx0)
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("holes: 64", result);
+    Ok(())
+}
+
+// TODO: stair-step test (plus shape?)
