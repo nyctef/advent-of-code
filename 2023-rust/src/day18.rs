@@ -112,9 +112,20 @@ fn solve_for(input: &str) -> Result<String> {
             let prev_was_corner = prev_was_start_end == 'S' || prev_was_start_end == 'E';
             let is_corner = is_start_end == 'S' || is_start_end == 'E';
             let is_ud_changing = ud != updown;
-            if (!prev_was_corner && is_ud_changing)
-                || (is_corner && !is_ud_changing && (is_start_end == prev_was_start_end))
-                || (is_corner && is_ud_changing && (is_start_end != prev_was_start_end))
+            println!(
+                "pwc: {} ic: {} iudc: {}",
+                prev_was_corner, is_corner, is_ud_changing
+            );
+            if (!is_corner && is_ud_changing)
+                || (!prev_was_corner && is_ud_changing && parity == 0)
+                || (prev_was_corner
+                    && is_corner
+                    && !is_ud_changing
+                    && (is_start_end == prev_was_start_end))
+                || (prev_was_corner
+                    && is_corner
+                    && is_ud_changing
+                    && (is_start_end != prev_was_start_end))
             {
                 println!(" changing from {} to {}", updown, ud);
                 updown = ud;
