@@ -88,6 +88,7 @@ fn solve_for(input: &str) -> Result<String> {
         let mut updown = ' ';
         let mut x_start = isize::min_value();
         let mut prev_was_start_end = ' ';
+        let mut corner_count = 0;
 
         for (ud, x, ymin, ymax) in matching_ranges {
             // TODO: can't we pattern match these dereferences in the above line?
@@ -111,10 +112,13 @@ fn solve_for(input: &str) -> Result<String> {
             );
             let prev_was_corner = prev_was_start_end == 'S' || prev_was_start_end == 'E';
             let is_corner = is_start_end == 'S' || is_start_end == 'E';
+            if is_corner {
+                corner_count += 1;
+            }
             let is_ud_changing = ud != updown;
             println!(
-                "pwc: {} ic: {} iudc: {}",
-                prev_was_corner, is_corner, is_ud_changing
+                "pwc: {} ic: {} cc: {} iudc: {}",
+                prev_was_corner, is_corner, corner_count, is_ud_changing
             );
             // if we're outside the shape and we hit anything, then switch
             if (parity == 0)
@@ -123,12 +127,13 @@ fn solve_for(input: &str) -> Result<String> {
                 // if we hit a vertical wall then we're going outside
                 || (!is_corner)
                 // TODO: instead of these checks, try just checking for U vs S shape
-                || (prev_was_corner
-                    && is_corner
+                || (//prev_was_corner && is_corner
+                    corner_count % 2 == 0
                     && !is_ud_changing
                     && (is_start_end == prev_was_start_end))
-                || (prev_was_corner
-                    && is_corner
+                || (
+                    // prev_was_corner && is_corner
+                    corner_count % 2 == 0
                     && is_ud_changing
                     && (is_start_end != prev_was_start_end))
             {
