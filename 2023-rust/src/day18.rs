@@ -116,8 +116,13 @@ fn solve_for(input: &str) -> Result<String> {
                 "pwc: {} ic: {} iudc: {}",
                 prev_was_corner, is_corner, is_ud_changing
             );
-            if (!is_corner && is_ud_changing)
-                || (!prev_was_corner && is_ud_changing && parity == 0)
+            // if we're outside the shape and we hit anything, then switch
+            if (parity == 0)
+                // so remaining checks assume we're inside the shape:
+                //
+                // if we hit a vertical wall then we're going outside
+                || (!is_corner)
+                // TODO: instead of these checks, try just checking for U vs S shape
                 || (prev_was_corner
                     && is_corner
                     && !is_ud_changing
@@ -128,6 +133,7 @@ fn solve_for(input: &str) -> Result<String> {
                     && (is_start_end != prev_was_start_end))
             {
                 println!(" changing from {} to {}", updown, ud);
+                // TODO: try changing `updown` here to `prev_updown` and always flipping it
                 updown = ud;
                 parity = 1 - parity;
                 if parity == 1 {
