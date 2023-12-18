@@ -75,40 +75,40 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut holes: u64 = 0;
     for y in min.y..=max.y {
-        // println!("checking y={}", y);
+        println!();
+        println!("checking y={}", y);
         let mut matching_ranges = updown_ranges
             .iter()
             .filter(|r| y >= r.2 && y <= r.3)
             .collect_vec();
         matching_ranges.sort_by_key(|r| r.1);
-        // println!();
-        // println!("matching ranges: {:?}", matching_ranges);
+        println!("matching ranges: {:?}", matching_ranges);
 
         let mut parity = 0;
         let mut updown = ' ';
         let mut x_start = isize::min_value();
 
         for (ud, x, _ymin, _ymax) in matching_ranges {
-            // println!("checking {} range at {}", ud, x);
+            println!("checking {} range at {}", ud, x);
             if *ud != updown {
-                // println!(" changing from {} to {}", updown, ud);
+                println!(" changing from {} to {}", updown, ud);
                 updown = *ud;
                 parity = 1 - parity;
                 if parity == 1 {
-                    // println!("  starting a line at {}", x);
+                    println!("  starting a line at {}", x);
                     // beginning of line to fill
                     x_start = *x;
                 } else {
                     let new_holes = (1 + *x - x_start) as u64;
-                    // println!("  ending a line at {} ({} new holes)", x, new_holes);
+                    println!("  ending a line at {} ({} new holes)", x, new_holes);
                     // end of line to fill
                     holes += new_holes;
                     x_start = *x;
                 }
             } else {
-                // println!(" no change");
+                println!(" no change");
                 let new_holes = (*x - x_start) as u64;
-                // println!("  continuing a line at {} ({} new holes)", x, new_holes);
+                println!("  continuing a line at {} ({} new holes)", x, new_holes);
                 holes += new_holes;
                 x_start = *x;
             }
@@ -269,6 +269,32 @@ U 2 (#7a21e3)
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 62 | Part 2: ", result);
+    assert_eq!("holes: 62", result);
     Ok(())
 }
+
+#[test]
+fn test_example2() -> Result<()> {
+    // made up example
+    //   0123456
+    // 0 ####### -> 7
+    // 1 #     # -> 7
+    // 2 # ### # -> 7
+    // 3 # # # # -> 6
+    // 4 ### ### -> 6
+    let input = r###"
+R 6 (#xxxxx0)
+D 4 (#xxxxx0)
+L 2 (#xxxxx0)
+U 2 (#xxxxx0)
+L 2 (#xxxxx0)
+D 2 (#xxxxx0)
+L 2 (#xxxxx0)
+U 4 (#xxxxx0)
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("holes: 33", result);
+    Ok(())
+}
+
