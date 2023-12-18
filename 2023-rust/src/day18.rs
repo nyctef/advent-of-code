@@ -25,10 +25,10 @@ fn solve_for(input: &str) -> Result<String> {
         .trim()
         .lines()
         .map(|l| re.captures(l).unwrap())
-        .map(|c| (c[2].chars().nth(0).unwrap(), u64::from_str_radix(&c[1], 16).unwrap()))
+        .map(|c| (c[2].chars().exactly_one().unwrap(), u64::from_str_radix(&c[1], 16).unwrap()))
         .collect_vec();
 
-    dbg!(&lines);
+    // dbg!(&lines);
 
     // let mut grid = XYGrid::new();
     let mut current = XYIndex::new(0, 0);
@@ -37,6 +37,11 @@ fn solve_for(input: &str) -> Result<String> {
     let mut updown_ranges = vec![];
     let mut max = XYIndex::new(0, 0);
     let mut min = XYIndex::new(0, 0);
+
+    let mut lat: f32 = -20.0;
+    let mut long: f32 = -90.4;
+    let mut map_coords = vec![];
+    map_coords.push((lat, long));
 
     for (mut dir_char, count) in lines {
         let dir = match dir_char {
@@ -70,8 +75,16 @@ fn solve_for(input: &str) -> Result<String> {
         grid.set(current, updown);
         */
         current = current + (dir * count as isize);
+        // https://gis.stackexchange.com/a/2964
+        lat += ((dir.xdiff * count as isize) as f32 / 111_111.0);
+        long += ((dir.ydiff * count as isize) as f32 / 111_111.0);
+        map_coords .push((lat, long));
         max = max.max(&current);
         min = min.min(&current);
+    }
+
+    for map_coord in map_coords {
+        println!(" {{ lat: {}, lng: {} }},", map_coord.0, map_coord.1);
     }
 
     // dbg!(&updown_ranges, max, min);
