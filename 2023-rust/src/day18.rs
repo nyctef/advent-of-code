@@ -38,7 +38,7 @@ fn solve_for(input: &str) -> Result<String> {
     let mut max = XYIndex::new(0, 0);
     let mut min = XYIndex::new(0, 0);
 
-    for (dir_char, count) in lines {
+    for (mut dir_char, count) in lines {
         let dir = match dir_char {
             '3' => XYDirection::up(),
             '2' => XYDirection::left(),
@@ -47,7 +47,10 @@ fn solve_for(input: &str) -> Result<String> {
             _ => panic!("unrecognised direction {}", dir_char),
         };
 
-        if dir_char == '3' || dir_char == '1' {
+        if dir_char == '1' { dir_char = 'D' }
+        if dir_char == '3' { dir_char = 'U' }
+
+        if dir_char == 'U' || dir_char == 'D' {
             let x = current.x;
             let ystart = current.y;
             let yend = current.y + (dir.ydiff * count as isize);
