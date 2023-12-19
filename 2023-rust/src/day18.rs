@@ -318,7 +318,7 @@ U 2 (#7a21e3)
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("holes: 62", result);
+    assert_eq!("holes: 952408144115", result);
     Ok(())
 }
 
@@ -332,14 +332,14 @@ fn test_example2() -> Result<()> {
     // -3 # # # # -> 6
     // -4 ### ### -> 6
     let input = r###"
-R 6 (#xxxxx0)
-D 4 (#xxxxx0)
-L 2 (#xxxxx0)
-U 2 (#xxxxx0)
-L 2 (#xxxxx0)
-D 2 (#xxxxx0)
-L 2 (#xxxxx0)
-U 4 (#xxxxx0)
+R 6 (#000060)
+D 4 (#000041)
+L 2 (#000022)
+U 2 (#000023)
+L 2 (#000022)
+D 2 (#000021)
+L 2 (#000022)
+U 4 (#000043)
 "###;
     let result = solve_for(input)?;
 
@@ -363,18 +363,18 @@ fn test_example3() -> Result<()> {
 
     */
     let input = r###"
-R 10 (#xxxxx0)
-D 6 (#xxxxx0)
-L 4 (#xxxxx0)
-U 2 (#xxxxx0)
-R 2 (#xxxxx0)
-U 3 (#xxxxx0)
-L 6 (#xxxxx0)
-D 3 (#xxxxx0)
-R 2 (#xxxxx0)
-D 2 (#xxxxx0)
-L 4 (#xxxxx0)
-U 6 (#xxxxx0)
+R 10 (#0000a0)
+D 6 (#000061)
+L 4 (#000042)
+U 2 (#000023)
+R 2 (#000020)
+U 3 (#000033)
+L 6 (#000062)
+D 3 (#000031)
+R 2 (#000020)
+D 2 (#000021)
+L 4 (#000042)
+U 6 (#000063)
 "###;
     let result = solve_for(input)?;
 
