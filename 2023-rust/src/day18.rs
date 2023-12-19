@@ -1,14 +1,8 @@
 use crate::utils::*;
 use color_eyre::eyre::Result;
-use derive_more::Constructor;
 use itertools::Itertools;
 use regex::Regex;
-use std::{
-    collections::HashMap,
-    fmt::Display,
-    ops::{Add, Mul},
-    str::FromStr,
-};
+use std::str::FromStr;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 18)?;
@@ -25,7 +19,12 @@ fn solve_for(input: &str) -> Result<String> {
         .trim()
         .lines()
         .map(|l| re.captures(l).unwrap())
-        .map(|c| (c[2].chars().nth(0).unwrap(), u64::from_str_radix(&c[1], 16).unwrap()))
+        .map(|c| {
+            (
+                c[2].chars().next().unwrap(),
+                u64::from_str_radix(&c[1], 16).unwrap(),
+            )
+        })
         .collect_vec();
 
     dbg!(&lines);
@@ -47,8 +46,12 @@ fn solve_for(input: &str) -> Result<String> {
             _ => panic!("unrecognised direction {}", dir_char),
         };
 
-        if dir_char == '1' { dir_char = 'D' }
-        if dir_char == '3' { dir_char = 'U' }
+        if dir_char == '1' {
+            dir_char = 'D'
+        }
+        if dir_char == '3' {
+            dir_char = 'U'
+        }
 
         if dir_char == 'U' || dir_char == 'D' {
             let x = current.x;
@@ -110,7 +113,6 @@ fn solve_for(input: &str) -> Result<String> {
             };
             assert!(!(is_range_start && is_range_end));
             // println!( "checking {} range at {} | se: {} | pse: {}", ud, x, is_start_end, prev_was_start_end);
-            let prev_was_corner = prev_was_start_end == 'S' || prev_was_start_end == 'E';
             let is_corner = is_start_end == 'S' || is_start_end == 'E';
             if is_corner {
                 corner_count += 1;
@@ -192,111 +194,6 @@ fn solve_for(input: &str) -> Result<String> {
     Ok(format!("holes: {holes}"))
 }
 
-struct XYGrid {
-    points: HashMap<XYIndex, char>,
-    min: XYIndex,
-    max: XYIndex,
-}
-
-impl XYGrid {
-    pub fn new() -> XYGrid {
-        XYGrid {
-            points: HashMap::new(),
-            min: XYIndex::new(0, 0),
-            max: XYIndex::new(0, 0),
-        }
-    }
-
-    fn set(&mut self, pos: XYIndex, c: char) {
-        self.points.insert(pos, c);
-        self.min = self.min.min(&pos);
-        self.max = self.max.max(&pos);
-    }
-
-    fn enumerate_chars_xy(&self) -> impl Iterator<Item = (XYIndex, char)> + '_ {
-        (self.min.y..=self.max.y)
-            .rev()
-            .flat_map(|y| (self.min.x..=self.max.x).map(move |x| XYIndex::new(x, y)))
-            .map(|i| (i, self.points.get(&i).copied().unwrap_or(' ')))
-    }
-
-    fn point_count(&self) -> usize {
-        self.points.len()
-    }
-}
-
-impl Display for XYGrid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // note we reverse y since we have to print the top line first
-        for y in (self.min.y..=self.max.y).rev() {
-            for x in self.min.x..=self.max.x {
-                f.write_fmt(format_args!(
-                    "{}",
-                    self.points.get(&XYIndex::new(x, y)).unwrap_or(&' ')
-                ))?;
-            }
-            f.write_str("\n")?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Constructor)]
-struct XYIndex {
-    x: isize,
-    y: isize,
-}
-
-impl XYIndex {
-    pub fn min(&self, other: &Self) -> Self {
-        Self {
-            x: self.x.min(other.x),
-            y: self.y.min(other.y),
-        }
-    }
-    pub fn max(&self, other: &Self) -> Self {
-        Self {
-            x: self.x.max(other.x),
-            y: self.y.max(other.y),
-        }
-    }
-}
-
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Constructor)]
-struct XYDirection {
-    xdiff: isize,
-    ydiff: isize,
-}
-
-impl XYDirection {
-    pub fn up() -> XYDirection {
-        XYDirection::new(0, 1)
-    }
-    pub fn down() -> XYDirection {
-        XYDirection::new(0, -1)
-    }
-    pub fn left() -> XYDirection {
-        XYDirection::new(-1, 0)
-    }
-    pub fn right() -> XYDirection {
-        XYDirection::new(1, 0)
-    }
-}
-
-impl Add<XYDirection> for XYIndex {
-    type Output = XYIndex;
-
-    fn add(self, rhs: XYDirection) -> Self::Output {
-        XYIndex::new(self.x + rhs.xdiff, self.y + rhs.ydiff)
-    }
-}
-impl Mul<isize> for XYDirection {
-    type Output = XYDirection;
-
-    fn mul(self, rhs: isize) -> Self::Output {
-        XYDirection::new(self.xdiff * rhs, self.ydiff * rhs)
-    }
-}
 
 #[test]
 fn test_example1() -> Result<()> {
