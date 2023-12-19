@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-
 use crate::utils::*;
 use color_eyre::eyre::Result;
+use derive_more::Constructor;
 use itertools::Itertools;
+use std::collections::{HashMap, VecDeque};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 19)?;
@@ -14,8 +14,8 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let (workflows, items) = input.trim().split_once("\n\n").unwrap();
-    let items = items.trim().lines().map(|l| all_numbers(l)).collect_vec();
+    let (workflows, _items) = input.trim().split_once("\n\n").unwrap();
+    // let items = items.trim().lines().map(|l| all_numbers(l)).collect_vec();
     let workflows: HashMap<_, _> = workflows
         .trim()
         .lines()
@@ -49,7 +49,46 @@ fn solve_for(input: &str) -> Result<String> {
         .collect();
 
     let mut accepted = vec![];
+    let starting_beam: Beam = (
+        RangeInc::new(1, 4000),
+        RangeInc::new(1, 4000),
+        RangeInc::new(1, 4000),
+        RangeInc::new(1, 4000),
+    );
 
+    let mut q = VecDeque::new();
+    q.push_front(("in".to_string(), starting_beam));
+
+    while let Some((flow, beam)) = q.pop_front() {
+        let workflow = &workflows[&flow.as_str()];
+
+        let mut remaining_beam = beam;
+        for work in workflow {
+            let (split, remaining) = split_beam(&remaining_beam, &work);
+            if let Some((dest, split)) = split {
+                if dest == "A" {
+                    accepted.push(split);
+                } else if dest == "R" {
+                    // forget about it
+                } else {
+                    // queue the work for another workflow
+                    q.push_front((dest, split));
+                }
+
+            }
+
+            if let Some(remaining) = remaining {
+                remaining_beam = remaining;
+                continue;
+            } else {
+                break;
+            }
+
+        }
+
+    }
+
+    /*
     for item in items {
         let mut current_work = &workflows["in"];
         'workflow: loop {
@@ -85,10 +124,24 @@ fn solve_for(input: &str) -> Result<String> {
             panic!("ran out of work in this workflow");
         }
     }
+    */
 
-    let part1 = accepted.iter().map(|a| a.iter().sum::<u32>()).sum::<u32>();
+    //let part1 = accepted.iter().map(|a| a.iter().sum::<u32>()).sum::<u32>();
     let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    Ok(format!("Part 2: {part2}"))
+}
+
+type Beam = (RangeInc, RangeInc, RangeInc, RangeInc);
+
+// returns split, remaining
+fn split_beam(beam: &Beam, condition: &Condition) -> (Option<(String, Beam)>, Option<Beam>) {
+    todo!()
+}
+
+#[derive(Debug, Eq, PartialEq, Constructor)]
+struct RangeInc {
+    start: u32,
+    end: u32,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -122,6 +175,6 @@ hdj{m>838:A,pv}
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 19114 | Part 2: ", result);
+    assert_eq!("Part 2: 167409079868000", result);
     Ok(())
 }
