@@ -66,6 +66,9 @@ fn solve_for(input: &str) -> Result<String> {
         for work in workflow {
             let (split, remaining) = split_beam(&remaining_beam, work);
             if let Some((dest, split)) = split {
+                let size = split.iter().map(|r| r.size()).product::<usize>();
+                // output for https://sankeymatic.com/build/
+                println!("{flow} [{size}] {dest}");
                 if dest == "A" {
                     accepted.push(split);
                 } else if dest == "R" {
