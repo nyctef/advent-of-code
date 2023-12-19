@@ -49,12 +49,12 @@ fn solve_for(input: &str) -> Result<String> {
         .collect();
 
     let mut accepted = vec![];
-    let starting_beam: Beam = (
+    let starting_beam: Beam = vec![
         RangeInc::new(1, 4000),
         RangeInc::new(1, 4000),
         RangeInc::new(1, 4000),
         RangeInc::new(1, 4000),
-    );
+    ];
 
     let mut q = VecDeque::new();
     q.push_front(("in".to_string(), starting_beam));
@@ -74,7 +74,6 @@ fn solve_for(input: &str) -> Result<String> {
                     // queue the work for another workflow
                     q.push_front((dest, split));
                 }
-
             }
 
             if let Some(remaining) = remaining {
@@ -83,9 +82,7 @@ fn solve_for(input: &str) -> Result<String> {
             } else {
                 break;
             }
-
         }
-
     }
 
     /*
@@ -126,22 +123,77 @@ fn solve_for(input: &str) -> Result<String> {
     }
     */
 
-    //let part1 = accepted.iter().map(|a| a.iter().sum::<u32>()).sum::<u32>();
-    let part2 = "";
+    let part2 = accepted.iter().map(|a| a.iter().map(|x| x.size()).product::<usize>()).sum::<usize>();
     Ok(format!("Part 2: {part2}"))
 }
 
-type Beam = (RangeInc, RangeInc, RangeInc, RangeInc);
+type Beam = Vec<RangeInc>;
 
 // returns split, remaining
 fn split_beam(beam: &Beam, condition: &Condition) -> (Option<(String, Beam)>, Option<Beam>) {
-    todo!()
+    match condition {
+        Condition::Always(dest) => (Some((dest.clone(), beam.clone())), None),
+        Condition::GTLT(p, gt, v, dest) => {
+            let relevant_range = beam[*p];
+
+            let (matching, notmatching) = split_range(relevant_range, *gt, *v);
+
+            let matching_beam = matching.map(|r| (dest.to_string(), replace_range(beam, r, *p)));
+            let remaining_beam = notmatching.map(|r| replace_range(beam, r, *p));
+
+
+            (matching_beam, remaining_beam)
+        }
+    }
 }
 
-#[derive(Debug, Eq, PartialEq, Constructor)]
+fn replace_range(beam: &Beam, new_range: RangeInc, p: usize) -> Beam {
+    let mut new_beam = beam.clone();
+    new_beam[p] = new_range;
+    new_beam
+}
+
+// returns matching, not matching
+fn split_range(range: RangeInc, gt: bool, v: u32) -> (Option<RangeInc>, Option<RangeInc>) {
+    if gt {
+        if range.start > v {
+            return (Some(range), None);
+        } else if range.end < v {
+            return (None, Some(range));
+        } else {
+            return (
+                Some(RangeInc::new(v + 1, range.end)),
+                Some(RangeInc::new(range.start, v)),
+            );
+        }
+    } else
+    /* lt */
+    {
+        if range.end < v {
+            return (Some(range), None);
+        } else if range.start > v {
+            return (None, Some(range));
+        } else {
+            return (
+                Some(RangeInc::new(range.start, v - 1)),
+                Some(RangeInc::new(v, range.end)),
+            );
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Constructor, Copy, Clone)]
 struct RangeInc {
     start: u32,
     end: u32,
+}
+
+impl RangeInc {
+    fn size(&self) -> usize {
+        // since this range is inclusive we need to make sure that [3, 3] counts as size 1
+        (self.end + 1) as usize - self.start as usize
+
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
