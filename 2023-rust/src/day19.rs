@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
@@ -14,35 +16,77 @@ pub fn solve() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let (workflows, items) = input.trim().split_once("\n\n").unwrap();
     let items = items.trim().lines().map(|l| all_numbers(l)).collect_vec();
-    let workflows = workflows.trim().lines().map(|l| {
-        let (name, rest) = l.split_once('{').unwrap();
-        let rest = rest.strip_suffix('}').unwrap();
-        let conditions = rest.split(',').map(|c| {
-            if let Some((cond, dest)) = c.split_once(':') {
-                let prop = match cond.chars().next().unwrap()  {
-                    'x' => 0,
-                    'm' => 1,
-                    'a' => 2,
-                    's' => 3,
-                    _ => panic!("xmas")
-                };
-                let gtlt = cond.chars().nth(1).unwrap() == '>';
-                let dest = dest.to_string();
-                let value: u32 = cond[2..].parse().unwrap();
+    let workflows: HashMap<_, _> = workflows
+        .trim()
+        .lines()
+        .map(|l| {
+            let (name, rest) = l.split_once('{').unwrap();
+            let rest = rest.strip_suffix('}').unwrap();
+            let conditions = rest
+                .split(',')
+                .map(|c| {
+                    if let Some((cond, dest)) = c.split_once(':') {
+                        let prop = match cond.chars().next().unwrap() {
+                            'x' => 0,
+                            'm' => 1,
+                            'a' => 2,
+                            's' => 3,
+                            _ => panic!("xmas"),
+                        };
+                        let gtlt = cond.chars().nth(1).unwrap() == '>';
+                        let dest = dest.to_string();
+                        let value: u32 = cond[2..].parse().unwrap();
 
-                Condition::GTLT(prop, gtlt, value, dest)
-            } else {
-                let dest = c.to_string();
-                Condition::Always(dest)
+                        Condition::GTLT(prop, gtlt, value, dest)
+                    } else {
+                        let dest = c.to_string();
+                        Condition::Always(dest)
+                    }
+                })
+                .collect_vec();
+            (name, conditions)
+        })
+        .collect();
+
+    let mut accepted = vec![];
+
+    for item in items {
+        let mut current_work = &workflows["in"];
+        'workflow: loop {
+            for work in current_work {
+                match work {
+                    Condition::Always(dest) => {
+                        if dest == "A" {
+                            accepted.push(item);
+                            break 'workflow;
+                        } else if dest == "R" {
+                            break 'workflow;
+                        } else {
+                            current_work = &workflows[dest.as_str()];
+                            continue 'workflow;
+                        }
+                    }
+                    Condition::GTLT(p, gt, v, dest) => {
+                        let rating = item[*p];
+                        if (*gt && rating > *v) || (!*gt && rating < *v) {
+                            if dest == "A" {
+                                accepted.push(item);
+                                break 'workflow;
+                            } else if dest == "R" {
+                                break 'workflow;
+                            } else {
+                                current_work = &workflows[dest.as_str()];
+                                continue 'workflow;
+                            }
+                        }
+                    }
+                }
             }
-        }).collect_vec();
-        (name, conditions)
-    }).collect_vec();
+            panic!("ran out of work in this workflow");
+        }
+    }
 
-    dbg!(&workflows);
-
-
-    let part1 = "";
+    let part1 = accepted.iter().map(|a| a.iter().sum::<u32>()).sum::<u32>();
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
