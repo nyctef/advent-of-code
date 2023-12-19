@@ -37,7 +37,7 @@ fn solve_for(input: &str) -> Result<String> {
                         let dest = dest.to_string();
                         let value: u32 = cond[2..].parse().unwrap();
 
-                        Condition::GTLT(prop, gtlt, value, dest)
+                        Condition::Ltgt(prop, gtlt, value, dest)
                     } else {
                         let dest = c.to_string();
                         Condition::Always(dest)
@@ -64,7 +64,7 @@ fn solve_for(input: &str) -> Result<String> {
 
         let mut remaining_beam = beam;
         for work in workflow {
-            let (split, remaining) = split_beam(&remaining_beam, &work);
+            let (split, remaining) = split_beam(&remaining_beam, work);
             if let Some((dest, split)) = split {
                 if dest == "A" {
                     accepted.push(split);
@@ -85,45 +85,13 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
-    /*
-    for item in items {
-        let mut current_work = &workflows["in"];
-        'workflow: loop {
-            for work in current_work {
-                match work {
-                    Condition::Always(dest) => {
-                        if dest == "A" {
-                            accepted.push(item);
-                            break 'workflow;
-                        } else if dest == "R" {
-                            break 'workflow;
-                        } else {
-                            current_work = &workflows[dest.as_str()];
-                            continue 'workflow;
-                        }
-                    }
-                    Condition::GTLT(p, gt, v, dest) => {
-                        let rating = item[*p];
-                        if (*gt && rating > *v) || (!*gt && rating < *v) {
-                            if dest == "A" {
-                                accepted.push(item);
-                                break 'workflow;
-                            } else if dest == "R" {
-                                break 'workflow;
-                            } else {
-                                current_work = &workflows[dest.as_str()];
-                                continue 'workflow;
-                            }
-                        }
-                    }
-                }
-            }
-            panic!("ran out of work in this workflow");
-        }
-    }
-    */
-
-    let part2 = accepted.iter().map(|a| a.iter().map(|x| x.size()).product::<usize>()).sum::<usize>();
+    // for each of the accepted beams, we count the number of possibilities
+    // it contains (multiplying the ranges together gives the number of ways
+    // you could pick a distinct number from each of the ranges)
+    let part2 = accepted
+        .iter()
+        .map(|a| a.iter().map(|x| x.size()).product::<usize>())
+        .sum::<usize>();
     Ok(format!("Part 2: {part2}"))
 }
 
@@ -133,14 +101,13 @@ type Beam = Vec<RangeInc>;
 fn split_beam(beam: &Beam, condition: &Condition) -> (Option<(String, Beam)>, Option<Beam>) {
     match condition {
         Condition::Always(dest) => (Some((dest.clone(), beam.clone())), None),
-        Condition::GTLT(p, gt, v, dest) => {
+        Condition::Ltgt(p, gt, v, dest) => {
             let relevant_range = beam[*p];
 
             let (matching, notmatching) = split_range(relevant_range, *gt, *v);
 
             let matching_beam = matching.map(|r| (dest.to_string(), replace_range(beam, r, *p)));
             let remaining_beam = notmatching.map(|r| replace_range(beam, r, *p));
-
 
             (matching_beam, remaining_beam)
         }
@@ -154,30 +121,31 @@ fn replace_range(beam: &Beam, new_range: RangeInc, p: usize) -> Beam {
 }
 
 // returns matching, not matching
+#[allow(clippy::collapsible_else_if)]
 fn split_range(range: RangeInc, gt: bool, v: u32) -> (Option<RangeInc>, Option<RangeInc>) {
     if gt {
         if range.start > v {
-            return (Some(range), None);
+            (Some(range), None)
         } else if range.end < v {
-            return (None, Some(range));
+            (None, Some(range))
         } else {
-            return (
+            (
                 Some(RangeInc::new(v + 1, range.end)),
                 Some(RangeInc::new(range.start, v)),
-            );
+            )
         }
     } else
     /* lt */
     {
         if range.end < v {
-            return (Some(range), None);
+            (Some(range), None)
         } else if range.start > v {
-            return (None, Some(range));
+            (None, Some(range))
         } else {
-            return (
+            (
                 Some(RangeInc::new(range.start, v - 1)),
                 Some(RangeInc::new(v, range.end)),
-            );
+            )
         }
     }
 }
@@ -192,7 +160,6 @@ impl RangeInc {
     fn size(&self) -> usize {
         // since this range is inclusive we need to make sure that [3, 3] counts as size 1
         (self.end + 1) as usize - self.start as usize
-
     }
 }
 
@@ -201,7 +168,7 @@ enum Condition {
     // destination
     Always(String),
     // property, is_gt, value to compare against, destination
-    GTLT(usize, bool, u32, String),
+    Ltgt(usize, bool, u32, String),
 }
 
 #[test]
