@@ -61,6 +61,7 @@ fn solve_for(input: &str) -> Result<String> {
     let mut total_signals_sent: usize = 0;
     let mut low_signals_sent: usize = 0;
     let mut high_signals_sent: usize = 0;
+    let mut button_presses: usize = 0;
 
     let mut track_signal = |s| {
         if s {
@@ -70,9 +71,10 @@ fn solve_for(input: &str) -> Result<String> {
         }
         total_signals_sent += 1;
     };
-    for _ in 0..1000 {
+    'outer: loop {
         // pushing the button sends a low signal to broadcaster
         track_signal(false);
+        button_presses += 1;
         let mut queue = VecDeque::new();
         let broadcaster = &modules["broadcaster"];
         let Module::Broadcaster(broadcast_targets) = broadcaster else {
@@ -85,6 +87,15 @@ fn solve_for(input: &str) -> Result<String> {
         while let Some((source, dest, sig_is_high)) = queue.pop_front() {
             track_signal(sig_is_high);
             // println!("handling signal {} for {}", sig_is_high, dest);
+            if dest == "rx" {
+                if button_presses % 100_000 == 0 {
+                println!("rx {} [{}]", sig_is_high, button_presses);
+                }
+
+                if !sig_is_high {
+                break 'outer;
+            }
+            }
             let target_module = modules
                 .entry(dest.clone())
                 // TODO: missing modules?
@@ -106,6 +117,9 @@ fn solve_for(input: &str) -> Result<String> {
                 Module::Conjunction(ref mut inputs, c_targets) => {
                     inputs.insert(source.clone(), sig_is_high);
 
+                    if dest == "cn" && inputs.values().any(|i| *i) {
+                        println!("cn: bp {} inputs {:?}", button_presses, inputs);
+                    }
                     // dbg!(&inputs);
 
                     let output_is_high = if inputs.values().all(|i| *i) {
@@ -123,7 +137,8 @@ fn solve_for(input: &str) -> Result<String> {
     }
 
     let part1 = (low_signals_sent * high_signals_sent);
-    let part2 = "";
+    let part2 = button_presses;
+
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
