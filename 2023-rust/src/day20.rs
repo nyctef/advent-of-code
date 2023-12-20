@@ -17,7 +17,7 @@ fn solve_for(input: &str) -> Result<String> {
     let nodes = lines.map(|l| l.split_once(" -> ").unwrap());
     let mut modules: HashMap<_, _> = nodes
         .map(|(n, t)| {
-            let targets = t.split(",").map(|x| x.trim().to_owned()).collect_vec();
+            let targets = t.split(',').map(|x| x.trim().to_owned()).collect_vec();
             if n == "broadcaster" {
                 (n.to_owned(), Module::Broadcaster(targets))
             } else if let Some(name) = n.strip_prefix('%') {
@@ -111,12 +111,7 @@ fn solve_for(input: &str) -> Result<String> {
                         println!("cn: bp {} inputs {:?}", button_presses, inputs);
                     }
 
-                    let output_is_high = if inputs.values().all(|i| *i) {
-                        false
-                    } else {
-                        true
-                    };
-
+                    let output_is_high = !inputs.values().all(|i| *i);
                     for t in c_targets {
                         queue.push_back((dest.clone(), t.clone(), output_is_high));
                     }
