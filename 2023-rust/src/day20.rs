@@ -34,6 +34,8 @@ fn solve_for(input: &str) -> Result<String> {
         })
         .collect();
 
+    modules.insert("output".to_owned(), Module::Output);
+
     dbg!(&modules);
 
     let mut total_signals_sent: usize = 0;
@@ -68,6 +70,7 @@ fn solve_for(input: &str) -> Result<String> {
                 .or_insert_with(|| panic!("can't find module entry for {}", dest));
 
             match target_module {
+                Module::Output => {},
                 Module::Broadcaster(_) => panic!("???"),
                 Module::Flipflop(ref mut ff_is_on, ff_targets) => {
                     if sig_is_high {
@@ -105,6 +108,7 @@ fn solve_for(input: &str) -> Result<String> {
 
 #[derive(Debug, Eq, PartialEq)]
 enum Module {
+    Output,
     // targets
     Broadcaster(Vec<String>),
     // is_on, targets
