@@ -1,8 +1,7 @@
-use std::collections::{HashMap, VecDeque, hash_map::{OccupiedEntry, Entry}};
-
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use std::collections::{hash_map::Entry, HashMap, VecDeque};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 20)?;
@@ -48,15 +47,10 @@ fn solve_for(input: &str) -> Result<String> {
             if let Module::Conjunction(ref mut inputs, _) = target_module.get_mut() {
                 inputs.insert(source_name.clone(), false);
             }
-
         } else {
-            // TODO: there appear to be some target modules that don't appear in the input
-            // not sure if there's anything we need to do to handle those?
-            // panic!("couldn't find module with name {}", target_name.clone());
+            // turns out we might send signals to an undefined module (this is intended)
         }
     }
-
-    dbg!(&modules);
 
     let mut total_signals_sent: usize = 0;
     let mut low_signals_sent: usize = 0;
@@ -71,7 +65,7 @@ fn solve_for(input: &str) -> Result<String> {
         }
         total_signals_sent += 1;
     };
-    'outer: loop {
+    'outer: for _ in 0..4 {
         // pushing the button sends a low signal to broadcaster
         track_signal(false);
         button_presses += 1;
@@ -89,22 +83,18 @@ fn solve_for(input: &str) -> Result<String> {
             // println!("handling signal {} for {}", sig_is_high, dest);
             if dest == "rx" {
                 if button_presses % 100_000 == 0 {
-                println!("rx {} [{}]", sig_is_high, button_presses);
+                    println!("rx {} [{}]", sig_is_high, button_presses);
                 }
 
                 if !sig_is_high {
-                break 'outer;
+                    break 'outer;
+                }
             }
-            }
-            let target_module = modules
-                .entry(dest.clone())
-                // TODO: missing modules?
-                .or_insert(Module::Output);
+            let target_module = modules.get_mut(&dest.clone());
 
             match target_module {
-                Module::Output => {},
-                Module::Broadcaster(_) => panic!("???"),
-                Module::Flipflop(ref mut ff_is_on, ff_targets) => {
+                Some(Module::Broadcaster(_)) => panic!("???"),
+                Some(Module::Flipflop(ref mut ff_is_on, ff_targets)) => {
                     if sig_is_high {
                         // nothing happens
                     } else {
@@ -114,13 +104,12 @@ fn solve_for(input: &str) -> Result<String> {
                         }
                     }
                 }
-                Module::Conjunction(ref mut inputs, c_targets) => {
+                Some(Module::Conjunction(ref mut inputs, c_targets)) => {
                     inputs.insert(source.clone(), sig_is_high);
 
                     if dest == "cn" && inputs.values().any(|i| *i) {
                         println!("cn: bp {} inputs {:?}", button_presses, inputs);
                     }
-                    // dbg!(&inputs);
 
                     let output_is_high = if inputs.values().all(|i| *i) {
                         false
@@ -132,12 +121,13 @@ fn solve_for(input: &str) -> Result<String> {
                         queue.push_back((dest.clone(), t.clone(), output_is_high));
                     }
                 }
+                _ => {}
             }
         }
     }
 
-    let part1 = (low_signals_sent * high_signals_sent);
-    let part2 = button_presses;
+    let part1 = low_signals_sent * high_signals_sent;
+    let part2 = "";
 
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
@@ -173,7 +163,7 @@ broadcaster -> a, b, c
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 32000000 | Part 2: ", result);
+    assert_eq!("Part 1: 512 | Part 2: ", result);
     Ok(())
 }
 #[test]
@@ -187,6 +177,6 @@ broadcaster -> a
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 11687500 | Part 2: ", result);
+    assert_eq!("Part 1: 187 | Part 2: ", result);
     Ok(())
 }
