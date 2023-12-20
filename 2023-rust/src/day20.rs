@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, VecDeque, hash_map::{OccupiedEntry, Entry}};
 
 use crate::utils::*;
 use color_eyre::eyre::Result;
@@ -36,6 +36,26 @@ fn solve_for(input: &str) -> Result<String> {
 
     modules.insert("output".to_owned(), Module::Output);
 
+    let mut target_links = vec![];
+    for (source_name, source_module) in modules.iter() {
+        for target_name in get_targets(source_module) {
+            target_links.push((source_name.clone(), target_name.clone()));
+        }
+    }
+
+    for (source_name, target_name) in target_links {
+        if let Entry::Occupied(mut target_module) = modules.entry(target_name.clone()) {
+            if let Module::Conjunction(ref mut inputs, _) = target_module.get_mut() {
+                inputs.insert(source_name.clone(), false);
+            }
+
+        } else {
+            // TODO: there appear to be some target modules that don't appear in the input
+            // not sure if there's anything we need to do to handle those?
+            // panic!("couldn't find module with name {}", target_name.clone());
+        }
+    }
+
     dbg!(&modules);
 
     let mut total_signals_sent: usize = 0;
@@ -64,10 +84,11 @@ fn solve_for(input: &str) -> Result<String> {
 
         while let Some((source, dest, sig_is_high)) = queue.pop_front() {
             track_signal(sig_is_high);
-            println!("handling signal {} for {}", sig_is_high, dest);
+            // println!("handling signal {} for {}", sig_is_high, dest);
             let target_module = modules
                 .entry(dest.clone())
-                .or_insert_with(|| panic!("can't find module entry for {}", dest));
+                // TODO: missing modules?
+                .or_insert(Module::Output);
 
             match target_module {
                 Module::Output => {},
@@ -85,7 +106,7 @@ fn solve_for(input: &str) -> Result<String> {
                 Module::Conjunction(ref mut inputs, c_targets) => {
                     inputs.insert(source.clone(), sig_is_high);
 
-                    dbg!(&inputs);
+                    // dbg!(&inputs);
 
                     let output_is_high = if inputs.values().all(|i| *i) {
                         false
@@ -104,6 +125,15 @@ fn solve_for(input: &str) -> Result<String> {
     let part1 = (low_signals_sent * high_signals_sent);
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+}
+
+fn get_targets(module: &Module) -> Vec<String> {
+    match module {
+        Module::Output => vec![],
+        Module::Broadcaster(t) => t.clone(),
+        Module::Flipflop(_, t) => t.clone(),
+        Module::Conjunction(_, t) => t.clone(),
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
