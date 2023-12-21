@@ -2,7 +2,10 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
-use std::{collections::HashSet, ops::Add};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Add,
+};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 21)?;
@@ -26,7 +29,31 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     let mut starting_set = HashSet::new();
     starting_set.insert(start);
     let mut next_step = HashSet::new();
-    for _ in 0..step_count {
+
+    let mut central_grid_seen_states = HashMap::new();
+
+    for step in 0..step_count {
+        let points_inside_original_grid = starting_set
+            .iter()
+            .filter(|p| {
+                p.row >= 0
+                    && p.row < grid.height() as isize
+                    && p.col >= 0
+                    && p.col < grid.width() as isize
+            })
+            .sorted_by_key(|p| (p.row, p.col))
+            .copied()
+            .collect_vec();
+        let maybe_prev_step = central_grid_seen_states
+            .entry(points_inside_original_grid.clone())
+            .or_insert(step);
+        // if *maybe_prev_step != step {
+        //     println!("found central grid repitition: step {} is same as step {}", step, maybe_prev_step);
+        // }
+        if *maybe_prev_step == step {
+            println!("found new central grid state at step {} : {:?}", step, points_inside_original_grid)
+        }
+
         for p in &starting_set {
             for dir in RCDirection::four() {
                 let p2 = *p + dir;
@@ -45,10 +72,15 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     Ok(format!("total: {}", starting_set.len()))
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Constructor, Hash)]
 pub struct WrappingIndexRC {
     pub row: isize,
     pub col: isize,
+}
+impl std::fmt::Debug for WrappingIndexRC {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("WI({},{})", self.row, self.col))
+    }
 }
 
 impl WrappingIndexRC {
