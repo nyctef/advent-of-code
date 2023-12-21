@@ -30,7 +30,9 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     let mut starting_set = HashSet::new();
     starting_set.insert(GGIndexRC::new(0, 0, start.row, start.col));
     let mut next_step = HashSet::new();
+    let mut grid_is_cycling: HashMap<(isize, isize), bool> = HashMap::new();
     let mut final_total: usize = 0;
+    let mut frozen_grids: HashMap<(isize, isize), bool> = HashMap::new();
     let parity = step_count % 2;
 
     let mut central_grid_seen_states = HashMap::new();
@@ -38,49 +40,49 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     for step in 0..step_count {
         let mut points_by_grid: HashMap<(isize, isize), Vec<GGIndexRC>> = HashMap::new();
 
-        for (key, group) in &starting_set
-            .iter()
-            // .map(|p| {
-            //     (
-            //         (
-            //             div_floor(p.row, grid.height() as isize),
-            //             div_floor(p.col, grid.width() as isize),
-            //         ),
-            //         p.wrap(grid.width(), grid.height()),
-            //     )
-            // })
-            .group_by(|gp| (gp.x, gp.y))
-        {
+        for (key, group) in &starting_set.iter().group_by(|gp| (gp.x, gp.y)) {
             let collection = points_by_grid.entry(key).or_default();
             collection.extend(group);
             // todo: this repeated sorting is probably slow
             collection.sort_by_key(|p| (p.row, p.col));
         }
-        let points_inside_original_grid = &points_by_grid[&(0, 0)];
-        // if !(points_inside_original_grid == by_division) {
-        //     assert_eq!(points_inside_original_grid, by_division);
-        //     panic!(
-        //         "points inside: {:?} by_division: {:?}",
-        //         points_inside_original_grid, by_division
-        //     );
-        // }
-        let maybe_prev_step = central_grid_seen_states
-            .entry(points_inside_original_grid.clone())
-            .or_insert(step);
 
-        let this_step_parity = step % 2;
-        if *maybe_prev_step != step && this_step_parity == parity {
-            println!(
-                "found repeated central grid state at step {} : {:?}",
-                step, points_inside_original_grid
-            );
-            final_total += points_inside_original_grid.len();
-            starting_set.retain(|p| !points_inside_original_grid.contains(p));
+        for (g, points_inside_grid) in points_by_grid {
+            let maybe_prev_step = central_grid_seen_states
+                .entry(points_inside_grid.clone())
+                .or_insert(step);
+
+            let this_step_parity = step % 2;
+            if *maybe_prev_step != step && this_step_parity == parity {
+                // println!(
+                //     "found repeated grid {:?} state at step {} : {:?}",
+                //     g,
+                //     step, points_inside_grid
+                // );
+                // dbg!(&grid_is_cycling);
+                grid_is_cycling.insert(g, true);
+                if [
+                    (g.0 - 1, g.1),
+                    (g.0, g.1 - 1),
+                    (g.0 + 1, g.1),
+                    (g.0, g.1 + 1),
+                ]
+                .iter()
+                .all(|g2| *grid_is_cycling.entry(*g2).or_insert(false))
+                {
+                    final_total += points_inside_grid.len();
+                    starting_set.retain(|p| !points_inside_grid.contains(p));
+                    frozen_grids.insert(g, true);
+                }
+            }
         }
 
         for p in &starting_set {
             for p2 in [p.up(&grid), p.right(&grid), p.down(&grid), p.left(&grid)] {
                 if grid.index_rc(p2.row, p2.col) == '#' {
+                    continue;
+                }
+                if frozen_grids.contains_key(&(p2.x, p2.y)) {
                     continue;
                 }
                 next_step.insert(p2);
@@ -91,8 +93,9 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
         starting_set.extend(&next_step);
         next_step.clear();
     }
+    final_total += starting_set.len();
 
-    Ok(format!("total: {}", starting_set.len()))
+    Ok(format!("total: {}", final_total))
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Constructor, Hash)]
