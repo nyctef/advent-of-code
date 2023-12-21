@@ -49,7 +49,7 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     // right thing there
     let parity = step_count % 2;
 
-    let mut grid_seen_states: HashMap<Vec<GGIndexRC>, usize, BuildHasherDefault<FxHasher>> =
+    let mut grid_seen_states: HashMap<Vec<CharGridIndexRC>, usize, BuildHasherDefault<FxHasher>> =
         Default::default();
 
     for step in 0..step_count {
@@ -58,10 +58,11 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
         if step % 250 == 0 {
             println!();
             println!(
-                "s {} fg {} ss {}",
+                "s {} fg {} starting_set {} grid_seen_states {}",
                 step,
                 frozen_grids.len(),
-                starting_set.len()
+                starting_set.len(),
+                grid_seen_states.len()
             );
         }
         let mut points_by_grid: HashMap<
@@ -82,7 +83,13 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
 
         for (g, points_inside_grid) in points_by_grid {
             let maybe_prev_step = grid_seen_states
-                .entry(points_inside_grid.clone())
+                .entry(
+                    points_inside_grid
+                        .iter()
+                        .map(|p| CharGridIndexRC::new(p.row, p.col))
+                        .sorted_by_key(|p| (p.row, p.col))
+                        .collect_vec(),
+                )
                 .or_insert(step);
 
             let this_step_parity = step % 2;
@@ -106,12 +113,12 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
                     final_total += points_inside_grid.len();
                     starting_set.retain(|p| !points_inside_grid.contains(p));
                     frozen_grids.insert(g, true);
-                    // println!(
-                    //     "step {} : froze grid {:?} but {} points remain",
-                    //     step,
-                    //     g,
-                    //     starting_set.len()
-                    // );
+                    println!(
+                        "step {} : froze grid {:?} but {} points remain",
+                        step,
+                        g,
+                        starting_set.len()
+                    );
                 }
             }
         }
@@ -235,11 +242,19 @@ fn test_example1() -> Result<()> {
 "###;
 
     // assert_eq!("total: 16", solve_for(input, 6)?);
-    // assert_eq!("total: 50", solve_for(input, 10)?);
+    println!();
+    println!("10:");
+    assert_eq!("total: 50", solve_for(input, 10)?);
+    println!();
+    println!("50:");
     assert_eq!("total: 1594", solve_for(input, 50)?);
-    // assert_eq!("total: 167004", solve_for(input, 500)?);
-    // assert_eq!("total: 668697", solve_for(input, 1000)?);
-    assert_eq!("total: 16733044", solve_for(input, 5000)?);
+    println!();
+    println!("500:");
+    assert_eq!("total: 167004", solve_for(input, 500)?);
+    println!();
+    println!("1000:");
+    assert_eq!("total: 668697", solve_for(input, 1000)?);
+    //assert_eq!("total: 16733044", solve_for(input, 5000)?);
     Ok(())
 }
 
