@@ -30,12 +30,8 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     let mut starting_set = HashSet::new();
     starting_set.insert(GGIndexRC::new(0, 0, start.row, start.col));
     let mut next_step = HashSet::new();
-    let mut final_total: u64 = 0;
+    let mut final_total: usize = 0;
     let parity = step_count % 2;
-
-    // TODO: something like: if we see a grid go into a cycle, and the current step count is
-    // even or odd according to the final step count, then remove all the points from that grid
-    // and add that grid's current count of points to the final total
 
     let mut central_grid_seen_states = HashMap::new();
 
@@ -71,14 +67,15 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
         let maybe_prev_step = central_grid_seen_states
             .entry(points_inside_original_grid.clone())
             .or_insert(step);
-        // if *maybe_prev_step != step {
-        //     println!("found central grid repitition: step {} is same as step {}", step, maybe_prev_step);
-        // }
-        if *maybe_prev_step == step {
+
+        let this_step_parity = step % 2;
+        if *maybe_prev_step != step && this_step_parity == parity {
             println!(
-                "found new central grid state at step {} : {:?}",
+                "found repeated central grid state at step {} : {:?}",
                 step, points_inside_original_grid
-            )
+            );
+            final_total += points_inside_original_grid.len();
+            starting_set.retain(|p| !points_inside_original_grid.contains(p));
         }
 
         for p in &starting_set {
