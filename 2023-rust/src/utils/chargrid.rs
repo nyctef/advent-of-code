@@ -235,10 +235,16 @@ impl Debug for CharGrid {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Constructor, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Constructor, Hash)]
 pub struct CharGridIndexRC {
     pub row: usize,
     pub col: usize,
+}
+
+impl std::fmt::Debug for CharGridIndexRC {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("CG({}, {})", self.row, self.col))
+    }
 }
 
 #[allow(dead_code)]

@@ -34,27 +34,35 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     let mut central_grid_seen_states = HashMap::new();
 
     for step in 0..step_count {
-        let points_inside_original_grid = starting_set
+        let mut points_by_grid: HashMap<(isize, isize), Vec<CharGridIndexRC>> = HashMap::new();
+
+        for (key, group) in &starting_set
             .iter()
-            .filter(|p| {
-                p.row >= 0
-                    && p.row < grid.height() as isize
-                    && p.col >= 0
-                    && p.col < grid.width() as isize
+            .map(|p| {
+                (
+                    (
+                        div_floor(p.row, grid.height() as isize),
+                        div_floor(p.col, grid.width() as isize),
+                    ),
+                    p.wrap(grid.width(), grid.height()),
+                )
             })
-            .sorted_by_key(|p| (p.row, p.col))
-            .copied()
-            .collect_vec();
-        let by_division = starting_set
-            .iter()
-            .filter(|p| p.row.div_euclid(grid.height() as isize) == 0 && p.col.div_euclid(grid.width() as isize) == 0)
-            .sorted_by_key(|p| (p.row, p.col))
-            .copied()
-            .collect_vec();
-        if !(points_inside_original_grid == by_division) {
-            assert_eq!(points_inside_original_grid, by_division);
-            panic!("points inside: {:?} by_division: {:?}", points_inside_original_grid, by_division);
+            .group_by(|gp| gp.0)
+        {
+            let collection = points_by_grid.entry(key).or_default();
+            collection.extend(group.map(|gp| gp.1));
+            // todo: this repeated sorting is probably slow
+            collection.sort_by_key(|p| (p.row, p.col));
+
         }
+        let points_inside_original_grid = &points_by_grid[&(0, 0)];
+        // if !(points_inside_original_grid == by_division) {
+        //     assert_eq!(points_inside_original_grid, by_division);
+        //     panic!(
+        //         "points inside: {:?} by_division: {:?}",
+        //         points_inside_original_grid, by_division
+        //     );
+        // }
         let maybe_prev_step = central_grid_seen_states
             .entry(points_inside_original_grid.clone())
             .or_insert(step);
@@ -139,4 +147,22 @@ fn test_example1() -> Result<()> {
     assert_eq!("total: 167004", solve_for(input, 500)?);
     // assert_eq!("total: 16733044", solve_for(input, 5000)?);
     Ok(())
+}
+
+// since the proper impl for this is still nightly
+pub const fn div_floor(lhs: isize, rhs: isize) -> isize {
+    let d = lhs / rhs;
+    let r = lhs % rhs;
+    if (r > 0 && rhs < 0) || (r < 0 && rhs > 0) {
+        d - 1
+    } else {
+        d
+    }
+}
+
+#[test]
+fn test_div() {
+    assert_eq!(div_floor(-1, 10), -1);
+    assert_eq!(div_floor(1, 10), 0);
+    assert_eq!(div_floor(11, 10), 1);
 }
