@@ -15,6 +15,8 @@ nom-supreme = "0.8.0"
 num = "0.4.1"
 regex = "1.10.2"
 reqwest = { version = "0.11.22", features = ["blocking", "cookies"] }
+rustc-hash = "1.1.0"
+unordered-hash = "0.1.0"
 
 [profile.release]
 overflow-checks = true

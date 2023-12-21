@@ -3,7 +3,9 @@ use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
 use num::traits::Euclid;
+use rustc_hash::FxHasher;
 use std::collections::BTreeSet;
+use std::hash::BuildHasherDefault;
 use std::io;
 use std::io::prelude::*;
 use std::{
@@ -11,6 +13,7 @@ use std::{
     ops::Add,
     task::Wake,
 };
+use unordered_hash::UnorderedHasher;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 21)?;
@@ -33,23 +36,27 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     let mut starting_set = HashSet::new();
     starting_set.insert(GGIndexRC::new(0, 0, start.row, start.col));
     let mut next_step = HashSet::new();
-    let mut grid_is_cycling: HashMap<(isize, isize), bool> = HashMap::new();
+    let mut grid_is_cycling: HashMap<(isize, isize), bool, BuildHasherDefault<FxHasher>> =
+        Default::default();
     let mut final_total: usize = 0;
-    let mut frozen_grids: HashMap<(isize, isize), bool> = HashMap::new();
+    let mut frozen_grids: HashMap<(isize, isize), bool, BuildHasherDefault<FxHasher>> =
+        Default::default();
     let parity = step_count % 2;
 
     let mut central_grid_seen_states = HashMap::new();
 
     for step in 0..step_count {
-        print!(".");
-        io::stdout().flush().ok().expect("Could not flush stdout");
-        let mut points_by_grid: HashMap<(isize, isize), BTreeSet<GGIndexRC>> = HashMap::new();
+        // print!(".");
+        // io::stdout().flush().ok().expect("Could not flush stdout");
+        let mut points_by_grid: HashMap<
+            (isize, isize),
+            Vec<GGIndexRC>,
+            BuildHasherDefault<FxHasher>,
+        > = Default::default();
 
         for (key, group) in &starting_set.iter().group_by(|gp| (gp.x, gp.y)) {
             let collection = points_by_grid.entry(key).or_default();
-            for x in group.into_iter() {
-                collection.insert(*x);
-            }
+                collection.extend(group);
         }
 
         for (g, points_inside_grid) in points_by_grid {
@@ -78,6 +85,7 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
                     final_total += points_inside_grid.len();
                     starting_set.retain(|p| !points_inside_grid.contains(p));
                     frozen_grids.insert(g, true);
+                    println!("step {} : froze grid {:?} but {} points remain", step, g, starting_set.len());
                 }
             }
         }
