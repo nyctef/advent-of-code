@@ -3,6 +3,8 @@ use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
 use num::traits::Euclid;
+use std::io;
+use std::io::prelude::*;
 use std::{
     collections::{HashMap, HashSet},
     ops::Add,
@@ -38,13 +40,18 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     let mut central_grid_seen_states = HashMap::new();
 
     for step in 0..step_count {
+        print!(".");
+        io::stdout().flush().ok().expect("Could not flush stdout");
         let mut points_by_grid: HashMap<(isize, isize), Vec<GGIndexRC>> = HashMap::new();
 
         for (key, group) in &starting_set.iter().group_by(|gp| (gp.x, gp.y)) {
             let collection = points_by_grid.entry(key).or_default();
             collection.extend(group);
+        }
+
+        for (_, v) in points_by_grid.iter_mut() {
             // todo: this repeated sorting is probably slow
-            collection.sort_by_key(|p| (p.row, p.col));
+            v.sort_by_key(|p| (p.row, p.col));
         }
 
         for (g, points_inside_grid) in points_by_grid {
@@ -196,11 +203,12 @@ fn test_example1() -> Result<()> {
 ...........
 "###;
 
-    assert_eq!("total: 16", solve_for(input, 6)?);
-    assert_eq!("total: 50", solve_for(input, 10)?);
-    assert_eq!("total: 1594", solve_for(input, 50)?);
-    assert_eq!("total: 167004", solve_for(input, 500)?);
-    // assert_eq!("total: 16733044", solve_for(input, 5000)?);
+    // assert_eq!("total: 16", solve_for(input, 6)?);
+    // assert_eq!("total: 50", solve_for(input, 10)?);
+    // assert_eq!("total: 1594", solve_for(input, 50)?);
+    // assert_eq!("total: 167004", solve_for(input, 500)?);
+    // assert_eq!("total: 668697", solve_for(input, 1000)?);
+    assert_eq!("total: 16733044", solve_for(input, 5000)?);
     Ok(())
 }
 
