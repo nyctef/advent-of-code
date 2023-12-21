@@ -6,7 +6,7 @@ use num::traits::Euclid;
 use std::{
     collections::{HashMap, HashSet},
     ops::Add,
-    task::Wake,
+    task::Wake, mem::swap,
 };
 
 pub fn solve() -> Result<()> {
@@ -61,14 +61,14 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
                 // );
                 // dbg!(&grid_is_cycling);
                 grid_is_cycling.insert(g, true);
-                if [
-                    (g.0 - 1, g.1),
-                    (g.0, g.1 - 1),
-                    (g.0 + 1, g.1),
-                    (g.0, g.1 + 1),
-                ]
-                .iter()
-                .all(|g2| *grid_is_cycling.entry(*g2).or_insert(false))
+                // if [
+                //     (g.0 - 1, g.1),
+                //     (g.0, g.1 - 1),
+                //     (g.0 + 1, g.1),
+                //     (g.0, g.1 + 1),
+                // ]
+                // .iter()
+                // .all(|g2| *grid_is_cycling.entry(*g2).or_insert(false))
                 {
                     final_total += points_inside_grid.len();
                     starting_set.retain(|p| !points_inside_grid.contains(p));
@@ -89,8 +89,7 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
             }
         }
 
-        starting_set.clear();
-        starting_set.extend(&next_step);
+        swap(&mut next_step, &mut starting_set);
         next_step.clear();
     }
     final_total += starting_set.len();
