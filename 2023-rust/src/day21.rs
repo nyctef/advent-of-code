@@ -2,6 +2,7 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
+use num::traits::Euclid;
 use std::{
     collections::{HashMap, HashSet},
     ops::Add,
@@ -44,6 +45,16 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
             .sorted_by_key(|p| (p.row, p.col))
             .copied()
             .collect_vec();
+        let by_division = starting_set
+            .iter()
+            .filter(|p| p.row.div_euclid(grid.height() as isize) == 0 && p.col.div_euclid(grid.width() as isize) == 0)
+            .sorted_by_key(|p| (p.row, p.col))
+            .copied()
+            .collect_vec();
+        if !(points_inside_original_grid == by_division) {
+            assert_eq!(points_inside_original_grid, by_division);
+            panic!("points inside: {:?} by_division: {:?}", points_inside_original_grid, by_division);
+        }
         let maybe_prev_step = central_grid_seen_states
             .entry(points_inside_original_grid.clone())
             .or_insert(step);
@@ -51,7 +62,10 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
         //     println!("found central grid repitition: step {} is same as step {}", step, maybe_prev_step);
         // }
         if *maybe_prev_step == step {
-            println!("found new central grid state at step {} : {:?}", step, points_inside_original_grid)
+            println!(
+                "found new central grid state at step {} : {:?}",
+                step, points_inside_original_grid
+            )
         }
 
         for p in &starting_set {
