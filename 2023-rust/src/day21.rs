@@ -89,5 +89,8 @@ fn test_example1() -> Result<()> {
 
     assert_eq!("total: 16", solve_for(input, 6)?);
     assert_eq!("total: 50", solve_for(input, 10)?);
+    assert_eq!("total: 1594", solve_for(input, 50)?);
+    assert_eq!("total: 167004", solve_for(input, 500)?);
+    // assert_eq!("total: 16733044", solve_for(input, 5000)?);
     Ok(())
 }
