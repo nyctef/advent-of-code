@@ -63,8 +63,8 @@ fn test_example1() -> Result<()> {
 .##..##.##.
 ...........
 "###;
-    let result = solve_for(input, 6)?;
 
-    assert_eq!("total: 16", result);
+    assert_eq!("total: 16", solve_for(input, 6)?);
+    assert_eq!("total: 50", solve_for(input, 10)?);
     Ok(())
 }
