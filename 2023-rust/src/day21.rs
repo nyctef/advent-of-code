@@ -8,6 +8,7 @@ use std::collections::BTreeSet;
 use std::hash::BuildHasherDefault;
 use std::io;
 use std::io::prelude::*;
+use std::mem::swap;
 use std::{
     collections::{HashMap, HashSet},
     ops::Add,
@@ -52,8 +53,17 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
         Default::default();
 
     for step in 0..step_count {
-        // print!(".");
-        // io::stdout().flush().ok().expect("Could not flush stdout");
+        print!(".");
+        io::stdout().flush().ok().expect("Could not flush stdout");
+        if step % 250 == 0 {
+            println!();
+            println!(
+                "s {} fg {} ss {}",
+                step,
+                frozen_grids.len(),
+                starting_set.len()
+            );
+        }
         let mut points_by_grid: HashMap<
             (isize, isize),
             Vec<GGIndexRC>,
@@ -96,12 +106,12 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
                     final_total += points_inside_grid.len();
                     starting_set.retain(|p| !points_inside_grid.contains(p));
                     frozen_grids.insert(g, true);
-                    println!(
-                        "step {} : froze grid {:?} but {} points remain",
-                        step,
-                        g,
-                        starting_set.len()
-                    );
+                    // println!(
+                    //     "step {} : froze grid {:?} but {} points remain",
+                    //     step,
+                    //     g,
+                    //     starting_set.len()
+                    // );
                 }
             }
         }
@@ -118,8 +128,7 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
             }
         }
 
-        starting_set.clear();
-        starting_set.extend(&next_step);
+        swap(&mut starting_set, &mut next_step);
         next_step.clear();
     }
     final_total += starting_set.len();
