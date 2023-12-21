@@ -33,17 +33,23 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
         .exactly_one()
         .map(|(p, _c)| p)
         .unwrap();
-    let mut starting_set = HashSet::new();
+    let mut starting_set: HashSet<GGIndexRC, BuildHasherDefault<FxHasher>> = Default::default();
     starting_set.insert(GGIndexRC::new(0, 0, start.row, start.col));
-    let mut next_step = HashSet::new();
+    let mut next_step: HashSet<GGIndexRC, BuildHasherDefault<FxHasher>> = Default::default();
     let mut grid_is_cycling: HashMap<(isize, isize), bool, BuildHasherDefault<FxHasher>> =
         Default::default();
     let mut final_total: usize = 0;
     let mut frozen_grids: HashMap<(isize, isize), bool, BuildHasherDefault<FxHasher>> =
         Default::default();
+    // since grids cycle with a period of 2, we want to make sure we end up
+    // calculating results for the correct part of the period.
+    // all the examples end on an even number of steps, but the actual
+    // puzzle ends on an odd step, so hopefully this means we do the
+    // right thing there
     let parity = step_count % 2;
 
-    let mut central_grid_seen_states = HashMap::new();
+    let mut grid_seen_states: HashMap<Vec<GGIndexRC>, usize, BuildHasherDefault<FxHasher>> =
+        Default::default();
 
     for step in 0..step_count {
         // print!(".");
@@ -56,11 +62,16 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
 
         for (key, group) in &starting_set.iter().group_by(|gp| (gp.x, gp.y)) {
             let collection = points_by_grid.entry(key).or_default();
-                collection.extend(group);
+            collection.extend(group);
         }
 
+        // TODO: we should really be sorting the per-grid points now to make
+        // sure they hash consistently, but that turns out to be expensive.
+        // maybe we can get UnorderedHasher to work with a custom Hasher impl
+        // which is supported for iterators only?
+
         for (g, points_inside_grid) in points_by_grid {
-            let maybe_prev_step = central_grid_seen_states
+            let maybe_prev_step = grid_seen_states
                 .entry(points_inside_grid.clone())
                 .or_insert(step);
 
@@ -85,7 +96,12 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
                     final_total += points_inside_grid.len();
                     starting_set.retain(|p| !points_inside_grid.contains(p));
                     frozen_grids.insert(g, true);
-                    println!("step {} : froze grid {:?} but {} points remain", step, g, starting_set.len());
+                    println!(
+                        "step {} : froze grid {:?} but {} points remain",
+                        step,
+                        g,
+                        starting_set.len()
+                    );
                 }
             }
         }
