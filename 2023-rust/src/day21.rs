@@ -33,6 +33,7 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     let mut grid_is_cycling: HashMap<(isize, isize), bool> = HashMap::new();
     let mut final_total: usize = 0;
     let mut frozen_grids: HashMap<(isize, isize), bool> = HashMap::new();
+    let mut seen_grids: HashSet<(isize, isize)> = HashSet::new();
     let parity = step_count % 2;
 
     let mut central_grid_seen_states = HashMap::new();
@@ -69,16 +70,22 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
                 // ]
                 // .iter()
                 // .all(|g2| *grid_is_cycling.entry(*g2).or_insert(false))
-                {
-                    final_total += points_inside_grid.len();
-                    starting_set.retain(|p| !points_inside_grid.contains(p));
-                    frozen_grids.insert(g, true);
-                }
+                // {
+                //     final_total += points_inside_grid.len();
+                //     println!("final_total += {}", points_inside_grid.len());
+                //     starting_set.retain(|p| !points_inside_grid.contains(p));
+                //     frozen_grids.insert(g, true);
+                // }
             }
         }
 
         for p in &starting_set {
             for p2 in [p.up(&grid), p.right(&grid), p.down(&grid), p.left(&grid)] {
+                if !seen_grids.contains(&(p2.x, p2.y)) {
+                    println!("new grid {:?} seen at step {} | p {:?} p2 {:?}", (p2.x, p2.y), step, (p.row, p.col), (p2.row, p2.col));
+                    println!("sslen: {}", starting_set.len());
+                    seen_grids.insert((p2.x, p2.y));
+                }
                 if grid.index_rc(p2.row, p2.col) == '#' {
                     continue;
                 }
