@@ -3,7 +3,7 @@ use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 22)?;
@@ -89,7 +89,7 @@ fn solve_for(input: &str) -> Result<String> {
         bricks[i] = brick;
     }
 
-    dbg!(&bricks, &height, &is_supporting, &is_supported_by);
+    // dbg!(&bricks, &height, &is_supporting, &is_supported_by);
 
     let mut removable_bricks: usize = 0;
 
@@ -103,8 +103,45 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
-    let part2 = "";
-    Ok(format!("Part 1: {removable_bricks} | Part 2: {part2}"))
+    let mut chain_reaction_total: usize = 0;
+
+    for i in 0..bricks.len() {
+        let mut subtotal = 0;
+        let mut q = VecDeque::new();
+        let mut exploded_bricks = FxHashSet::default();
+        let mut visited_bricks = FxHashSet::default();
+        q.push_front(i);
+
+        while let Some(n) = q.pop_front() {
+            if visited_bricks.contains(&n) { continue; }
+            visited_bricks.insert(n);
+            if (n == i) || is_supported_by
+                .entry(n)
+                .or_default()
+                .iter()
+                .all(|s| exploded_bricks.contains(s))
+            {
+                exploded_bricks.insert(n);
+                subtotal += 1;
+                for sb in is_supporting.entry(n).or_default() {
+                    q.push_back(*sb);
+
+                }
+            }
+        }
+
+        subtotal -= 1; // don't count the original brick
+
+        println!(
+            "disintegrating brick {} ({:?}) would cause {} other bricks to fall",
+            i, bricks[i], subtotal
+        );
+        chain_reaction_total += subtotal;
+    }
+
+    Ok(format!(
+        "Part 1: {removable_bricks} | Part 2: {chain_reaction_total}"
+    ))
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Constructor)]
@@ -185,6 +222,6 @@ fn test_example1() -> Result<()> {
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: | Part 2: ", result);
+    assert_eq!("Part 1: 5 | Part 2: 7", result);
     Ok(())
 }
