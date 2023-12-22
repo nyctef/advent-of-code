@@ -66,14 +66,14 @@ fn solve_for(input: &str) -> Result<String> {
             }
 
             let mut has_hit_something = false;
-            for i2 in 0..bricks.len() {
+            for (i2, &brick2) in bricks.iter().enumerate() {
                 if i2 == i {
                     // don't intersect with self
                     continue;
                 }
 
                 // println!("trying to intersect {:?} and {:?}", next_brick, bricks[i2]);
-                if next_brick.intersects(bricks[i2]) {
+                if next_brick.intersects(brick2) {
                     // println!("intersected!")
                     // we've tried to move brick down into next_brick,
                     // but we hit bricks[i2]
@@ -124,7 +124,7 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut chain_reaction_total: usize = 0;
 
-    for i in 0..bricks.len() {
+    for (i, &brick) in bricks.iter().enumerate() {
         let mut q = VecDeque::new();
         let mut exploded_bricks = FxHashSet::default();
         q.push_front(i);
@@ -152,7 +152,7 @@ fn solve_for(input: &str) -> Result<String> {
 
         println!(
             "disintegrating brick {} ({:?}) would cause {} other bricks to fall",
-            i, bricks[i], subtotal
+            i, brick, subtotal
         );
         chain_reaction_total += subtotal;
     }

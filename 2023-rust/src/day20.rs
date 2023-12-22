@@ -30,7 +30,7 @@ fn solve_for<'input>(input: &'input str) -> Result<String> {
         })
         .collect();
 
-    modules.insert(&"output", Module::Output);
+    modules.insert("output", Module::Output);
 
     let mut target_links: Vec<(&'input str, &'input str)> = vec![];
     for (source_name, source_module) in modules.iter() {
@@ -42,7 +42,7 @@ fn solve_for<'input>(input: &'input str) -> Result<String> {
     for (source_name, target_name) in target_links {
         if let Entry::Occupied(mut target_module) = modules.entry(target_name) {
             if let Module::Conjunction(ref mut inputs, _) = target_module.get_mut() {
-                inputs.insert(&source_name, false);
+                inputs.insert(source_name, false);
             }
         } else {
             // turns out we might send signals to an undefined module (this is intended)
@@ -103,7 +103,7 @@ fn solve_for<'input>(input: &'input str) -> Result<String> {
                     }
                 }
                 Some(Module::Conjunction(ref mut inputs, c_targets)) => {
-                    inputs.insert(&source, sig_is_high);
+                    inputs.insert(source, sig_is_high);
 
                     if dest == "cn" && inputs.values().any(|i| *i) {
                         println!("cn: bp {} inputs {:?}", button_presses, inputs);
