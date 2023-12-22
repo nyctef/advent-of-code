@@ -103,6 +103,20 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
+    /*
+    println!("is_supported_by graph:");
+    println!();
+    println!("digraph {{");
+    for i in 0..bricks.len() {
+        for i2 in is_supported_by.entry(i).or_default() {
+            println!("b{} -> b{}", i, i2);
+        }
+    }
+    println!("}}");
+    println!();
+    println!();
+    */
+
     let mut chain_reaction_total: usize = 0;
 
     for i in 0..bricks.len() {
@@ -113,19 +127,22 @@ fn solve_for(input: &str) -> Result<String> {
         q.push_front(i);
 
         while let Some(n) = q.pop_front() {
-            if visited_bricks.contains(&n) { continue; }
+            if visited_bricks.contains(&n) {
+                continue;
+            }
             visited_bricks.insert(n);
-            if (n == i) || is_supported_by
-                .entry(n)
-                .or_default()
-                .iter()
-                .all(|s| exploded_bricks.contains(s))
+
+            if (n == i)
+                || is_supported_by
+                    .entry(n)
+                    .or_default()
+                    .iter()
+                    .all(|s| exploded_bricks.contains(s))
             {
                 exploded_bricks.insert(n);
                 subtotal += 1;
                 for sb in is_supporting.entry(n).or_default() {
                     q.push_back(*sb);
-
                 }
             }
         }
