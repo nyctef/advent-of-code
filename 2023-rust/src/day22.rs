@@ -2,8 +2,10 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 22)?;
@@ -43,11 +45,14 @@ fn solve_for(input: &str) -> Result<String> {
         })
         .collect_vec();
 
+    // try to make sure we're not making any assumptions based on the input order in the test
+    bricks.shuffle(&mut thread_rng());
+
     // sort bricks so they go from bottom to top
     bricks.sort_by_key(|b| b.zmin());
     // usize indexes from now on will refer to the index in this sorted list
 
-    let height = bricks.iter().map(|b| b.zmax()).max().unwrap();
+    let _height = bricks.iter().map(|b| b.zmax()).max().unwrap();
 
     // if we drop bricks starting from the bottom, we shouldn't ever have to re-drop a brick
     for i in 0..bricks.len() {
