@@ -2,9 +2,7 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
-use num::traits::Euclid;
 use rustc_hash::FxHasher;
-use std::collections::BTreeSet;
 use std::hash::BuildHasherDefault;
 use std::io;
 use std::io::prelude::*;
@@ -12,9 +10,7 @@ use std::mem::swap;
 use std::{
     collections::{HashMap, HashSet},
     ops::Add,
-    task::Wake,
 };
-use unordered_hash::UnorderedHasher;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 21)?;
@@ -205,6 +201,7 @@ impl std::fmt::Debug for WrappingIndexRC {
     }
 }
 
+#[allow(dead_code)]
 impl WrappingIndexRC {
     fn wrap(&self, width: usize, height: usize) -> CharGridIndexRC {
         CharGridIndexRC::new(
@@ -259,6 +256,7 @@ fn test_example1() -> Result<()> {
 }
 
 // since the proper impl for this is still nightly
+#[allow(dead_code)]
 pub const fn div_floor(lhs: isize, rhs: isize) -> isize {
     let d = lhs / rhs;
     let r = lhs % rhs;

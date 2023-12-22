@@ -6,7 +6,16 @@ lazy_static! {
     static ref NEGATIVE_DIGITS: Regex = Regex::new(r"[-\d]+").unwrap();
 }
 
+// TODO: try making this generic? (or use a macro?)
+
 pub fn all_numbers(input: &str) -> Vec<u32> {
+    DIGITS
+        .find_iter(input)
+        .map(|x| x.as_str().parse().unwrap())
+        .collect()
+}
+
+pub fn all_numbers_usize(input: &str) -> Vec<usize> {
     DIGITS
         .find_iter(input)
         .map(|x| x.as_str().parse().unwrap())
