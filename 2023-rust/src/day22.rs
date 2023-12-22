@@ -15,8 +15,8 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    // let mut is_supporting: HashMap<usize, Vec<usize>, _> = FxHashMap::default();
-    // let mut is_supported_by: HashMap<usize, Vec<usize>, _> = FxHashMap::default();
+    let mut is_supporting: HashMap<usize, Vec<usize>, _> = FxHashMap::default();
+    let mut is_supported_by: HashMap<usize, Vec<usize>, _> = FxHashMap::default();
     // let mut is_landed: HashSet<usize, _> = FxHashSet::default();
     let mut bricks = input
         .trim()
@@ -60,6 +60,7 @@ fn solve_for(input: &str) -> Result<String> {
                 break;
             }
 
+            let mut has_hit_something = false;
             for i2 in 0..bricks.len() {
                 if i2 == i {
                     // don't intersect with self
@@ -71,23 +72,39 @@ fn solve_for(input: &str) -> Result<String> {
                     // println!("intersected!")
                     // we've tried to move brick down into next_brick,
                     // but we hit bricks[i2]
-                    // TODO: record this collision
-                    break 'outer;
+
+                    // record this collision
+                    is_supporting.entry(i2).or_default().push(i);
+                    is_supported_by.entry(i).or_default().push(i2);
+                    // need to make sure we record any other collisions as well
+                    has_hit_something = true;
                 }
+            }
+            if has_hit_something {
+                break 'outer;
             }
 
             brick = next_brick;
         }
         bricks[i] = brick;
-
     }
 
+    dbg!(&bricks, &height, &is_supporting, &is_supported_by);
 
-    dbg!(&bricks, &height);
+    let mut removable_bricks: usize = 0;
 
-    let part1 = "";
+    for i in 0..bricks.len() {
+        let supported_bricks = is_supporting.entry(i).or_default();
+        if supported_bricks
+            .iter()
+            .all(|sb| is_supported_by.entry(*sb).or_default().len() >= 2)
+        {
+            removable_bricks += 1;
+        }
+    }
+
     let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    Ok(format!("Part 1: {removable_bricks} | Part 2: {part2}"))
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Constructor)]
@@ -107,7 +124,6 @@ impl Point3 {
     fn down(&self) -> Point3 {
         Point3::new(self.x, self.y, self.z - 1)
     }
-
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy, Constructor)]
@@ -145,13 +161,13 @@ impl Brick {
         // try to find a separating axis
         if self.xmax() < other.xmin() || other.xmax() < self.xmin() {
             return false;
-        } 
+        }
         if self.ymax() < other.ymin() || other.ymax() < self.ymin() {
             return false;
-        } 
+        }
         if self.zmax() < other.zmin() || other.zmax() < self.zmin() {
             return false;
-        } 
+        }
         true
     }
 }
