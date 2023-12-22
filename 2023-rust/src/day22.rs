@@ -125,17 +125,14 @@ fn solve_for(input: &str) -> Result<String> {
     let mut chain_reaction_total: usize = 0;
 
     for i in 0..bricks.len() {
-        let mut subtotal = 0;
         let mut q = VecDeque::new();
         let mut exploded_bricks = FxHashSet::default();
-        let mut visited_bricks = FxHashSet::default();
         q.push_front(i);
 
         while let Some(n) = q.pop_front() {
-            if visited_bricks.contains(&n) {
+            if exploded_bricks.contains(&n) {
                 continue;
             }
-            visited_bricks.insert(n);
 
             if (n == i)
                 || is_supported_by
@@ -145,14 +142,13 @@ fn solve_for(input: &str) -> Result<String> {
                     .all(|s| exploded_bricks.contains(s))
             {
                 exploded_bricks.insert(n);
-                subtotal += 1;
                 for sb in is_supporting.entry(n).or_default() {
                     q.push_back(*sb);
                 }
             }
         }
 
-        subtotal -= 1; // don't count the original brick
+        let subtotal = exploded_bricks.len() - 1; // don't count the original brick
 
         println!(
             "disintegrating brick {} ({:?}) would cause {} other bricks to fall",
