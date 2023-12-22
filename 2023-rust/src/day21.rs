@@ -2,14 +2,10 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
-use rustc_hash::FxHasher;
-use std::hash::BuildHasherDefault;
-use std::io;
-use std::io::prelude::*;
-use std::mem::swap;
 use std::{
     collections::{HashMap, HashSet},
     ops::Add,
+    mem::swap,
 };
 
 pub fn solve() -> Result<()> {
@@ -30,62 +26,31 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
         .exactly_one()
         .map(|(p, _c)| p)
         .unwrap();
-    let mut starting_set: HashSet<GGIndexRC, BuildHasherDefault<FxHasher>> = Default::default();
+    let mut starting_set = HashSet::new();
     starting_set.insert(GGIndexRC::new(0, 0, start.row, start.col));
-    let mut next_step: HashSet<GGIndexRC, BuildHasherDefault<FxHasher>> = Default::default();
-    let mut grid_is_cycling: HashMap<(isize, isize), bool, BuildHasherDefault<FxHasher>> =
-        Default::default();
+    let mut next_step = HashSet::new();
+    let mut grid_is_cycling: HashMap<(isize, isize), bool> = HashMap::new();
     let mut final_total: usize = 0;
-    let mut frozen_grids: HashMap<(isize, isize), bool, BuildHasherDefault<FxHasher>> =
-        Default::default();
-    // since grids cycle with a period of 2, we want to make sure we end up
-    // calculating results for the correct part of the period.
-    // all the examples end on an even number of steps, but the actual
-    // puzzle ends on an odd step, so hopefully this means we do the
-    // right thing there
+    #[allow(unused_mut)]
+    let mut frozen_grids: HashMap<(isize, isize), bool> = HashMap::new();
+    let mut seen_grids: HashSet<(isize, isize)> = HashSet::new();
     let parity = step_count % 2;
 
-    let mut grid_seen_states: HashMap<Vec<CharGridIndexRC>, usize, BuildHasherDefault<FxHasher>> =
-        Default::default();
+    let mut central_grid_seen_states = HashMap::new();
 
     for step in 0..step_count {
-        print!(".");
-        io::stdout().flush().ok().expect("Could not flush stdout");
-        if step % 250 == 0 {
-            println!();
-            println!(
-                "s {} fg {} starting_set {} grid_seen_states {}",
-                step,
-                frozen_grids.len(),
-                starting_set.len(),
-                grid_seen_states.len()
-            );
-        }
-        let mut points_by_grid: HashMap<
-            (isize, isize),
-            Vec<GGIndexRC>,
-            BuildHasherDefault<FxHasher>,
-        > = Default::default();
+        let mut points_by_grid: HashMap<(isize, isize), Vec<GGIndexRC>> = HashMap::new();
 
         for (key, group) in &starting_set.iter().group_by(|gp| (gp.x, gp.y)) {
             let collection = points_by_grid.entry(key).or_default();
             collection.extend(group);
+            // todo: this repeated sorting is probably slow
+            collection.sort_by_key(|p| (p.row, p.col));
         }
 
-        // TODO: we should really be sorting the per-grid points now to make
-        // sure they hash consistently, but that turns out to be expensive.
-        // maybe we can get UnorderedHasher to work with a custom Hasher impl
-        // which is supported for iterators only?
-
         for (g, points_inside_grid) in points_by_grid {
-            let maybe_prev_step = grid_seen_states
-                .entry(
-                    points_inside_grid
-                        .iter()
-                        .map(|p| CharGridIndexRC::new(p.row, p.col))
-                        .sorted_by_key(|p| (p.row, p.col))
-                        .collect_vec(),
-                )
+            let maybe_prev_step = central_grid_seen_states
+                .entry(points_inside_grid.clone())
                 .or_insert(step);
 
             let this_step_parity = step % 2;
@@ -97,30 +62,30 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
                 // );
                 // dbg!(&grid_is_cycling);
                 grid_is_cycling.insert(g, true);
-                if [
-                    (g.0 - 1, g.1),
-                    (g.0, g.1 - 1),
-                    (g.0 + 1, g.1),
-                    (g.0, g.1 + 1),
-                ]
-                .iter()
-                .all(|g2| *grid_is_cycling.entry(*g2).or_insert(false))
-                {
-                    final_total += points_inside_grid.len();
-                    starting_set.retain(|p| !points_inside_grid.contains(p));
-                    frozen_grids.insert(g, true);
-                    println!(
-                        "step {} : froze grid {:?} but {} points remain",
-                        step,
-                        g,
-                        starting_set.len()
-                    );
-                }
+                // if [
+                //     (g.0 - 1, g.1),
+                //     (g.0, g.1 - 1),
+                //     (g.0 + 1, g.1),
+                //     (g.0, g.1 + 1),
+                // ]
+                // .iter()
+                // .all(|g2| *grid_is_cycling.entry(*g2).or_insert(false))
+                // {
+                //     final_total += points_inside_grid.len();
+                //     println!("final_total += {}", points_inside_grid.len());
+                //     starting_set.retain(|p| !points_inside_grid.contains(p));
+                //     frozen_grids.insert(g, true);
+                // }
             }
         }
 
         for p in &starting_set {
             for p2 in [p.up(&grid), p.right(&grid), p.down(&grid), p.left(&grid)] {
+                if !seen_grids.contains(&(p2.x, p2.y)) {
+                    println!("new grid {:?} seen at step {} | p {:?} p2 {:?}", (p2.x, p2.y), step, (p.row, p.col), (p2.row, p2.col));
+                    println!("sslen: {}", starting_set.len());
+                    seen_grids.insert((p2.x, p2.y));
+                }
                 if grid.index_rc(p2.row, p2.col) == '#' {
                     continue;
                 }
@@ -131,7 +96,7 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
             }
         }
 
-        swap(&mut starting_set, &mut next_step);
+        swap(&mut next_step, &mut starting_set);
         next_step.clear();
     }
     final_total += starting_set.len();
@@ -139,7 +104,7 @@ fn solve_for(input: &str, step_count: usize) -> Result<String> {
     Ok(format!("total: {}", final_total))
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Constructor, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Constructor, Hash)]
 pub struct GGIndexRC {
     // which grid we're on
     pub x: isize,
@@ -238,25 +203,16 @@ fn test_example1() -> Result<()> {
 ...........
 "###;
 
-    // assert_eq!("total: 16", solve_for(input, 6)?);
-    println!();
-    println!("10:");
+    assert_eq!("total: 16", solve_for(input, 6)?);
     assert_eq!("total: 50", solve_for(input, 10)?);
-    println!();
-    println!("50:");
     assert_eq!("total: 1594", solve_for(input, 50)?);
-    println!();
-    println!("500:");
-    assert_eq!("total: 167004", solve_for(input, 500)?);
-    println!();
-    println!("1000:");
-    assert_eq!("total: 668697", solve_for(input, 1000)?);
-    //assert_eq!("total: 16733044", solve_for(input, 5000)?);
+    // assert_eq!("total: 167004", solve_for(input, 500)?);
+    // assert_eq!("total: 16733044", solve_for(input, 5000)?);
     Ok(())
 }
 
-// since the proper impl for this is still nightly
 #[allow(dead_code)]
+// since the proper impl for this is still nightly
 pub const fn div_floor(lhs: isize, rhs: isize) -> isize {
     let d = lhs / rhs;
     let r = lhs % rhs;
