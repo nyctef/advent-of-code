@@ -57,7 +57,7 @@ fn solve_for(input: &str) -> Result<String> {
     // if we drop bricks starting from the bottom, we shouldn't ever have to re-drop a brick
     for i in 0..bricks.len() {
         let mut brick = bricks[i];
-        'outer: loop {
+        loop {
             let next_brick = brick.down();
 
             if next_brick.intersects_z_at(0) {
@@ -85,8 +85,9 @@ fn solve_for(input: &str) -> Result<String> {
                     has_hit_something = true;
                 }
             }
+
             if has_hit_something {
-                break 'outer;
+                break;
             }
 
             brick = next_brick;
