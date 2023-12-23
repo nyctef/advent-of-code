@@ -29,7 +29,7 @@ fn solve_for(input: &str) -> Result<String> {
         .exactly_one()
         .unwrap();
 
-    let mut search = Dijkstra::new(|s: &State| s.current_pos);
+    let mut search = ScoredSearch::new_bfs(|s:&State| s.current_pos, |s:&State| 100_000 - s.visited_points.len());
     search.push(State {
         current_pos: start,
         visited_points: FxHashSet::from_iter(vec![start].into_iter()),
@@ -64,24 +64,28 @@ fn solve_for(input: &str) -> Result<String> {
                 .collect_vec()
         },
         |s| s.current_pos == end,
+        111_111
     );
 
 
-    for (p, c) in grid.enumerate_chars_rc() {
-        if p.col == 0 {
-            println!()
-        }
+    // for (p, c) in grid.enumerate_chars_rc() {
+    //     if p.col == 0 {
+    //         println!()
+    //     }
 
-        if res.visited_points.contains(&p) {
-            print!("O");
-        } else {
-            print!("{}", c);
-        }
-    }
+    //     if res.visited_points.contains(&p) {
+    //         print!("O");
+    //     } else {
+    //         print!("{}", c);
+    //     }
+    // }
     println!();
 
     // don't count starting point as a step?
-    let part1 = res.visited_points.len() - 1;
+    // let part1 = res.visited_points.len() - 1;
+    let res = res.iter().exactly_one().unwrap();
+    let res = 100_000 - res;
+    let part1 = res - 1;
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }

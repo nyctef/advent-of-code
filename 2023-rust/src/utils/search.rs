@@ -15,6 +15,13 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
             dfs: true,
         }
     }
+    pub fn new_bfs() -> Search<T> {
+        Search {
+            queue: VecDeque::new(),
+            seen: HashSet::new(),
+            dfs: true,
+        }
+    }
 
     pub fn push(&mut self, entry: T) -> bool {
         if self.seen.contains(&entry) {
