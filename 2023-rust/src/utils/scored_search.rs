@@ -2,6 +2,8 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 
+use color_eyre::Section;
+
 /// T: the state type
 /// K: a unique key for the state for looking up scores
 /// S: the type of the score
@@ -26,7 +28,7 @@ pub struct ScoredSearch<T, K, S> {
 #[allow(dead_code)]
 impl<
         T: std::fmt::Debug + Clone,
-        K: Eq + PartialEq + Hash,
+        K: std::fmt::Debug + Eq + PartialEq + Hash,
         S: std::fmt::Debug + Clone + Copy + PartialOrd,
     > ScoredSearch<T, K, S>
 {
@@ -50,14 +52,17 @@ impl<
         get_next_candidates: impl Fn(T) -> Vec<T>,
         is_target_state: impl Fn(&T) -> bool,
         max_score: S,
-    ) -> Vec<S> {
+    ) -> (Vec<S>, Option<T>) {
         let mut bests = vec![max_score];
+        let mut best_state = None;
         let mut count: u64 = 0;
         while let Some(current_state) = self.pop() {
             if is_target_state(&current_state) {
                 let score = (self.get_score)(&current_state);
                 if !bests.iter().any(|b| b <= &score) {
+                    // println!("found a potential best {:?} with score {:?}", &current_state, score);
                     bests.push(score);
+                    best_state = Some(current_state.clone());
                     bests.retain(|b| b.partial_cmp(&score) != Some(Ordering::Greater));
                 }
             }
@@ -81,7 +86,8 @@ impl<
             }
         }
         println!("final bests: {:?}", bests);
-        bests
+        // dbg!(&self.best_scores);
+        (bests, best_state)
     }
 
     pub fn push(&mut self, entry: T) -> bool {
