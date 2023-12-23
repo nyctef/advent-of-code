@@ -2,8 +2,6 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 
-use color_eyre::Section;
-
 /// T: the state type
 /// K: a unique key for the state for looking up scores
 /// S: the type of the score

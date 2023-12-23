@@ -41,6 +41,8 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
     pub fn pop(&mut self) -> Option<T> {
         self.queue.pop_front()
     }
+
+    pub fn len(&self) -> usize { self.queue.len() }
 }
 
 pub trait SearchExt<T> {
