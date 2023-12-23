@@ -59,7 +59,7 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut best = 0;
 
-    let mut junction_search = Search::new_bfs();
+    let mut junction_search = Search::new_exhaustive();
     junction_search.push((start, 0, vec![]));
 
 

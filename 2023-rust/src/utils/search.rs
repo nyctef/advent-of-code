@@ -5,6 +5,7 @@ pub struct Search<T> {
     queue: VecDeque<T>,
     seen: HashSet<T>,
     dfs: bool,
+    track_seen: bool,
 }
 
 impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
@@ -13,6 +14,7 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
             queue: VecDeque::new(),
             seen: HashSet::new(),
             dfs: true,
+            track_seen: true,
         }
     }
     pub fn new_bfs() -> Search<T> {
@@ -20,16 +22,26 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
             queue: VecDeque::new(),
             seen: HashSet::new(),
             dfs: true,
+            track_seen: true,
+        }
+    }
+    pub fn new_exhaustive() -> Search<T> {
+        Search {
+            queue: VecDeque::new(),
+            seen: HashSet::new(),
+            dfs: true,
+            track_seen: false,
         }
     }
 
     pub fn push(&mut self, entry: T) -> bool {
-        if self.seen.contains(&entry) {
-            return false;
+        if self.track_seen {
+            if self.seen.contains(&entry) {
+                return false;
+            }
+
+            self.seen.insert(entry.clone());
         }
-        // todo: some workaround like https://github.com/rust-lang/rust/issues/60896 to avoid the
-        // double lookup here?
-        self.seen.insert(entry.clone());
         if self.dfs {
             self.queue.push_front(entry);
         } else {
@@ -42,7 +54,9 @@ impl<T: std::fmt::Debug + PartialEq + Eq + std::hash::Hash + Clone> Search<T> {
         self.queue.pop_front()
     }
 
-    pub fn len(&self) -> usize { self.queue.len() }
+    pub fn len(&self) -> usize {
+        self.queue.len()
+    }
 }
 
 pub trait SearchExt<T> {
