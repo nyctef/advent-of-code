@@ -2,7 +2,7 @@ use crate::utils::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::{HashMap};
+use std::{collections::HashMap, time::Instant};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 23)?;
@@ -64,12 +64,13 @@ fn solve_for(input: &str) -> Result<String> {
 
 
     let mut counter:usize = 0;
+    let mut last_report = Instant::now();
 
     while let Some((n, d, seen)) = junction_search.pop() {
         counter += 1;
-        if counter % 100_000 == 0 {
+        if last_report.elapsed().as_millis() > 500 {
             println!("c {} b {} len {}", counter, best, junction_search.len());
-
+            last_report = Instant::now();
         }
         if n == end {
             best = best.max(d);
