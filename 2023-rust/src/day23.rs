@@ -1,9 +1,8 @@
-use std::collections::HashSet;
-
 use crate::utils::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::{HashMap, HashSet};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 23)?;
@@ -29,7 +28,40 @@ fn solve_for(input: &str) -> Result<String> {
         .exactly_one()
         .unwrap();
 
-    let mut search = ScoredSearch::new_bfs(|s:&State| s.current_pos, |s:&State| -(s.visited_points.len() as isize));
+    let mut junctions = grid
+        .enumerate_chars_rc()
+        .filter(|(p, c)| {
+            if c == &'#' {
+                return false;
+            }
+
+            let n_count = RCDirection::four()
+                .into_iter()
+                .map(|d| *p + d)
+                .filter(|p2| grid.is_in_bounds(*p2) && grid[*p2] != '#')
+                .count();
+            n_count > 2
+        })
+        .map(|(p, _)| p)
+        .collect_vec();
+    junctions.push(start);
+    junctions.push(end);
+
+
+    let mut junction_distances: HashMap<CharGridIndexRC, Vec<(CharGridIndexRC, usize)>, _> =
+        FxHashMap::default();
+
+    for j in &junctions {
+        for (j2, d) in get_neighbor_junction_dists(&grid, &junctions, *j) {
+            junction_distances.entry(*j).or_default().push((j2, d));
+        }
+    }
+    dbg!(&junctions, &junction_distances);
+
+    let mut search = ScoredSearch::new_bfs(
+        |s: &State| s.current_pos,
+        |s: &State| -(s.visited_points.len() as isize),
+    );
     search.push(State {
         current_pos: start,
         visited_points: FxHashSet::from_iter(vec![start].into_iter()),
@@ -47,7 +79,9 @@ fn solve_for(input: &str) -> Result<String> {
                 // _ => panic!("unhandled char {}", c),
             }
 
-            candidates.retain(|ca| grid.is_in_bounds(*ca) && grid[*ca] != '#'  && !s.visited_points.contains(ca));
+            candidates.retain(|ca| {
+                grid.is_in_bounds(*ca) && grid[*ca] != '#' && !s.visited_points.contains(ca)
+            });
 
             candidates
                 .into_iter()
@@ -64,9 +98,8 @@ fn solve_for(input: &str) -> Result<String> {
                 .collect_vec()
         },
         |s| s.current_pos == end,
-        0
+        0,
     );
-
 
     for (p, c) in grid.enumerate_chars_rc() {
         if p.col == 0 {
@@ -84,10 +117,40 @@ fn solve_for(input: &str) -> Result<String> {
     // don't count starting point as a step?
     // let part1 = res.visited_points.len() - 1;
     let res = bests.iter().exactly_one().unwrap();
-    let res = - res;
+    let res = -res;
     let part1 = res - 1;
     let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+}
+
+fn get_neighbor_junction_dists(
+    grid: &CharGrid,
+    junctions: &[CharGridIndexRC],
+    j: CharGridIndexRC,
+) -> Vec<(CharGridIndexRC, usize)> {
+    let mut res = vec![];
+    let mut seen = FxHashSet::default();
+    let mut search = Search::new_bfs();
+    search.push((j, 0));
+    while let Some((n, d)) = search.pop() {
+        if seen.contains(&n) {
+            continue;
+        }
+        seen.insert(n);
+        if n != j && junctions.contains(&n) {
+            res.push((n, d));
+            continue;
+        }
+
+        for dir in RCDirection::four() {
+            let n2 = n + dir;
+            let d2 = d + 1;
+            if grid.is_in_bounds(n2) && grid[n2] != '#' {
+                search.push((n2, d2));
+            }
+        }
+    }
+    res
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -95,7 +158,6 @@ struct State {
     current_pos: CharGridIndexRC,
     visited_points: FxHashSet<CharGridIndexRC>,
 }
-
 
 impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
