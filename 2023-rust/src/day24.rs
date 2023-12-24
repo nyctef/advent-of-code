@@ -64,35 +64,46 @@ fn solve_for(input: &str) -> Result<String> {
 
              let's try to isolate t_a first:
 
-             t_a * dx_a = x0_b + t_b * dx_b
+             t_a * dx_a = x0_b + t_b * dx_b - x0_a
              
-             t_a = (x0_b + t_b * dx_b) / dx_a
+             t_a = (x0_b + t_b * dx_b - x0_a) / dx_a
              and same for y:
-             t_a = (y0_b + t_b * dy_b) / dy_a
+             t_a = (y0_b + t_b * dy_b - y0_a) / dy_a
 
              this t_a is the same for both equations, though, so now we have
 
-             (x0_b + t_b * dx_b) / dx_a = (y0_b + t_b * dy_b) / dy_a
+             (x0_b + t_b * dx_b - x0_a) / dx_a = (y0_b + t_b * dy_b - y0_a) / dy_a
 
              which we should be able to use to isolate t_b
 
              let's try multiplying by dy_a first:
 
-             (x0_b + t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b
+             (x0_b + t_b * dx_b - x0_a) * (dy_a / dx_a) = y0_b + t_b * dy_b - y0_a
 
-             x0_b * (dy_a / dx_a) + (t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b
+             split up left side:
 
-             (t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b - (x0_b * (dy_a / dx_a))
-             (t_b * dx_b) * (dy_a / dx_a) - (t_b * dy_b) = y0_b - (x0_b * (dy_a / dx_a))
+             (x0_b - x0_a) * (dy_a / dx_a) + (t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b - y0_a
 
-             t_b * ((dx_b * dy_a / dx_a) - dy_b) = y0_b - (x0_b * (dy_a / dx_a))
+             move part not containing t_b over to the right:
 
-             t_b = (y0_b - (x0_b * (dy_a / dx_a))) / (((dx_b * dy_a / dx_a) - dy_b))
+             (t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b - y0_a - ((x0_b - x0_a) * (dy_a / dx_a))
+
+             move a part containing t_b from the right to the left:
+
+             (t_b * dx_b) * (dy_a / dx_a) - (t_b * dy_b) = y0_b - y0_a - ((x0_b - x0_a) * (dy_a / dx_a))
+
+             factor out t_b on the left:
+
+             t_b * ((dx_b * dy_a / dx_a) - dy_b) = y0_b - y0_a - ((x0_b - x0_a) * (dy_a / dx_a))
+
+             and get t_b by itself:
+
+             t_b = (y0_b - y0_a - ((x0_b - x0_a) * (dy_a / dx_a))) / (((dx_b * dy_a / dx_a) - dy_b))
 
 
             */
 
-            let t_b = (hb.y0 - (hb.x0 * (ha.dy / ha.dx))) / (((hb.dx * ha.dy / ha.dx) - hb.dy));
+            let t_b = (hb.y0 - ha.y0 - ((hb.x0 - ha.x0) * (ha.dy / ha.dx))) / (((hb.dx * ha.dy / ha.dx) - hb.dy));
             let t_a = (hb.x0 + t_b * hb.dx) / ha.dx;
 
             println!("t_b {:.3} t_a {:.3}", t_b, t_a);
