@@ -94,8 +94,19 @@ fn solve_for(input: &str) -> Result<String> {
 
             let t_b = (hb.y0 - (hb.x0 * (ha.dy / ha.dx))) / (((hb.dx * ha.dy / ha.dx) - hb.dy));
             let t_a = (hb.x0 + t_b * hb.dx) / ha.dx;
-            println!("t_b {} t_a {}", t_b, t_a);
 
+            println!("t_b {:.3} t_a {:.3}", t_b, t_a);
+            if t_a.is_infinite() || t_b.is_infinite() {
+                println!("nonintersecting");
+                continue;
+            }
+
+            let x_a = ha.x0 + (ha.dx * t_a);
+            let y_a = ha.y0 + (ha.dy * t_a);
+            let x_b = hb.x0 + (hb.dx * t_b);
+            let y_b = hb.y0 + (hb.dy * t_b);
+
+            println!("a: {:.3} {:.3} b: {:.3} {:.3}", x_a, y_a, x_b, y_b);
         }
     }
 
