@@ -5,13 +5,13 @@ use itertools::Itertools;
 pub fn solve() -> Result<()> {
     let input = get_input(2023, 24)?;
 
-    let result = solve_for(&input)?;
+    let result = solve_for(&input, 200000000000000., 400000000000000.)?;
 
     println!("{}", result);
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<String> {
+fn solve_for(input: &str, test_area_min: f64, test_area_max: f64) -> Result<String> {
     let inputs = input
         .trim()
         .lines()
@@ -125,8 +125,6 @@ fn solve_for(input: &str) -> Result<String> {
                 println!("past");
                 continue;
             }
-            let test_area_min = 200000000000000.;
-            let test_area_max = 400000000000000.;
 
             if x_a < test_area_min || y_a < test_area_min || x_a > test_area_max || y_a > test_area_max {
                 println!("out of bounds");
@@ -170,8 +168,8 @@ fn test_example1() -> Result<()> {
 12, 31, 28 @ -1, -2, -1
 20, 19, 15 @  1, -5, -3
 "###;
-    let result = solve_for(input)?;
+    let result = solve_for(input, 7., 27.)?;
 
-    assert_eq!("Part 1: 2 | Part 2: ", result);
+    assert_eq!("Part 1: 2 | Part 2: 47", result);
     Ok(())
 }
