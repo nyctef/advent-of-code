@@ -15,7 +15,7 @@ fn solve_for(input: &str) -> Result<String> {
     let inputs = input
         .trim()
         .lines()
-        .map(|l| all_numbers_i64(l))
+        .map(|l| all_numbers_f64(l))
         .map(|ns| Hail {
             x0: ns[0],
             y0: ns[1],
@@ -32,11 +32,11 @@ fn solve_for(input: &str) -> Result<String> {
 
     for i in 0..inputs.len() {
         for j in 0..i {
-            let h1 = &inputs[i];
-            let h2 = &inputs[j];
+            let ha = &inputs[i];
+            let hb = &inputs[j];
 
             // consider all distinct pairs of hailstones:
-            println!("Comparing {:?} and {:?}", h1, h2);
+            println!("Comparing a={:?} and b={:?}", ha, hb);
 
             /*
              for part 1
@@ -45,38 +45,57 @@ fn solve_for(input: &str) -> Result<String> {
              x = x0 + t*dx
              y = y0 + t*dy
 
-             if two hailstones a and b intersect, then we have
+             where t is a time parameter
 
-             x0a + t*dxa = x0b + t*dxb
-             y0a + t*dya = y0b + t*dyb
+             the hailstones don't have to collide exactly - we just
+             have to find out if their paths intersect.
 
-             we want to find the value of t at the intersection, if it exists
-             since we need to know if t is in the past (negative)
+             (checking this working using https://gamedev.stackexchange.com/a/44733/114877 )
+                                  
+             the path of ha is defined by x_a = x0_a + t_a * dx_a (and same for y)
+             the path of hb is defined by x_b = x0_b + t_b * dx_b (and same for y)
 
-             t*dxa - t*dxb = x0b - x0a
+             since they don't have to collide exactly, t_a and t_b don't
+             have to be the same value.
 
-             t(dxa - dxb) = x0b - x0a
+             however if there is an intersection, then we have x_a = x_b, so 
 
-             t = (x0b - x0a) / (dxa - dxb)
-             t = (y0b - y0a) / (dya - dyb)
+             x0_a + t_a * dx_a = x0_b + t_b * dx_b
+
+             let's try to isolate t_a first:
+
+             t_a * dx_a = x0_b + t_b * dx_b
+             
+             t_a = (x0_b + t_b * dx_b) / dx_a
+             and same for y:
+             t_a = (y0_b + t_b * dy_b) / dy_a
+
+             this t_a is the same for both equations, though, so now we have
+
+             (x0_b + t_b * dx_b) / dx_a = (y0_b + t_b * dy_b) / dy_a
+
+             which we should be able to use to isolate t_b
+
+             let's try multiplying by dy_a first:
+
+             (x0_b + t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b
+
+             x0_b * (dy_a / dx_a) + (t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b
+
+             (t_b * dx_b) * (dy_a / dx_a) = y0_b + t_b * dy_b - (x0_b * (dy_a / dx_a))
+             (t_b * dx_b) * (dy_a / dx_a) - (t_b * dy_b) = y0_b - (x0_b * (dy_a / dx_a))
+
+             t_b * ((dx_b * dy_a / dx_a) - dy_b) = y0_b - (x0_b * (dy_a / dx_a))
+
+             t_b = (y0_b - (x0_b * (dy_a / dx_a))) / (((dx_b * dy_a / dx_a) - dy_b))
 
 
             */
 
-            // if (h1.dx, h1.dy) == (h2.dx, h2.dy) {
-            //     println!("{:?} and {:?} are parallel", h1, h2);
-            //     continue;
-            // }
-            //
-            let tx: f64 = (h2.x0 - h1.x0) as f64 / (h1.dx - h2.dx) as f64;
-            let ty: f64 = (h2.y0 - h1.y0) as f64 / (h1.dy - h2.dy) as f64;
+            let t_b = (hb.y0 - (hb.x0 * (ha.dy / ha.dx))) / (((hb.dx * ha.dy / ha.dx) - hb.dy));
+            let t_a = (hb.x0 + t_b * hb.dx) / ha.dx;
+            println!("t_b {} t_a {}", t_b, t_a);
 
-            let x1 = h1.x0 as f64 + tx*h1.dx as f64;
-            let y1 = h1.y0 as f64 + ty*h1.dy as f64;
-            let x2 = h2.x0 as f64 + tx*h2.dx as f64;
-            let y2 = h2.y0 as f64 + ty*h2.dy as f64;
-
-            println!("tx{} ty{} | x1{} y1{} | x2{} y2{}", tx, ty, x1, y1, x2, y2);
         }
     }
 
@@ -87,14 +106,13 @@ fn solve_for(input: &str) -> Result<String> {
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
-#[derive(Eq, PartialEq)]
 struct Hail {
-    x0: i64,
-    y0: i64,
-    z0: i64,
-    dx: i64,
-    dy: i64,
-    dz: i64,
+    x0: f64,
+    y0: f64,
+    z0: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
 }
 
 impl std::fmt::Debug for Hail {
