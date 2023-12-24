@@ -31,7 +31,7 @@ fn solve_for(input: &str) -> Result<String> {
     let mut collisions:usize = 0;
 
     for i in 0..inputs.len() {
-        for j in 0..i {
+        for j in (i + 1)..inputs.len() {
             let ha = &inputs[i];
             let hb = &inputs[j];
 
