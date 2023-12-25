@@ -14,10 +14,25 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let grid = CharGrid::from_string(input);
+    let mut grid = CharGrid::from_string(input);
+    let mut next_robot = 1;
+    let mut robots = vec![];
+
+    for robot in grid
+        .enumerate_chars_rc()
+        .filter(|(_p, c)| c == &'@')
+        .map(|(p, _)| p)
+        .collect_vec()
+    {
+        let c = char::from_digit(next_robot, 10).unwrap();
+        grid.set_index_rc(robot, c);
+        robots.push(c);
+        next_robot += 1;
+    }
+
     let nodes: HashMap<char, CharGridIndexRC> = grid
         .enumerate_chars_rc()
-        .filter(|(_p, c)| c.is_ascii_alphabetic() || c == &'@')
+        .filter(|(_p, c)| c.is_ascii_alphanumeric())
         .map(|(p, c)| (c, p))
         .collect();
     let mut links: HashMap<char, Vec<(char, usize)>> = HashMap::new();
@@ -42,7 +57,7 @@ fn solve_for(input: &str) -> Result<String> {
     // dbg!(&all_keys);
 
     let mut search = Dijkstra::new(|s: &State| (s.pos.clone(), s.keys.clone()));
-    search.push(State::new(0, vec!['@'], vec![]));
+    search.push(State::new(0, robots, vec![]));
 
     // note this ending condition relies on the state's keys being sorted for vec equality
     // making State.keys into a hashset for easier comparison would be nice, but HashSet isn't
@@ -117,7 +132,7 @@ fn find_neighboring_nodes(grid: &CharGrid, p: CharGridIndexRC) -> Vec<(char, usi
     search.push((p, 0));
     while let Some((np, nd)) = search.pop() {
         let c = grid[np];
-        if np != p && (c.is_ascii_alphabetic() || c == '@') {
+        if np != p && c.is_ascii_alphanumeric() {
             result.push((c, nd));
             continue;
         }
