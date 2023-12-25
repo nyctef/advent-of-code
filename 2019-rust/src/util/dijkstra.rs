@@ -33,8 +33,9 @@ impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> 
 
         self.run(get_next_candidates, &is_target_state);
 
-        let result = self.bests.values().filter(|b| is_target_state(&b)).exactly_one()
-            .unwrap_or_else(|e| panic!("expected to get exactly one target state, but got {:?}", e.count()));
+        // we may have queued up several candidates for the final state
+        // before processing one and quitting the loop, so now we find the smallest here:
+        let result = self.bests.values().filter(|b| is_target_state(&b)).min().unwrap_or_else(|| panic!("expected a result"));
 
         // TODO: how do we remove this clone?
         result.clone()
