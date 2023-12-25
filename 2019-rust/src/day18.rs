@@ -41,7 +41,7 @@ fn solve_for(input: &str) -> Result<String> {
     // note this ending condition relies on the state's keys being sorted for vec equality
     // making State.keys into a hashset for easier comparison would be nice, but HashSet isn't
     // hashable itself (which breaks the required trait bound for the state key)
-    let res = search.run(|s| get_next_steps(s, &links), |s| s.keys == all_keys);
+    let res = search.run_single(|s| get_next_steps(s, &links), |s| s.keys == all_keys);
 
     Ok(format!("steps: {}", res.steps))
 }

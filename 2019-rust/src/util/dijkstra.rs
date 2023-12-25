@@ -3,6 +3,8 @@ use std::collections::hash_map::Entry;
 use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
 
+use itertools::Itertools;
+
 /// T: the state type
 /// K: a unique key for the state for looking up scores
 ///
@@ -24,11 +26,25 @@ impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> 
         }
     }
 
-    pub fn run(
+    pub fn run_single(mut self, 
+        get_next_candidates: impl Fn(T) -> Vec<T>,
+        is_target_state: impl Fn(&T) -> bool,
+        ) -> T {
+
+        self.run(get_next_candidates, &is_target_state);
+
+        let result = self.bests.values().filter(|b| is_target_state(&b)).exactly_one()
+            .unwrap_or_else(|e| panic!("expected to get exactly one target state, but got {:?}", e.count()));
+
+        // TODO: how do we remove this clone?
+        result.clone()
+    }
+
+    fn run(
         &mut self,
         get_next_candidates: impl Fn(T) -> Vec<T>,
         is_target_state: impl Fn(&T) -> bool,
-    ) -> T {
+    ) {
         let mut count: u64 = 0;
         while let Some(Reverse(current_state)) = self.queue.pop() {
             if count % 1_000_000 == 0 {
@@ -46,7 +62,7 @@ impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> 
                 // the smallest step from the lowest-cost node, then if
                 // we reach the destination then we must have taken
                 // the shortest path.
-                return current_state;
+                return;
             }
             let candidates = get_next_candidates(current_state);
             for c in candidates {
@@ -72,7 +88,6 @@ impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> 
                 self.queue.push(Reverse(c));
             }
         }
-        panic!("ran out of states before reaching the end");
     }
 
     pub fn push(&mut self, entry: T) {
