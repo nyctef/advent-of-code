@@ -41,8 +41,8 @@ fn solve_for(input: &str) -> Result<String> {
         .collect_vec();
     // dbg!(&all_keys);
 
-    let mut search = Dijkstra::new(|s: &State| (s.pos, s.keys.clone()));
-    search.push(State::new(0, '@', vec![]));
+    let mut search = Dijkstra::new(|s: &State| (s.pos.clone(), s.keys.clone()));
+    search.push(State::new(0, vec!['@'], vec![]));
 
     // note this ending condition relies on the state's keys being sorted for vec equality
     // making State.keys into a hashset for easier comparison would be nice, but HashSet isn't
@@ -56,22 +56,21 @@ fn get_next_steps(s: State, links: &HashMap<char, Vec<(char, usize)>>) -> Vec<St
     // println!("getting next steps for {:?}", &s);
     let mut result = vec![];
 
-    for &(n, d) in &links[&s.pos] {
-        // println!("considering {:?}", (n, d));
-        if n.is_ascii_lowercase() && !s.keys.contains(&n) {
-            // found a new key
-            let mut new_keys = s.keys.clone();
-            new_keys.push(n);
-            new_keys.sort();
-            result.push(State::new(s.steps + d, n, new_keys));
-        } else if n.is_ascii_uppercase() && !s.keys.contains(&n.to_ascii_lowercase()) {
-            // this is a door we don't have the key to yet
-            continue;
-        } else {
-            // it's a door we can open, or a key we've already collected
-            // - just go there and see what's next
-            // println!(" searching {:?}", &links[&n]);
-            result.push(State::new(s.steps + d, n, s.keys.clone()));
+    for r in 0..s.pos.len() {
+        for &(n, d) in &links[&s.pos[r]] {
+            // println!("considering {:?}", (n, d));
+            if n.is_ascii_lowercase() && !s.keys.contains(&n) {
+                // found a new key
+                result.push(s.move_robot(r, n, d).gain_key(n));
+            } else if n.is_ascii_uppercase() && !s.keys.contains(&n.to_ascii_lowercase()) {
+                // this is a door we don't have the key to yet
+                continue;
+            } else {
+                // it's a door we can open, or a key we've already collected
+                // - just go there and see what's next
+                // println!(" searching {:?}", &links[&n]);
+                result.push(s.move_robot(r, n, d));
+            }
         }
     }
     // println!("next steps from {} with keys {:?}: {:?}", s.pos, s.keys, result);
@@ -82,8 +81,22 @@ fn get_next_steps(s: State, links: &HashMap<char, Vec<(char, usize)>>) -> Vec<St
 #[derive(Debug, Eq, PartialEq, Clone, Constructor)]
 struct State {
     steps: usize,
-    pos: char,
+    pos: Vec<char>,
     keys: Vec<char>,
+}
+impl State {
+    fn move_robot(&self, r: usize, pos: char, dd: usize) -> State {
+        let mut s = self.clone();
+        s.pos[r] = pos;
+        s.steps += dd;
+        s
+    }
+    fn gain_key(&self, key: char) -> State {
+        let mut s = self.clone();
+        s.keys.push(key);
+        s.keys.sort();
+        s
+    }
 }
 impl Ord for State {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
