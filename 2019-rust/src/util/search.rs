@@ -18,6 +18,15 @@ impl<T: std::fmt::Debug + Clone, K: PartialEq + Eq + Hash> Search<T, K> {
         }
     }
 
+    pub fn new_bfs(get_key: impl Fn(&T) -> K + 'static) -> Search<T, K> {
+        Search {
+            queue: VecDeque::new(),
+            seen: HashSet::new(),
+            get_key: Box::new(get_key),
+            dfs: false,
+        }
+    }
+
     pub fn push(&mut self, entry: T) -> bool {
         if self.seen.contains(&(self.get_key)(&entry)) {
             return false;

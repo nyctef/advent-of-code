@@ -5,7 +5,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 pub fn solve() -> Result<()> {
-    let input = get_input(2019, 1)?;
+    let input = get_input(2019, 18)?;
 
     let result = solve_for(&input)?;
 
@@ -26,7 +26,7 @@ fn solve_for(input: &str) -> Result<String> {
         links.insert(*c, find_neighboring_nodes(&grid, *p));
     }
 
-    // dbg!(&nodes, &links);
+    dbg!(&nodes, &links);
     let all_keys = nodes
         .keys()
         .filter(|x| x.is_ascii_lowercase())
@@ -43,18 +43,37 @@ fn solve_for(input: &str) -> Result<String> {
     // hashable itself (which breaks the required trait bound for the state key)
     let res = search.run(|s| get_next_steps(s, &links), |s| s.keys == all_keys);
 
-    dbg!(&res);
-
-    let steps = 0;
-
-    Ok(format!("steps: {}", steps))
+    Ok(format!("steps: {}", res.steps))
 }
 
 fn get_next_steps(s: State, links: &HashMap<char, Vec<(char, usize)>>) -> Vec<State> {
-    // TODO: starting from s.pos, search through links until we find doors
-    // we can't open or keys we don't have yet
+    // println!("getting next steps for {:?}", &s);
     let mut result = vec![];
-    todo!();
+    // TODO: is bfs okay here or do we need dijkstra?
+    let mut search = Search::new_bfs(|s: &(char, usize)| s.0);
+    search.push((s.pos, 0));
+    while let Some((n, d)) = search.pop() {
+        // println!("considering {:?}", (n, d));
+        if n.is_ascii_lowercase() && !s.keys.contains(&n) {
+            // found a new key
+            let mut new_keys = s.keys.clone();
+            new_keys.push(n);
+            new_keys.sort();
+            result.push(State::new(s.steps + d, n, new_keys));
+        } else if n.is_ascii_uppercase() && !s.keys.contains(&n.to_ascii_lowercase()) {
+            // this is a door we don't have the key to yet
+            continue;
+        } else if n.is_ascii_uppercase() && n != s.pos {
+            // here's a door we can open
+            result.push(State::new(s.steps + d, n, s.keys.clone()));
+        } else {
+            // println!(" searching {:?}", &links[&n]);
+            for &(n2, d2) in &links[&n] {
+                search.push((n2, d + d2));
+            }
+        }
+    }
+    // println!("next steps from {} with keys {:?}: {:?}", s.pos, s.keys, result);
     result
 }
 
@@ -119,3 +138,17 @@ fn test_example1() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn test_example2() -> Result<()> {
+    let input = r###"
+########################
+#f.D.E.e.C.b.A.@.a.B.c.#
+######################.#
+#d.....................#
+########################
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("steps: 86", result);
+    Ok(())
+}
