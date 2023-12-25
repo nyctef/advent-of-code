@@ -26,7 +26,6 @@ fn solve_for(input: &str) -> Result<String> {
         links.insert(*c, find_neighboring_nodes(&grid, *p));
     }
 
-
     dbg!(&nodes, &links);
     for (c, ls) in &links {
         for &(c2, d) in ls {
@@ -58,7 +57,6 @@ fn get_next_steps(s: State, links: &HashMap<char, Vec<(char, usize)>>) -> Vec<St
     let mut result = vec![];
 
     for &(n, d) in &links[&s.pos] {
-        
         // println!("considering {:?}", (n, d));
         if n.is_ascii_lowercase() && !s.keys.contains(&n) {
             // found a new key
@@ -76,36 +74,6 @@ fn get_next_steps(s: State, links: &HashMap<char, Vec<(char, usize)>>) -> Vec<St
             result.push(State::new(s.steps + d, n, s.keys.clone()));
         }
     }
-    /*
-    let mut search = Dijkstra::new(|s: &(char, usize)| s.0);
-    search.push((s.pos, 0));
-    let result = search.run_multiple(|s| , |(n, d)| {
-        (n.is_ascii_lowercase() && !s.keys.contains(&n)) || 
-    });
-    */
-    /*
-    while let Some((n, d)) = search.pop() {
-        // println!("considering {:?}", (n, d));
-        if n.is_ascii_lowercase() && !s.keys.contains(&n) {
-            // found a new key
-            let mut new_keys = s.keys.clone();
-            new_keys.push(n);
-            new_keys.sort();
-            result.push(State::new(s.steps + d, n, new_keys));
-        } else if n.is_ascii_uppercase() && !s.keys.contains(&n.to_ascii_lowercase()) {
-            // this is a door we don't have the key to yet
-            continue;
-        } else if n.is_ascii_uppercase() && n != s.pos {
-            // here's a door we can open
-            result.push(State::new(s.steps + d, n, s.keys.clone()));
-        } else {
-            // println!(" searching {:?}", &links[&n]);
-            for &(n2, d2) in &links[&n] {
-                search.push((n2, d + d2));
-            }
-        }
-    }
-    */
     // println!("next steps from {} with keys {:?}: {:?}", s.pos, s.keys, result);
     result
 }
