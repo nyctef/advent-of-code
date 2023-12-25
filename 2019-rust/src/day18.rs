@@ -152,3 +152,53 @@ fn test_example2() -> Result<()> {
     assert_eq!("steps: 86", result);
     Ok(())
 }
+
+#[test]
+fn test_example3() -> Result<()> {
+    let input = r###"
+########################
+#...............b.C.D.f#
+#.######################
+#.....@.a.B.c.d.A.e.F.g#
+########################
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("steps: 132", result);
+    Ok(())
+}
+
+#[test]
+fn test_example4() -> Result<()> {
+    let input = r###"
+#################
+#i.G..c...e..H.p#
+########.########
+#j.A..b...f..D.o#
+########@########
+#k.E..a...g..B.n#
+########.########
+#l.F..d...h..C.m#
+#################
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("steps: 136", result);
+    Ok(())
+}
+
+#[test]
+fn test_example5() -> Result<()> {
+    let input = r###"
+########################
+#@..............ac.GI.b#
+###d#e#f################
+###A#B#C################
+###g#h#i################
+########################
+"###;
+    let result = solve_for(input)?;
+
+    assert_eq!("steps: 81", result);
+    Ok(())
+}
