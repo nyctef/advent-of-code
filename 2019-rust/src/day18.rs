@@ -26,7 +26,14 @@ fn solve_for(input: &str) -> Result<String> {
         links.insert(*c, find_neighboring_nodes(&grid, *p));
     }
 
+
     dbg!(&nodes, &links);
+    for (c, ls) in &links {
+        for &(c2, d) in ls {
+            let rev = &links[&c2].iter().find(|x| x.0 == *c).unwrap();
+            assert_eq!(d, rev.1, "expected {} <-> {} dist to be same", c, c2);
+        }
+    }
     let all_keys = nodes
         .keys()
         .filter(|x| x.is_ascii_lowercase())
@@ -124,7 +131,7 @@ impl PartialOrd for State {
 fn find_neighboring_nodes(grid: &CharGrid, p: CharGridIndexRC) -> Vec<(char, usize)> {
     let mut result = vec![];
 
-    let mut search = Search::new_dfs(|x: &(CharGridIndexRC, usize)| x.0);
+    let mut search = Search::new_bfs(|x: &(CharGridIndexRC, usize)| x.0);
     // println!("starting at {}", p);
     search.push((p, 0));
     while let Some((np, nd)) = search.pop() {
