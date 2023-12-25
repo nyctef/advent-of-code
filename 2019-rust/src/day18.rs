@@ -33,7 +33,7 @@ fn solve_for(input: &str) -> Result<String> {
         .copied()
         .sorted()
         .collect_vec();
-    dbg!(&all_keys);
+    // dbg!(&all_keys);
 
     let mut search = Dijkstra::new(|s: &State| (s.pos, s.keys.clone()));
     search.push(State::new(0, '@', vec![]));
@@ -125,7 +125,7 @@ fn find_neighboring_nodes(grid: &CharGrid, p: CharGridIndexRC) -> Vec<(char, usi
     let mut result = vec![];
 
     let mut search = Search::new_dfs(|x: &(CharGridIndexRC, usize)| x.0);
-    println!("starting at {}", p);
+    // println!("starting at {}", p);
     search.push((p, 0));
     while let Some((np, nd)) = search.pop() {
         let c = grid[np];

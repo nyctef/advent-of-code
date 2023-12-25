@@ -17,7 +17,7 @@ pub struct Dijkstra<T, K> {
 }
 
 #[allow(dead_code)]
-impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> {
+impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Hash> Dijkstra<T, K> {
     pub fn new(get_key: impl Fn(&T) -> K + 'static) -> Dijkstra<T, K> {
         Dijkstra {
             queue: BinaryHeap::new(),
@@ -32,6 +32,8 @@ impl<T: std::fmt::Debug + Clone + Ord, K: Eq + PartialEq + Hash> Dijkstra<T, K> 
         ) -> T {
 
         self.run(get_next_candidates, &is_target_state);
+
+        dbg!(&self.bests.values().filter(|b| is_target_state(&b)).collect_vec());
 
         // we may have queued up several candidates for the final state
         // before processing one and quitting the loop, so now we find the smallest here:
