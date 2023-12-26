@@ -33,7 +33,6 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
 
         self.run(get_next_candidates, &is_target_state);
 
-        dbg!(&self.bests);
         dbg!(&self.bests.values().filter(|b| is_target_state(b)).collect_vec());
 
         // we may have queued up several candidates for the final state

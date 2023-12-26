@@ -23,6 +23,7 @@ fn solve_for(input: &str) -> Result<String> {
 
     // first find the portal locations
     let mut nodes = vec![];
+    let mut points_to_nodes = HashMap::new();
     for (p, c) in grid.enumerate_chars_rc() {
         if c != '.' {
             continue;
@@ -42,6 +43,7 @@ fn solve_for(input: &str) -> Result<String> {
                     name.reverse();
                 }
                 nodes.push((p, name));
+                points_to_nodes.insert(p, name);
             }
         }
     }
@@ -58,19 +60,22 @@ fn solve_for(input: &str) -> Result<String> {
         let portal_nodes = nodes.iter().filter(|n| n.1 == pn).collect_vec();
         assert!(portal_nodes.len() == 2);
 
-        portals.insert(pn, (portal_nodes[0], portal_nodes[1]));
+        portals.insert(portal_nodes[0].0, portal_nodes[1].0);
+        portals.insert(portal_nodes[1].0, portal_nodes[0].0);
     }
 
     let start = nodes
         .iter()
         .filter(|n| n.1 == ['A', 'A'])
         .exactly_one()
-        .unwrap();
+        .unwrap()
+        .0;
     let end = nodes
         .iter()
         .filter(|n| n.1 == ['Z', 'Z'])
         .exactly_one()
-        .unwrap();
+        .unwrap()
+        .0;
 
     let mut node_distances = HashMap::new();
     for &(p, node) in &nodes {
@@ -80,9 +85,9 @@ fn solve_for(input: &str) -> Result<String> {
             if n != p {
                 if let Some(other_node) = nodes.iter().find(|(np, _)| np == &n) {
                     node_distances
-                        .entry(node)
+                        .entry(p)
                         .or_insert(vec![])
-                        .push((other_node.1, d));
+                        .push((other_node, d));
                     continue;
                 }
             }
@@ -99,21 +104,34 @@ fn solve_for(input: &str) -> Result<String> {
 
     dbg!(&nodes, &node_distances);
 
-    let mut dijkstra = Dijkstra::new(|s: &State| s.node);
-    dijkstra.push(State { node: ['A', 'A'], steps: 0});
+    let mut dijkstra = Dijkstra::new(|s: &State| s.pos);
+    dijkstra.push(State {
+        pos: start,
+        steps: 0,
+    });
     let result = dijkstra.run_single(
         |s| {
-            node_distances[&s.node]
-                .iter()
-                .map(|n2| State {
-                    node: n2.0,
-                    // TODO: need to distinguish between walking between portals
-                    // vs taking a portal (which consumes an extra step)
-                    steps: s.steps + n2.1,
-                })
-                .collect_vec()
+            let mut res = vec![];
+
+            if let Some(&p) = portals.get(&s.pos) {
+                res.push(State {
+                    pos: p,
+                    steps: s.steps + 1,
+                });
+            }
+
+            let current_node = points_to_nodes[&s.pos];
+            for &(p, d) in &node_distances[&s.pos] {
+                let p2 = p.0;
+                res.push(State {
+                    pos: p2,
+                    steps: s.steps + d,
+                });
+            }
+
+            res
         },
-        |s| s.node == ['Z', 'Z'],
+        |s| s.pos == end,
     );
     let steps = result.steps;
     Ok(format!("steps: {steps}"))
@@ -121,7 +139,7 @@ fn solve_for(input: &str) -> Result<String> {
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 struct State {
-    node: [char; 2],
+    pos: CharGridIndexRC,
     steps: usize,
 }
 impl Ord for State {
