@@ -1,11 +1,7 @@
 use crate::util::*;
 use color_eyre::eyre::Result;
-use num_traits::Euclid;
 use regex::Regex;
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    str::FromStr,
-};
+use std::str::FromStr;
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 22)?;
@@ -20,12 +16,9 @@ fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Resu
     let mut pos = target;
     let re = Regex::from_str(r"-?\d+")?;
 
-    let mut positions = HashMap::new();
     let mut iteration = 0;
+    let mut last_pos = 0;
     while iteration < iterations {
-        if iteration % 1_000_000 == 0 {
-            println!("i {} pos {} ", iteration, pos);
-        }
         for line in input.trim().lines() {
             // println!("{}", line);
             if line.starts_with("deal into") {
@@ -40,19 +33,13 @@ fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Resu
             if line.starts_with("deal with") {
                 pos = (pos * num).rem_euclid(size);
             }
-        }
-        match positions.entry(pos) {
-            Entry::Occupied(o) => {
-                println!("found potential cycle: pos {} at this iteration {} matches previous iteration {}", pos, iteration, o.get());
-                let cycle_length = iteration - o.get();
-                while iteration + cycle_length <= iterations {
-                    iteration += cycle_length;
-                }
-                println!("skipped ahead to {}", iteration);
-            }
-            Entry::Vacant(v) => {
-                v.insert(iteration);
-            }
+            println!(
+                "i {} pos {} pos-last_pos {} ",
+                iteration,
+                pos,
+                pos - last_pos
+            );
+            last_pos = pos;
         }
         iteration += 1;
     }
