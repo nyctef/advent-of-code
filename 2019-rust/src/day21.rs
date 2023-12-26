@@ -15,8 +15,12 @@ fn solve_for(input: &str) -> Result<String> {
     let mut intcode = IntCode::from_str(input)?;
 
     let instructions = [
+        // jump if gap five steps ahead and nine steps ahead
+        // do this first since it requires mutating J
+        "NOT E J\nNOT I T\nAND T J",
+
         // jump if gap one steps ahead
-        "NOT A J",
+        "NOT A T\nOR T J",
         // jump if gap two steps ahead
         "NOT B T\nOR T J",
         // jump if gap three steps ahead
@@ -25,7 +29,7 @@ fn solve_for(input: &str) -> Result<String> {
         "AND D J",
         // only jump if we can 1. jump immediately or 2. go forward
         // after landing
-        "AND H T\nOR E T\nAND T J",
+        "OR H T\nOR E T\nAND T J",
         "RUN"
 
     ];
