@@ -91,8 +91,7 @@ deal with increment 9
 deal with increment 3
 cut -1
 "###;
-    let result = solve_for(input, 10, 7, 1)?;
-
-    assert_eq!("final number on card at position 7: 0", result);
+    assert_eq!("final number on card at position 7: 0", solve_for(input, 10, 7, 1)?);
+    assert_eq!("final number on card at position 8: 3", solve_for(input, 10, 8, 1)?);
     Ok(())
 }
