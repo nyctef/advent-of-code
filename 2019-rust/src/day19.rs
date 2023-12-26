@@ -39,7 +39,7 @@ fn solve_for(input: &str) -> Result<String> {
             }
             // print!("{}", result);
         }
-        if line_total != prev_line_total  || line_start != prev_line_start{
+        if line_total != prev_line_total || line_start != prev_line_start {
             // println!("line {} start {} total {}", y, line_start, line_total);
             prev_line_total = line_total;
             prev_line_start = line_start;
@@ -47,7 +47,7 @@ fn solve_for(input: &str) -> Result<String> {
         if line_total >= 100 {
             lookup.insert(y, (line_start, line_total));
 
-            if let Some((earlier_line_start, earlier_line_total)) = lookup.get(&(y - 100)) {
+            if let Some((earlier_line_start, earlier_line_total)) = lookup.get(&(y - 99)) {
                 println!("starting at bottom left corner y={} x={}", y, line_start);
                 let required_length = (line_start - earlier_line_start) + 100;
                 println!(
@@ -55,6 +55,12 @@ fn solve_for(input: &str) -> Result<String> {
                     required_length, earlier_line_total
                 );
                 if earlier_line_total >= &required_length {
+                    println!(
+                        "expected top left corner x={} y={} combined= {}",
+                        line_start,
+                        y - 99,
+                        (line_start * 10_000) + y - 99
+                    );
                     break;
                 }
             }
