@@ -99,8 +99,40 @@ fn solve_for(input: &str) -> Result<String> {
 
     dbg!(&nodes, &node_distances);
 
-    let steps = 0;
+    let mut dijkstra = Dijkstra::new(|s: &State| s.node);
+    dijkstra.push(State { node: ['A', 'A'], steps: 0});
+    let result = dijkstra.run_single(
+        |s| {
+            node_distances[&s.node]
+                .iter()
+                .map(|n2| State {
+                    node: n2.0,
+                    // TODO: need to distinguish between walking between portals
+                    // vs taking a portal (which consumes an extra step)
+                    steps: s.steps + n2.1,
+                })
+                .collect_vec()
+        },
+        |s| s.node == ['Z', 'Z'],
+    );
+    let steps = result.steps;
     Ok(format!("steps: {steps}"))
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+struct State {
+    node: [char; 2],
+    steps: usize,
+}
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.steps.cmp(&other.steps)
+    }
+}
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 #[test]
