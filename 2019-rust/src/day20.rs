@@ -91,7 +91,7 @@ fn solve_for(input: &str) -> Result<String> {
         .0;
 
     let mut node_distances = HashMap::new();
-    for &(p, _node, is_outer) in &nodes {
+    for &(p, _node, _is_outer) in &nodes {
         let mut search = Search::new_bfs(|s: &(CharGridIndexRC, usize)| s.0);
         search.push((p, 0));
         while let Some((n, d)) = search.pop() {
