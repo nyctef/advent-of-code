@@ -80,7 +80,7 @@ fn simulate(muns: &mut [Mun]) {
 
         assert!(this_mun.len() == 1);
         assert!(lower_muns.len() + higher_muns.len() == 3);
-        let mut this_mun = &mut this_mun[0];
+        let this_mun = &mut this_mun[0];
 
         #[allow(clippy::comparison_chain)]
         for other_mun in chain!(lower_muns.iter(), higher_muns.iter()) {

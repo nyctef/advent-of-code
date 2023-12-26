@@ -350,6 +350,7 @@ pub struct CharGridRange<T> {
     pub end: T,
 }
 
+#[allow(dead_code)]
 impl CharGridRange<CharGridIndexRC> {
     pub fn grow_1(&self) -> CharGridRange<CharGridIndexRC> {
         CharGridRange {

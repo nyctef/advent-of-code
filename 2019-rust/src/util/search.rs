@@ -8,6 +8,7 @@ pub struct Search<T, K> {
     dfs: bool,
 }
 
+#[allow(dead_code)]
 impl<T: std::fmt::Debug + Clone, K: PartialEq + Eq + Hash> Search<T, K> {
     pub fn new_dfs(get_key: impl Fn(&T) -> K + 'static) -> Search<T, K> {
         Search {
