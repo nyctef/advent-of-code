@@ -17,7 +17,7 @@ fn solve_for(input: &str) -> Result<String> {
     let instructions = [
         // jump if gap five steps ahead and nine steps ahead
         // do this first since it requires mutating J
-        "NOT E J\nNOT I T\nAND T J",
+        // "NOT E J\nNOT I T\nAND T J",
 
         // jump if gap one steps ahead
         "NOT A T\nOR T J",
@@ -27,6 +27,8 @@ fn solve_for(input: &str) -> Result<String> {
         "NOT C T\nOR T J",
         // only jump if will land on ground
         "AND D J",
+        // try to make sure T is false if it matters
+        "NOT J T",
         // only jump if we can 1. jump immediately or 2. go forward
         // after landing
         "OR H T\nOR E T\nAND T J",
