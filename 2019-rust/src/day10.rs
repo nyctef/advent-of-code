@@ -169,8 +169,7 @@ impl Display for Slope {
 }
 impl PartialOrd for Slope {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.atan2_from_north()
-            .partial_cmp(&other.atan2_from_north())
+        Some(self.cmp(other))
     }
 }
 impl Ord for Slope {

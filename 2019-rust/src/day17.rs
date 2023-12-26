@@ -82,7 +82,7 @@ fn solve_for(input: &str) -> Result<String> {
     let scaffolds = parse_map(&map);
 
     let mut align_param_sum = 0;
-    for (p, _) in &scaffolds {
+    for p in scaffolds.keys() {
         // if north, south, east and west are also in the collection, then this is an intersection
         if scaffolds.contains_key(&p.north())
             && scaffolds.contains_key(&p.south())
@@ -136,7 +136,7 @@ fn parse_map(map: &str) -> HashMap<PointRC, char> {
         .trim()
         .lines()
         .enumerate()
-        .map(|(r, l)| {
+        .flat_map(|(r, l)| {
             l.chars().enumerate().map(move |(c, char)| {
                 (
                     PointRC {
@@ -147,7 +147,6 @@ fn parse_map(map: &str) -> HashMap<PointRC, char> {
                 )
             })
         })
-        .flatten()
         .filter(|(_p, c)| c == &'#')
         .collect::<HashMap<_, _>>();
     scaffolds

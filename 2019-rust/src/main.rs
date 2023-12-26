@@ -49,6 +49,6 @@ fn main() -> Result<()> {
         17 => day17::solve(),
         18 => day18::solve(),
         19 => day19::solve(),
-        other => return Err(Report::msg(format!("day {other} not implemented yet"))),
+        other => Err(Report::msg(format!("day {other} not implemented yet"))),
     }
 }

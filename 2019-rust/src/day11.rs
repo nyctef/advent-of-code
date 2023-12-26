@@ -15,7 +15,7 @@ pub fn solve() -> Result<()> {
     let mut white_squares: HashSet<PointXY> = HashSet::new();
     let mut current_square = PointXY(0, 0);
     white_squares.insert(current_square);
-    let directions = vec![(0, 1), (1, 0), (0, -1), (-1, 0)];
+    let directions = [(0, 1), (1, 0), (0, -1), (-1, 0)];
     let mut current_direction = 0_isize;
 
     while robot.state().1 != MachineState::Halted {
