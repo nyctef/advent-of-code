@@ -31,7 +31,7 @@ impl CharGrid {
         assert!(width > 0);
         assert!(
             lines.iter().all(|l| l.len() == width),
-            "all lines must have same length"
+            "all lines must have same length (expected {})", width
         );
         assert!(lines.iter().all(|l| l.chars().all(|c| c.is_ascii())));
 
