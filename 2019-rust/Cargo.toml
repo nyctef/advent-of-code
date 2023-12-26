@@ -17,3 +17,6 @@ reqwest = { default-features = false, version = "0.11.13", features = [
     "cookies",
     "blocking",
 ] }
+
+[profile.release]
+overflow-checks = true
