@@ -70,14 +70,3 @@ fn solve_for(input: &str) -> Result<String> {
 
     Ok(format!("total: {}", total))
 }
-
-#[test]
-fn test_example1() -> Result<()> {
-    let input = r###"
-    
-"###;
-    let result = solve_for(input)?;
-
-    assert_eq!("expected", result);
-    Ok(())
-}
