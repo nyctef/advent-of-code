@@ -1,4 +1,4 @@
-use color_eyre::eyre::{Context, Result};
+use color_eyre::eyre::{eyre, Context, Report, Result};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -23,13 +23,19 @@ make sure this file exists and you are in the correct directory",
     cookie_store.add_cookie_str(&cookie_string, &url);
     let client = Client::builder()
         .cookie_provider(cookie_store.into())
+        .user_agent("github.com/nyctef/advent-of-code")
         .build()?;
     let puzzle_string = client
         .get(format!("https://adventofcode.com/{year}/day/{day}/input"))
-        .send()?
-        // TODO: can we get the response text into this error message?
-        .error_for_status()?
-        .text()?;
+        .send()
+        .map_err(|e| Report::new(e))
+        .and_then(|r| {
+            if r.status().is_client_error() || r.status().is_server_error() {
+                Err(eyre!("{}: {}", r.status().as_u16(), r.text()?))
+            } else {
+                Ok(r.text()?)
+            }
+        })?;
 
     fs::create_dir_all(input_file_path.parent().unwrap())
         .wrap_err("failed to create folder for input files")?;
