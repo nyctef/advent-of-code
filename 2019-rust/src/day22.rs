@@ -17,6 +17,8 @@ fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Resu
     let re = Regex::from_str(r"-?\d+")?;
 
     let mut iteration = 0;
+    let mut prevpos = target;
+    let mut prevprevpos = target;
     while iteration < iterations {
         // if iteration % 10_000_000 == 0 {
         println!("i {} pos {} ", iteration, pos,);
@@ -36,13 +38,53 @@ fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Resu
             if line.starts_with("deal with") {
                 // pos = (pos * num).rem_euclid(size);
                 // println!("inv of {} mod {} is {}", num, size, modmulinv(num, size));
-                pos = (pos as i128 * modmulinv(num, size) as i128).rem_euclid(size as i128) as isize;
+                pos = modmul(pos, modmulinv(num, size), size);
             }
         }
         iteration += 1;
+
+        if iteration >= 2 {
+            /*
+            assuming that the whole sequence of operations collapses down to an ax + y linear
+            equation
+
+            then taking two iterations of the sequence:
+
+            ax + y = b  mod m
+            cx + y = d  mod m
+
+            ax = b - y  mod m
+            x = inv(a) * (b - y)  mod m
+            c * (inv(a) * (b - y)) + y = d  mod m
+
+            c*inv(a)*b - c*inv(a)*y + y = d  mod m
+            - c*inv(a)*y + y = d - c*inv(a)*b  mod m
+            y*(1 - c*inv(a)) = d - c*inv(a)*b  mod m
+
+            y = inv(1-c*inv(a)) * (d - c*inv(a)*b)  mod m
+            */
+            let a = prevprevpos;
+            let b = prevpos;
+            let c = prevpos;
+            let d = pos;
+            println!("a {} b {} c {} d {}", a, b, c, d,);
+            let cia = modmul(c, modmulinv(a, size), size);
+            let y = modmul(modmulinv(1 - cia, size), d - modmul(cia, b, size), size);
+            let x = modmul(modmulinv(a, size), b - y, size);
+
+            println!("x {} y {}", x, y);
+        }
+        prevprevpos = prevpos;
+        prevpos = pos;
+        if iteration >= 7 {
+            break;
+        }
     }
 
-    Ok(format!("final number on card at position {}: {}", target, pos))
+    Ok(format!(
+        "final number on card at position {}: {}",
+        target, pos
+    ))
 }
 
 // based on https://github.com/TheAlgorithms/Rust/blob/master/src/math/extended_euclidean_algorithm.rs
@@ -77,6 +119,10 @@ pub fn modmulinv(a: isize, b: isize) -> isize {
     a
 }
 
+pub fn modmul(a: isize, b: isize, m: isize) -> isize {
+    (a as i128 * b as i128).rem_euclid(m as i128) as isize
+}
+
 #[test]
 fn test_example1() -> Result<()> {
     let input = r###"
@@ -91,7 +137,13 @@ deal with increment 9
 deal with increment 3
 cut -1
 "###;
-    assert_eq!("final number on card at position 7: 0", solve_for(input, 10, 7, 1)?);
-    assert_eq!("final number on card at position 8: 3", solve_for(input, 10, 8, 1)?);
+    assert_eq!(
+        "final number on card at position 7: 0",
+        solve_for(input, 10, 7, 1)?
+    );
+    assert_eq!(
+        "final number on card at position 8: 3",
+        solve_for(input, 10, 8, 1)?
+    );
     Ok(())
 }
