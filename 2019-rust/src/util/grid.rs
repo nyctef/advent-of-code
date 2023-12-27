@@ -2,6 +2,7 @@ use derive_more::Constructor;
 use itertools::Itertools;
 use std::{
     fmt::{Debug, Display},
+    iter,
     ops::{Add, Index, Sub},
 };
 
@@ -31,7 +32,8 @@ impl CharGrid {
         assert!(width > 0);
         assert!(
             lines.iter().all(|l| l.len() == width),
-            "all lines must have same length (expected {})", width
+            "all lines must have same length (expected {})",
+            width
         );
         assert!(lines.iter().all(|l| l.chars().all(|c| c.is_ascii())));
 
@@ -61,6 +63,11 @@ impl CharGrid {
                 .map(|l| l.to_owned())
                 .collect_vec(),
         )
+    }
+
+    pub fn from_empty_char(empty: char, width: usize, height: usize) -> CharGrid {
+        let lines = iter::repeat(vec![empty; width]).take(height).collect_vec();
+        CharGrid { width, height, lines }
     }
 
     pub fn height(&self) -> usize {

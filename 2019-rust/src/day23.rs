@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    str::FromStr,
-};
+use std::{collections::VecDeque, str::FromStr};
 
 use crate::{intcode::IntCode, util::*};
 use color_eyre::eyre::Result;
@@ -80,5 +77,4 @@ fn solve_for(input: &str) -> Result<String> {
             prev_naty = naty;
         }
     }
-
 }
