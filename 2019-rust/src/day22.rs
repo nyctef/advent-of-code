@@ -159,8 +159,7 @@ pub fn extended_euclidean_algorithm(a: isize, b: isize) -> (isize, isize, isize)
 
 // TODO: understand this better
 pub fn modmulinv(a: isize, b: isize) -> isize {
-    let (gcd, a, _) = extended_euclidean_algorithm(a, b);
-    // TODO: does it matter if gcd is negative here?
+    let (gcd, mut a, _) = extended_euclidean_algorithm(a, b);
     assert!(
         gcd.abs() == 1,
         "gcd({},{}) needs to be 1 but got {}",
@@ -168,6 +167,9 @@ pub fn modmulinv(a: isize, b: isize) -> isize {
         b,
         gcd
     ); // otherwise the modular inverse isn't properly defined
+    if gcd < 0 {
+        a = -a;
+    }
     a
 }
 
