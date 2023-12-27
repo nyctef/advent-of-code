@@ -1,20 +1,27 @@
 use crate::util::*;
 use color_eyre::eyre::Result;
 use regex::Regex;
-use std::{str::FromStr, collections::{HashMap, hash_map::Entry}};
+use std::{collections::HashMap, str::FromStr};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 22)?;
 
-    let result = solve_for(&input, 119315717514047, 2020, 101741582076661)?;
+    let result = solve_for(&input, 2020, 119315717514047, 101741582076661)?;
 
     println!("{}", result);
     Ok(())
 }
 
-fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Result<String> {
+fn solve_for(input: &str, target: isize, size: isize, iterations: usize) -> Result<String> {
+    let pos = solve_hyper(input, target, size, iterations);
 
+    Ok(format!(
+        "final number on card at position {}: {}",
+        target, pos
+    ))
+}
 
+fn solve_hyper(input: &str, target: isize, size: isize, iterations: usize) -> isize {
     let start_sequence = solve_brute_force(input, target, size, 3);
     let fac1 = get_linear_factors(
         start_sequence[0],
@@ -32,7 +39,7 @@ fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Resu
     let mut pos = target;
     let mut iteration = 0;
     while iteration < iterations {
-        println!("i {} I-i {} s {}", iteration, iterations-iteration, speed);
+        println!("i {} I-i {} s {}", iteration, iterations - iteration, speed);
 
         while iteration + (speed * 2) < iterations {
             println!("s: {} trying to speed up", speed);
@@ -43,21 +50,19 @@ fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Resu
             factors.insert(speed, new_factors);
         }
 
-        while iteration + speed > iterations { 
+        while iteration + speed > iterations {
             println!("s: {} need to slow down", speed);
             speed = speed / 2;
         }
-        
+
         let next = solve_from_factors(factors[&speed], pos, size, 2);
         pos = next[1];
+        println!("fs: {:?} next_pos: {}", factors[&speed], pos);
 
         iteration += speed;
     }
-
-    Ok(format!(
-        "final number on card at position {}: {}",
-        target, pos
-    ))
+    println!("final i: {} pos: {}", iteration, pos);
+    pos
 }
 
 fn solve_from_factors(fac: (isize, isize), start: isize, size: isize, count: usize) -> Vec<isize> {
@@ -69,7 +74,6 @@ fn solve_from_factors(fac: (isize, isize), start: isize, size: isize, count: usi
         result.push(pos);
     }
     result
-
 }
 
 fn solve_brute_force(input: &str, start: isize, size: isize, count: usize) -> Vec<isize> {
@@ -157,7 +161,13 @@ pub fn extended_euclidean_algorithm(a: isize, b: isize) -> (isize, isize, isize)
 pub fn modmulinv(a: isize, b: isize) -> isize {
     let (gcd, a, _) = extended_euclidean_algorithm(a, b);
     // TODO: does it matter if gcd is negative here?
-    assert!(gcd.abs() == 1, "gcd({},{}) needs to be 1 but got {}", a, b, gcd); // otherwise the modular inverse isn't properly defined
+    assert!(
+        gcd.abs() == 1,
+        "gcd({},{}) needs to be 1 but got {}",
+        a,
+        b,
+        gcd
+    ); // otherwise the modular inverse isn't properly defined
     a
 }
 
@@ -179,13 +189,23 @@ deal with increment 9
 deal with increment 3
 cut -1
 "###;
-    assert_eq!(
-        "final number on card at position 7: 0",
-        solve_for(input, 10, 7, 1)?
-    );
-    assert_eq!(
-        "final number on card at position 8: 3",
-        solve_for(input, 10, 8, 1)?
-    );
+    let at_7 = solve_brute_force(&input, 7, 10, 2);
+    let at_7 = at_7[1];
+    assert_eq!(0, at_7);
+    let at_8 = solve_brute_force(&input, 8, 10, 2);
+    let at_8 = at_8[1];
+    assert_eq!(3, at_8);
     Ok(())
+}
+
+#[test]
+fn test_hyper_against_brute_force() {
+    let input = get_input(2019, 22).unwrap();
+    let from_brute_force = solve_brute_force(&input, 2020, 119315717514047, 100);
+    for i in 0..100 {
+        println!();
+        println!("testing i={i}");
+        let faster = solve_hyper(&input, 2020, 119315717514047, i);
+        assert_eq!(faster, from_brute_force[i]);
+    }
 }
