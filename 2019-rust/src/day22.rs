@@ -44,7 +44,7 @@ fn solve_hyper(input: &str, target: isize, size: isize, iterations: usize) -> is
         while iteration + (speed * 2) < iterations {
             println!("s: {} trying to speed up", speed);
             let prev_factors = factors[&speed];
-            speed = speed * 2;
+            speed *= 2;
             let seq = solve_from_factors(prev_factors, target, size, 5);
             let new_factors = get_linear_factors(seq[0], seq[2], seq[2], seq[4], size);
             factors.insert(speed, new_factors);
@@ -52,7 +52,7 @@ fn solve_hyper(input: &str, target: isize, size: isize, iterations: usize) -> is
 
         while iteration + speed > iterations {
             println!("s: {} need to slow down", speed);
-            speed = speed / 2;
+            speed /= 2;
         }
 
         let next = solve_from_factors(factors[&speed], pos, size, 2);
