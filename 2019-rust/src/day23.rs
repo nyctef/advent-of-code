@@ -28,8 +28,11 @@ fn solve_for(input: &str) -> Result<String> {
 
     let mut network_queue = Vec::new();
     for _ in 0..50 {
-        network_queue.push( VecDeque::new());
+        network_queue.push(VecDeque::new());
     }
+    let mut natx = 0;
+    let mut naty = 0;
+    let mut prev_naty = 0;
     loop {
         // push packets to computers
         for i in 0..50 {
@@ -57,18 +60,25 @@ fn solve_for(input: &str) -> Result<String> {
                 let y = c.read_output().expect("y");
 
                 if i == 255 {
-                    println!("got packet for 255: {x} {y}");
+                    natx = x;
+                    naty = y;
+                    println!("nat got new packet {x} {y}");
+                } else {
+                    network_queue[i as usize].push_back(x);
+                    network_queue[i as usize].push_back(y);
                 }
-                network_queue[i as usize].push_back(x);
-                network_queue[i as usize].push_back(y);
-
             }
         }
 
-        if network_queue.len() == 0 {
-            break;
+        if network_queue.iter().all(|q| q.len() == 0) {
+            println!("nat sending packet {natx} {naty}");
+            if naty == prev_naty {
+                return Ok(format!("result: {}", naty));
+            }
+            network_queue[0].push_back(natx);
+            network_queue[0].push_back(naty);
+            prev_naty = naty;
         }
     }
 
-    todo!()
 }
