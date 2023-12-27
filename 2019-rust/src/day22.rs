@@ -1,7 +1,7 @@
 use crate::util::*;
 use color_eyre::eyre::Result;
 use regex::Regex;
-use std::str::FromStr;
+use std::{str::FromStr, collections::{HashMap, hash_map::Entry}};
 
 pub fn solve() -> Result<()> {
     let input = get_input(2019, 22)?;
@@ -13,16 +13,70 @@ pub fn solve() -> Result<()> {
 }
 
 fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Result<String> {
-    let mut pos = target;
-    let re = Regex::from_str(r"-?\d+")?;
 
+
+    let start_sequence = solve_brute_force(input, target, size, 3);
+    let fac1 = get_linear_factors(
+        start_sequence[0],
+        start_sequence[1],
+        start_sequence[1],
+        start_sequence[2],
+        size,
+    );
+    let mut factors = HashMap::new();
+    factors.insert(1, fac1);
+    println!("fac1 {:?}", fac1);
+
+    let mut speed = 1;
+
+    let mut pos = target;
     let mut iteration = 0;
-    let mut prevpos = target;
-    let mut prevprevpos = target;
     while iteration < iterations {
-        // if iteration % 10_000_000 == 0 {
-        println!("i {} pos {} ", iteration, pos,);
-        // }
+        println!("i {} I-i {} s {}", iteration, iterations-iteration, speed);
+
+        while iteration + (speed * 2) < iterations {
+            println!("s: {} trying to speed up", speed);
+            let prev_factors = factors[&speed];
+            speed = speed * 2;
+            let seq = solve_from_factors(prev_factors, target, size, 5);
+            let new_factors = get_linear_factors(seq[0], seq[2], seq[2], seq[4], size);
+            factors.insert(speed, new_factors);
+        }
+
+        while iteration + speed > iterations { 
+            println!("s: {} need to slow down", speed);
+            speed = speed / 2;
+        }
+        
+        let next = solve_from_factors(factors[&speed], pos, size, 2);
+        pos = next[1];
+
+        iteration += speed;
+    }
+
+    Ok(format!(
+        "final number on card at position {}: {}",
+        target, pos
+    ))
+}
+
+fn solve_from_factors(fac: (isize, isize), start: isize, size: isize, count: usize) -> Vec<isize> {
+    let mut pos = start;
+    let mut result = vec![start];
+    while result.len() < count {
+        pos = modmul(pos, fac.0, size);
+        pos = (pos + fac.1).rem_euclid(size);
+        result.push(pos);
+    }
+    result
+
+}
+
+fn solve_brute_force(input: &str, start: isize, size: isize, count: usize) -> Vec<isize> {
+    let mut pos = start;
+    let re = Regex::from_str(r"-?\d+").unwrap();
+    let mut result = vec![start];
+    while result.len() < count {
         for line in input.trim().lines().rev() {
             // println!("{}", line);
             if line.starts_with("deal into") {
@@ -41,50 +95,37 @@ fn solve_for(input: &str, size: isize, target: isize, iterations: usize) -> Resu
                 pos = modmul(pos, modmulinv(num, size), size);
             }
         }
-        iteration += 1;
-
-        if iteration >= 2 {
-            /*
-            assuming that the whole sequence of operations collapses down to an ax + y linear
-            equation
-
-            then taking two iterations of the sequence:
-
-            ax + y = b  mod m
-            cx + y = d  mod m
-
-            ax = b - y  mod m
-            x = inv(a) * (b - y)  mod m
-            c * (inv(a) * (b - y)) + y = d  mod m
-
-            c*inv(a)*b - c*inv(a)*y + y = d  mod m
-            - c*inv(a)*y + y = d - c*inv(a)*b  mod m
-            y*(1 - c*inv(a)) = d - c*inv(a)*b  mod m
-
-            y = inv(1-c*inv(a)) * (d - c*inv(a)*b)  mod m
-            */
-            let a = prevprevpos;
-            let b = prevpos;
-            let c = prevpos;
-            let d = pos;
-            println!("a {} b {} c {} d {}", a, b, c, d,);
-            let cia = modmul(c, modmulinv(a, size), size);
-            let y = modmul(modmulinv(1 - cia, size), d - modmul(cia, b, size), size);
-            let x = modmul(modmulinv(a, size), b - y, size);
-
-            println!("x {} y {}", x, y);
-        }
-        prevprevpos = prevpos;
-        prevpos = pos;
-        if iteration >= 7 {
-            break;
-        }
+        result.push(pos);
     }
+    result
+}
 
-    Ok(format!(
-        "final number on card at position {}: {}",
-        target, pos
-    ))
+fn get_linear_factors(a: isize, b: isize, c: isize, d: isize, m: isize) -> (isize, isize) {
+    /*
+    assuming that the whole sequence of operations collapses down to an ax + y linear
+    equation
+
+    then taking two iterations of the sequence:
+
+    ax + y = b  mod m
+    cx + y = d  mod m
+
+    ax = b - y  mod m
+    x = inv(a) * (b - y)  mod m
+    c * (inv(a) * (b - y)) + y = d  mod m
+
+    c*inv(a)*b - c*inv(a)*y + y = d  mod m
+    - c*inv(a)*y + y = d - c*inv(a)*b  mod m
+    y*(1 - c*inv(a)) = d - c*inv(a)*b  mod m
+
+    y = inv(1-c*inv(a)) * (d - c*inv(a)*b)  mod m
+    */
+    // println!("a {} b {} c {} d {}", a, b, c, d,);
+    let cia = modmul(c, modmulinv(a, m), m);
+    let y = modmul(modmulinv(1 - cia, m), d - modmul(cia, b, m), m);
+    let x = modmul(modmulinv(a, m), b - y, m);
+
+    (x, y)
 }
 
 // based on https://github.com/TheAlgorithms/Rust/blob/master/src/math/extended_euclidean_algorithm.rs
@@ -115,7 +156,8 @@ pub fn extended_euclidean_algorithm(a: isize, b: isize) -> (isize, isize, isize)
 // TODO: understand this better
 pub fn modmulinv(a: isize, b: isize) -> isize {
     let (gcd, a, _) = extended_euclidean_algorithm(a, b);
-    assert!(gcd == 1); // otherwise the modular inverse isn't properly defined
+    // TODO: does it matter if gcd is negative here?
+    assert!(gcd.abs() == 1, "gcd({},{}) needs to be 1 but got {}", a, b, gcd); // otherwise the modular inverse isn't properly defined
     a
 }
 
