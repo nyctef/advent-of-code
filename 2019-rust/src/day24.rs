@@ -16,11 +16,17 @@ fn solve_for(input: &str, time: usize) -> Result<String> {
     let starting_grid = NestedGrid::new(vec![CharGrid::from_string(input)], vec![None], vec![None]);
 
     let mut current_grid = starting_grid;
-    for _ in 0..time {
+    for t in 0..time {
+        println!("start of iteration {t}:");
+        current_grid.print();
+        current_grid.expand();
         let mut new_grid = current_grid.clone();
         update_grid(&current_grid, &mut new_grid);
         current_grid = new_grid;
     }
+
+    println!("final state:");
+    current_grid.print();
 
     let num_bugs = current_grid
         .grids
@@ -32,11 +38,11 @@ fn solve_for(input: &str, time: usize) -> Result<String> {
 }
 
 fn update_grid(current_grid: &NestedGrid, new_grid: &mut NestedGrid) {
-    new_grid.expand();
     for i in 0..current_grid.grids.len() {
         let cg = &current_grid.grids[i];
         let ng = &mut new_grid.grids[i];
         for (p, c) in cg.enumerate_chars_rc() {
+            if p == CharGridIndexRC::new(2, 2) { continue; }
             let n_count = current_grid.get_neighbor_count(i, p);
             ng.set_index_rc(
                 p,
@@ -59,7 +65,7 @@ struct NestedGrid {
 
 impl NestedGrid {
     pub fn expand(&mut self) {
-        dbg!(&self);
+        // dbg!(&self);
         let outermost_grid = self
             .outer
             .iter()
@@ -87,6 +93,7 @@ impl NestedGrid {
 
         if outermost_bugs {
             // ...then we need to make a new outermost grid
+            println!("expanding outer");
             let next_outer_grid_i = self.grids.len();
             self.grids.push(CharGrid::from_empty_char('.', 5, 5));
             // this new grid will have no outer grid yet
@@ -105,6 +112,7 @@ impl NestedGrid {
             .is_some();
 
         if innermost_bugs {
+            println!("expanding inner");
             let next_inner_grid_i = self.grids.len();
             self.grids.push(CharGrid::from_empty_char('.', 5, 5));
             // this new grid will have no more-inner grid yet
@@ -186,7 +194,7 @@ impl NestedGrid {
                 n_count += self.is_bug(ig, CharGridIndexRC::new(4, col));
             }
         }
-        if pos == CharGridIndexRC::new(3, 2) {
+        if pos == CharGridIndexRC::new(2, 1) {
             // 11
             for row in 0..5 {
                 n_count += self.is_bug(ig, CharGridIndexRC::new(row, 0));
@@ -200,6 +208,37 @@ impl NestedGrid {
         }
 
         n_count
+    }
+
+    pub fn print(&self) {
+        let outermost_grid = self
+            .outer
+            .iter()
+            .enumerate()
+            .filter(|(_i, x)| x.is_none())
+            .map(|(i, _)| i)
+            .exactly_one()
+            .expect("exactly one outermost grid");
+
+        let mut current_grid = outermost_grid;
+
+        loop {
+            println!("{}", self.grids[current_grid].lines().join("\n"));
+            println!();
+
+            if let Ok(next_grid) = self
+                .outer
+                .iter()
+                .enumerate()
+                .filter(|(i, o)| o == &&Some(current_grid))
+                .map(|(i, _)| i)
+                .exactly_one()
+            {
+                current_grid = next_grid;
+            } else {
+                break;
+            }
+        }
     }
 }
 
