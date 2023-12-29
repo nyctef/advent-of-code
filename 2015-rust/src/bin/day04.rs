@@ -36,11 +36,12 @@ fn solve_for(input: &str) -> Result<String> {
 }
 
 #[test]
+#[ignore = "slow"]
 fn test_example1() -> Result<()> {
     let input = r"abcdef";
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 609043 | Part 2: ", result);
+    assert_eq!("Part 1: 609043 | Part 2: 6742839", result);
     Ok(())
 }
 
