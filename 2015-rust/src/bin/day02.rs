@@ -1,5 +1,6 @@
 use aoc_2015_rust::util::*;
 use color_eyre::eyre::Result;
+use itertools::Itertools;
 
 pub fn main() -> Result<()> {
     let input = get_input(2015, 2)?;
@@ -11,19 +12,32 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let part1 = input.trim().lines().map(|l| {
-        let mut sizes = all_numbers(l);
-        sizes.sort();
-        assert_eq!(sizes.len(), 3);
-        3 * (sizes[0] * sizes[1]) + 2 * (sizes[1] * sizes[2]) + 2 * (sizes[0] * sizes[2])
-    }).sum::<u32>();
+    let sizes = input
+        .trim()
+        .lines()
+        .map(|l| {
+            let mut sizes = all_numbers(l);
+            sizes.sort();
+            assert_eq!(sizes.len(), 3);
+            sizes.into_iter().next_tuple::<(_, _, _)>().unwrap()
+        })
+        .collect_vec();
 
-    let part2 = input.trim().lines().map(|l| {
-        let mut sizes = all_numbers(l);
-        sizes.sort();
-        assert_eq!(sizes.len(), 3);
-        2 * sizes[0] + 2 * sizes[1] + sizes[0] * sizes[1] * sizes[2]
-    }).sum::<u32>();
+    let part1 = sizes
+        .iter()
+        .map(|&ss| {
+            let (s, m, l) = ss;
+            3 * (s * m) + 2 * (m * l) + 2 * (s * l)
+        })
+        .sum::<u32>();
+    let part2 = sizes
+        .iter()
+        .map(|&ss| {
+            let (s, m, l) = ss;
+            (2 * s) + (2 * m) + (s * m * l)
+        })
+        .sum::<u32>();
+
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
