@@ -18,7 +18,12 @@ fn solve_for(input: &str) -> Result<String> {
         3 * (sizes[0] * sizes[1]) + 2 * (sizes[1] * sizes[2]) + 2 * (sizes[0] * sizes[2])
     }).sum::<u32>();
 
-    let part2 = "";
+    let part2 = input.trim().lines().map(|l| {
+        let mut sizes = all_numbers(l);
+        sizes.sort();
+        assert_eq!(sizes.len(), 3);
+        2 * sizes[0] + 2 * sizes[1] + sizes[0] * sizes[1] * sizes[2]
+    }).sum::<u32>();
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
@@ -29,6 +34,6 @@ fn test_example1() -> Result<()> {
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 58 | Part 2: ", result);
+    assert_eq!("Part 1: 58 | Part 2: 34", result);
     Ok(())
 }
