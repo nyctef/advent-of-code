@@ -1,13 +1,12 @@
+use color_eyre::{
+    eyre::{eyre, Context, Report},
+    Result,
+};
+use regex::Regex;
 use std::{
     env, fs,
     path::{Path, PathBuf},
     process::Command,
-};
-
-use chrono::{DateTime, Datelike, Local};
-use color_eyre::{
-    eyre::{eyre, Context, Report},
-    Result,
 };
 
 fn main() -> Result<()> {
@@ -20,15 +19,34 @@ fn main() -> Result<()> {
     let task = args.next().ok_or_else(|| eyre!(usage))?;
     let day = args.next().map(|d| d.parse::<u8>().map_err(Report::new));
 
-    let now = Local::now();
-    let day = resolve_day(day, now)?;
+    let bin_files = get_bin_files()?;
+    let day = resolve_day(day, bin_files)?;
 
     match &task[..] {
-        "new_day" => new_day(day),
+        // TODO: this +1 is required if we're inferring the day,
+        // but it's a little confusing if the user actually specified one
+        "new_day" => new_day(day + 1),
         "test_day" => test_day(day),
         "run_day" => run_day(day),
         _ => Err(eyre!("Unknown task: {task}")),
     }
+}
+
+fn get_bin_files() -> Result<Vec<String>> {
+    let root = root_dir();
+    let readdir = fs::read_dir(root.join("src/bin/"))?;
+
+    let entries: Result<Vec<_>> = readdir.map(|x| x.map_err(Report::new)).collect();
+    let file_names: Result<Vec<_>> = entries?
+        .into_iter()
+        .map(|e| {
+            e.file_name()
+                .into_string()
+                .map_err(|e| eyre!("failed to convert osstring {:?} into string", e))
+        })
+        .collect();
+
+    file_names
 }
 
 fn new_day(day: u8) -> Result<()> {
@@ -73,17 +91,24 @@ fn root_dir() -> PathBuf {
     .to_path_buf()
 }
 
-fn resolve_day(specific_day: Option<Result<u8>>, now: DateTime<Local>) -> Result<u8> {
+fn resolve_day(specific_day: Option<Result<u8>>, existing_bin_files: Vec<String>) -> Result<u8> {
     if let Some(Ok(specific_day)) = specific_day {
         return Ok(specific_day);
     } else if let Some(Err(day_error)) = specific_day {
         return Err(day_error).wrap_err("attempting to parse day value");
     }
 
-    // otherwise try to infer the aoc day from the current date
-    if now.month() == 12 && now.day() <= 25 {
-        return Ok(now.day() as u8);
-    }
+    // otherwise try to infer the current aoc day based on the latest dayXX.rs file
+    // that's in the repo
 
-    return Err(eyre!("A day needs to be specified, since it isn't advent"));
+    let re = Regex::new(r"^day(\d\d).rs$")?;
+    let latest_day = existing_bin_files
+        .iter()
+        .filter_map(|f| re.captures(f))
+        .map(|c| c[1].parse::<u8>().unwrap())
+        .max();
+
+    latest_day.ok_or(eyre!(
+        "Couldn't find a latest day in src/bin/dayXX.rs - day needs to be specified"
+    ))
 }
