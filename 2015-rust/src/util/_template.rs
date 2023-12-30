@@ -3,6 +3,8 @@ use color_eyre::eyre::Result;
 use itertools::Itertools;
 
 pub fn main() -> Result<()> {
+    color_eyre::install()?;
+
     let input = get_input(2015, __DAY__)?;
 
     let result = solve_for(&input)?;
