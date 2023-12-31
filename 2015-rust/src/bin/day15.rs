@@ -27,7 +27,7 @@ fn solve_for(input: &str) -> Result<String> {
     // dbg!(&ingredients);
 
     let mut part1 = 0;
-    let choices = (0..=100 as usize).combinations_with_replacement(ingredients.len());
+    let choices = (0..=100 as usize).permutations(ingredients.len());
 
     for choice in choices {
         if choice.iter().sum::<usize>() != 100 {
