@@ -1,9 +1,8 @@
 use aoc_2015_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::HashMap,
     ops::Not,
 };
 
@@ -133,6 +132,6 @@ NOT y -> a
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 65079 | Part 2: ", result);
+    assert_eq!("Part 1: 65079 | Part 2: 65079", result);
     Ok(())
 }

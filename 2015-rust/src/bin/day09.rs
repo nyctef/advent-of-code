@@ -118,6 +118,6 @@ Dublin to Belfast = 141
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 605 | Part 2: ", result);
+    assert_eq!("Part 1: 605 | Part 2: 982", result);
     Ok(())
 }
