@@ -1,8 +1,7 @@
-use std::str::from_utf8;
-
 use aoc_2015_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use std::str::from_utf8;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -66,7 +65,12 @@ fn is_valid(value: &[u8]) -> bool {
         .filter(|&(_p, (a, b))| a == b)
         // forget what pair it was - just remember its position
         .map(|t| t.0)
-        // check to see if multiple instances of the pair are far enough apart
+        // check to see if the pairs are far enough apart
+        // ie we don't want this situation:
+        //    aaa
+        //    ^^
+        //    01
+        // to count if we detect pairs starting at indexes 0 and 1
         .tuple_windows()
         .any(|(a, b)| b - a > 1);
 
@@ -82,6 +86,7 @@ fn test_incr() {
     let mut value = "xy".to_string().into_bytes();
     incr(&mut value);
     assert_eq!(from_utf8(&value).unwrap(), "xz");
+    // incrementing the z in the last position triggers a carry
     incr(&mut value);
     assert_eq!(from_utf8(&value).unwrap(), "ya");
     incr(&mut value);
