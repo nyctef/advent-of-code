@@ -38,6 +38,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rustc-hash",
+ "serde_json",
 ]
 
 [[package]]
