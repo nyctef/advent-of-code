@@ -24,6 +24,7 @@ fn solve_for(input: &str) -> Result<String> {
                 .unwrap()
         })
         .collect_vec();
+    // dbg!(&ingredients);
 
     let mut part1 = 0;
     let choices = (0..=100 as usize).combinations_with_replacement(ingredients.len());
@@ -39,7 +40,7 @@ fn solve_for(input: &str) -> Result<String> {
 
         let total = res.0.max(0) * res.1.max(0) * res.2.max(0) * res.3.max(0);
         if total > part1 {
-            println!("choice {:?} produced score {}", &choice, total);
+            println!("choice {:?} produced score {} from parts {:?}", &choice, total, res);
             part1 = total;
         }
     }
