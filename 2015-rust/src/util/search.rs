@@ -30,11 +30,11 @@ impl<T: std::fmt::Debug + Clone, K: PartialEq + Eq + Hash> Search<T, K> {
             track_seen: true,
         }
     }
-    pub fn new_exhaustive(get_key: impl Fn(&T) -> K + 'static) -> Search<T, K> {
+    pub fn new_exhaustive() -> Search<T, K> {
         Search {
             queue: VecDeque::new(),
             seen: HashSet::new(),
-            get_key: Box::new(get_key),
+            get_key: Box::new(|_| panic!("should be unused")),
             dfs: false,
             track_seen: false,
         }

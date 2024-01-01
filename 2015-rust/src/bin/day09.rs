@@ -63,7 +63,7 @@ fn solve_for<'i>(input: &'i str) -> Result<String> {
 
     let mut longest = 0_usize;
     for starting_point in &all_points {
-        let mut search = Search::new_exhaustive(|s: &State| s.seen.clone());
+        let mut search : Search<State<'_>, ()> = Search::new_exhaustive();
         search.push(State::new(starting_point, vec![starting_point], 0));
 
         // TODO: a run method for search
