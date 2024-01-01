@@ -2,7 +2,8 @@ use aoc_2015_rust::util::*;
 use color_eyre::{eyre::Result, owo_colors::OwoColorize};
 use derive_more::Constructor;
 use itertools::Itertools;
-use std::collections::HashSet;
+use rustc_hash::FxHashMap;
+use std::{collections::HashSet, hash::Hasher};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -162,6 +163,7 @@ fn apply_rule<'i>(
 }
 
 fn solve<'i>(replacements: &Vec<(&'i str, Vec<&'i str>)>, target: Vec<&'i str>) {
+    let mut expansion_memo = FxHashMap::default();
     let mut search = Search::new_bfs(|s: &(Vec<&'i str>, usize, usize)| s.clone());
     // state: generated string, solved prefix, num steps applied
     search.push((vec!["e"], 0, 0));
@@ -181,16 +183,19 @@ fn solve<'i>(replacements: &Vec<(&'i str, Vec<&'i str>)>, target: Vec<&'i str>) 
         counter += 1;
         let target_token = target[solved];
         let expansion_index = solved;
-        let expansions =
-            get_possible_expansions(replacements, generated[expansion_index], target_token);
+        let expansions = expansion_memo
+            .entry((generated[expansion_index], target_token))
+            .or_insert_with(|| {
+                get_possible_expansions(replacements, generated[expansion_index], target_token)
+            });
 
         for (cost, expansion) in expansions {
             let mut new_string = generated.clone();
-            new_string.splice(expansion_index..(expansion_index + 1), expansion);
+            new_string.splice(expansion_index..(expansion_index + 1), expansion.clone());
             if new_string.len() > target.len() {
                 continue;
             }
-            search.push((new_string, solved + 1, steps + cost));
+            search.push((new_string, solved + 1, steps + *cost));
         }
     }
 }
