@@ -50,7 +50,7 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
     ) {
         let mut count: u64 = 0;
         while let Some(Reverse(current_state)) = self.queue.pop() {
-            if count % 1_000_000 == 0 {
+            if count % 100 == 0 {
                 println!(
                     "c: {} ql: {} s: {:?} bl: {}",
                     count,

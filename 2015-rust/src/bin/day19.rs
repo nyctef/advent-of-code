@@ -3,7 +3,7 @@ use color_eyre::{eyre::Result, owo_colors::OwoColorize};
 use derive_more::Constructor;
 use itertools::Itertools;
 use rustc_hash::FxHashMap;
-use std::{collections::HashSet, hash::Hasher};
+use std::{collections::HashSet, hash::Hasher, cmp::Reverse};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -163,40 +163,73 @@ fn apply_rule<'i>(
 }
 
 fn solve<'i>(replacements: &Vec<(&'i str, Vec<&'i str>)>, target: Vec<&'i str>) {
-    let mut expansion_memo = FxHashMap::default();
-    let mut search = Search::new_bfs(|s: &(Vec<&'i str>, usize, usize)| s.clone());
+    // let mut expansion_memo = FxHashMap::default();
+    let mut search = Dijkstra::new(|s: &State2| (s.generated.clone(), s.solved));
     // state: generated string, solved prefix, num steps applied
-    search.push((vec!["e"], 0, 0));
+    search.push(State2::new(vec!["e"], 0, 0));
 
     let mut counter = 0;
-    while let Some((generated, solved, steps)) = search.pop() {
-        if solved >= target.len() && generated == target {
-            println!(
-                "found potential solution {:?}",
-                (&generated, &solved, &steps)
-            );
-        }
-        if counter % 100 == 0 {
-            // println!("search len: {}", search.len());
-            println!("trying state {:?}", (&generated, solved, steps));
-        }
-        counter += 1;
-        let target_token = target[solved];
-        let expansion_index = solved;
-        let expansions = expansion_memo
-            .entry((generated[expansion_index], target_token))
-            .or_insert_with(|| {
-                get_possible_expansions(replacements, generated[expansion_index], target_token)
-            });
 
-        for (cost, expansion) in expansions {
-            let mut new_string = generated.clone();
-            new_string.splice(expansion_index..(expansion_index + 1), expansion.clone());
-            if new_string.len() > target.len() {
-                continue;
+    let res = search.run_single(
+        |s: State2| {
+            let generated  = s.generated;
+            let solved = s.solved;
+            let steps = s.steps;
+            let mut candidates = vec![];
+
+            if solved >= target.len() && generated == target {
+                println!(
+                    "found potential solution {:?}",
+                    (&generated, &solved, &steps)
+                );
             }
-            search.push((new_string, solved + 1, steps + *cost));
-        }
+            // if counter % 100 == 0 {
+            //     // println!("search len: {}", search.len());
+            //     println!("trying state {:?}", (&generated, solved, steps));
+            // }
+            // counter += 1;
+            let target_token = target[solved];
+            let expansion_index = solved;
+            let expansions =
+                // expansion_memo
+                // .entry((generated[expansion_index], target_token))
+                // .or_insert_with(|| {
+                    get_possible_expansions(replacements, generated[expansion_index], target_token);
+                // });
+
+            for (cost, expansion) in expansions {
+                let mut new_string = generated.clone();
+                new_string.splice(expansion_index..(expansion_index + 1), expansion.clone());
+                if new_string.len() > target.len() {
+                    continue;
+                }
+                candidates.push(State2::new(new_string, solved + 1, steps + cost));
+            }
+
+            // println!("candidates: {:?}", candidates);
+            candidates
+        },
+        |s| s.generated == target,
+    );
+}
+
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Constructor)]
+struct State2<'i> {
+    generated: Vec<&'i str>,
+    solved: usize,
+    steps: usize
+}
+
+impl<'i> Ord for State2<'i> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // (self.steps, Reverse(self.solved)).cmp(&(other.steps, Reverse(other.solved)))
+         (Reverse(self.solved), self.steps).cmp(&(Reverse(other.solved), other.steps))
+    }
+}
+
+impl<'i> PartialOrd for State2<'i> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
