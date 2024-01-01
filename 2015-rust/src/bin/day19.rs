@@ -163,7 +163,7 @@ fn apply_rule<'i>(
 }
 
 fn solve<'i>(replacements: &Vec<(&'i str, Vec<&'i str>)>, target: Vec<&'i str>) {
-    // let mut expansion_memo = FxHashMap::default();
+    let mut expansion_memo = FxHashMap::default();
     let mut search = Dijkstra::new(|s: &State2| (s.generated.clone(), s.solved));
     // state: generated string, solved prefix, num steps applied
     search.push(State2::new(vec!["e"], 0, 0));
@@ -171,7 +171,7 @@ fn solve<'i>(replacements: &Vec<(&'i str, Vec<&'i str>)>, target: Vec<&'i str>) 
     let mut counter = 0;
 
     let res = search.run_single(
-        |s: State2| {
+         |s: State2| {
             let generated  = s.generated;
             let solved = s.solved;
             let steps = s.steps;
@@ -191,11 +191,11 @@ fn solve<'i>(replacements: &Vec<(&'i str, Vec<&'i str>)>, target: Vec<&'i str>) 
             let target_token = target[solved];
             let expansion_index = solved;
             let expansions =
-                // expansion_memo
-                // .entry((generated[expansion_index], target_token))
-                // .or_insert_with(|| {
-                    get_possible_expansions(replacements, generated[expansion_index], target_token);
-                // });
+                expansion_memo
+                .entry((generated[expansion_index], target_token))
+                .or_insert_with(|| {
+                    get_possible_expansions(replacements, generated[expansion_index], target_token)
+                });
 
             for (cost, expansion) in expansions {
                 let mut new_string = generated.clone();
@@ -203,7 +203,7 @@ fn solve<'i>(replacements: &Vec<(&'i str, Vec<&'i str>)>, target: Vec<&'i str>) 
                 if new_string.len() > target.len() {
                     continue;
                 }
-                candidates.push(State2::new(new_string, solved + 1, steps + cost));
+                candidates.push(State2::new(new_string, solved + 1, steps + *cost));
             }
 
             // println!("candidates: {:?}", candidates);
@@ -222,8 +222,8 @@ struct State2<'i> {
 
 impl<'i> Ord for State2<'i> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        // (self.steps, Reverse(self.solved)).cmp(&(other.steps, Reverse(other.solved)))
-         (Reverse(self.solved), self.steps).cmp(&(Reverse(other.solved), other.steps))
+        (self.steps, Reverse(self.solved)).cmp(&(other.steps, Reverse(other.solved)))
+         // (Reverse(self.solved), self.steps).cmp(&(Reverse(other.solved), other.steps))
     }
 }
 
