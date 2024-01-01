@@ -1,11 +1,13 @@
 mod aoc_util;
 mod dijkstra;
 mod grid;
-mod search;
+mod scored_search;
 mod scraping;
+mod search;
 
 pub use aoc_util::*;
 pub use dijkstra::*;
 pub use grid::*;
-pub use search::*;
+pub use scored_search::*;
 pub use scraping::*;
+pub use search::*;

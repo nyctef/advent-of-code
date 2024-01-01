@@ -34,9 +34,10 @@ fn solve_for(input: &str) -> Result<String> {
 
     let part1 = calibration_results.len();
 
-    let mut search = Dijkstra::new(|s: &State| s.molecule.clone());
+    // let mut search = Dijkstra::new(|s: &State| s.molecule.clone());
+    let mut search = ScoredSearch::new_dfs(|s: &State| s.molecule.clone(), |s: &State| s.steps);
     search.push(State::new(target.to_string(), 0));
-    let res = search.run_single(
+    let res = search.run(
         |s| {
             let mut candidates = vec![];
 
@@ -48,13 +49,15 @@ fn solve_for(input: &str) -> Result<String> {
                 }
             }
 
+            candidates.sort_by_key(|c| c.molecule.len());
             candidates
         },
         |s| s.molecule == "e",
+        9999
     );
 
-    let part2 = res.steps;
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    let part2 = res;
+    Ok(format!("Part 1: {part1} | Part 2: {part2:?}"))
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Constructor)]
