@@ -67,7 +67,11 @@ impl CharGrid {
 
     pub fn from_empty_char(empty: char, width: usize, height: usize) -> CharGrid {
         let lines = iter::repeat(vec![empty; width]).take(height).collect_vec();
-        CharGrid { width, height, lines }
+        CharGrid {
+            width,
+            height,
+            lines,
+        }
     }
 
     pub fn height(&self) -> usize {
@@ -112,17 +116,22 @@ impl CharGrid {
         &self,
         index: CharGridIndexRC,
     ) -> impl Iterator<Item = (CharGridIndexRC, char)> + Debug + '_ {
-        let mut result = vec![];
-        for n in [index.left(), index.up()].into_iter().flatten() {
-            result.push((n, self.index(n)));
-        }
+        RCDirection::four()
+            .into_iter()
+            .map(move |d| index + d)
+            .filter(move |&p| p != index && self.is_in_bounds(p))
+            .map(|p| (p, self.index(p)))
+    }
 
-        for n in [index.right(), index.down()] {
-            if self.is_in_bounds(n) {
-                result.push((n, self.index(n)));
-            }
-        }
-        result.into_iter()
+    pub fn enumerate_8_neighbors(
+        &self,
+        index: CharGridIndexRC,
+    ) -> impl Iterator<Item = (CharGridIndexRC, char)> + Debug + '_ {
+        RCDirection::eight()
+            .into_iter()
+            .map(move |d| index + d)
+            .filter(move |&p| p != index && self.is_in_bounds(p))
+            .map(|p| (p, self.index(p)))
     }
 
     pub fn is_in_bounds(&self, index: CharGridIndexRC) -> bool {
@@ -404,6 +413,19 @@ impl RCDirection {
         vec![Self::right(), Self::up(), Self::left(), Self::down()]
     }
 
+    pub fn eight() -> Vec<RCDirection> {
+        vec![
+            Self::right(),
+            Self::right() + Self::up(),
+            Self::up(),
+            Self::up() + Self::left(),
+            Self::left(),
+            Self::left() + Self::down(),
+            Self::down(),
+            Self::down() + Self::right(),
+        ]
+    }
+
     pub fn clockwise(&self) -> RCDirection {
         assert!(self.is_unit());
         // TODO: is there a nicer way to write this?
@@ -469,5 +491,13 @@ impl RCDirection {
 impl Display for RCDirection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("(r{},c{})", self.rowdiff, self.coldiff))
+    }
+}
+
+impl Add<RCDirection> for RCDirection {
+    type Output = RCDirection;
+
+    fn add(self, rhs: RCDirection) -> Self::Output {
+        RCDirection::new(self.rowdiff + rhs.rowdiff, self.coldiff + rhs.coldiff)
     }
 }
