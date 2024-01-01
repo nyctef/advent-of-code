@@ -82,6 +82,7 @@ impl<
             }
             if count % 1_000_000 == 0 {
                 println!("{} best: {:?}", self.debug_info(), bests);
+                println!("{:?}", &current_state);
             }
             count += 1;
             let candidates = get_next_candidates(current_state.clone());
@@ -139,10 +140,11 @@ impl<
 
     pub fn debug_info(&self) -> String {
         format!(
-            "dsc: {} ins: {} len: {}",
+            "dsc: {} ins: {} len: {}, best_scores_len: {}",
             self.discard_count,
             self.insert_count,
-            self.queue.len()
+            self.queue.len(),
+            self.best_scores.len(),
         )
     }
 
