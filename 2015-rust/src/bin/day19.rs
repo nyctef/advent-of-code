@@ -53,8 +53,11 @@ fn solve_for(input: &str) -> Result<String> {
             .collect_vec(),
     );
 
-    dbg!(rules);
-    let _target = tokenize(target);
+    dbg!(&rules);
+    let target = tokenize(target);
+
+    let parser = Parser::from_rules(rules, Term::Nonterminal("e"));
+    parser.run(&target);
 
     // println!("r {:?} t {:?}", replacements, target);
 

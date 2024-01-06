@@ -1,4 +1,5 @@
 use derive_more::Constructor;
+use itertools::Itertools;
 use std::fmt::Display;
 
 // TODO: make this generic in the token type rather than assuming `&'input str` ?
@@ -118,15 +119,19 @@ impl<'i, 'r> std::hash::Hash for State<'i, 'r> {
 struct Column<'r, 'i> {
     states: Vec<State<'r, 'i>>,
     col_index: usize,
-    col_char: &'i str,
+    col_token: &'i str,
 }
 
 impl<'r, 'i> Column<'r, 'i> {
-    fn new(index: usize, char: &'i str) -> Self {
-        Self { states: vec![], col_index: index, col_char: char }
+    fn new(index: usize, token: &'i str) -> Self {
+        Self {
+            states: vec![],
+            col_index: index,
+            col_token: token,
+        }
     }
 
-    fn add (&mut self, mut state: State<'r, 'i>) {
+    fn add(&mut self, mut state: State<'r, 'i>) {
         // TODO: it might become worth storing a separate hashset
         // of seen states here - we'd need to be careful of mutating
         // states while they're contained in the hashset, though.
@@ -137,9 +142,69 @@ impl<'r, 'i> Column<'r, 'i> {
             state.end_col = Some(self.col_index);
             self.states.push(state);
         }
+    }
+}
 
+#[derive(Debug)]
+struct Chart<'r, 'i> {
+    columns: Vec<Column<'r, 'i>>,
+}
+
+impl<'r, 'i> Chart<'r, 'i> {
+    fn from_tokens(input_tokens: &[&'i str]) -> Self {
+        Self {
+            columns: input_tokens
+                .iter()
+                .enumerate()
+                .map(|(i, &t)| Column::new(i, t))
+                .collect_vec(),
+        }
+    }
+}
+
+#[derive(Debug, Constructor)]
+pub struct Grammar<'i> {
+    rules: Vec<Rule<'i>>,
+    start: Term<'i>,
+}
+
+impl<'i> Grammar<'i> {
+    fn rules_for(&self, term: &Term<'i>) -> impl Iterator<Item = &Rule<'i>> {
+        assert!(matches!(term, Term::Nonterminal(_)));
+        // TODO: can we remove this clone?
+        let term = term.clone();
+        self.rules.iter().filter(move |r| r.matches == term)
+    }
+}
+
+#[derive(Debug)]
+pub struct Parser<'i> {
+    grammar: Grammar<'i>,
+}
+
+impl<'i> Parser<'i> {
+    pub fn from_rules(rules: impl IntoIterator<Item = Rule<'i>>, start: Term<'i>) -> Self {
+        Self {
+            // TODO: calculate epsilon here if we ever need to handle nullable rules
+            grammar: Grammar::new(rules.into_iter().collect_vec(), start),
+        }
     }
 
+    pub fn run(&self, input_tokens: &[&'i str]) -> () {
+        let mut chart = Chart::from_tokens(input_tokens);
+
+        // slightly nonstandard: like in the gopinath.org article, we allow multiple
+        // start rules for a given starting token, rather than requiring a unique starting rule
+        for alt in self.grammar.rules_for(&self.grammar.start) {
+            chart.columns[0].add(State::new(alt, 0))
+        }
+    }
+
+    fn predict<'r>(&mut self, col: &mut Column<'r, 'i>, to_predict: &Term<'i>, _state: &mut State) {
+        for alt in self.grammar.rules_for(to_predict) {
+            col.add(State::new(alt, col.col_index))
+        }
+    }
 }
 
 #[cfg(test)]
