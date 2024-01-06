@@ -1,8 +1,6 @@
-use aoc_2015_rust::util::*;
+use aoc_2015_rust::util::{*, earley::*};
 use color_eyre::eyre::Result;
-use derive_more::Constructor;
 use itertools::Itertools;
-use std::fmt::Display;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -74,48 +72,6 @@ fn parse_replacements(replacements: &str) -> Vec<(&str, Vec<&str>)> {
         .map(|l| l.split_once(" => ").unwrap())
         .map(|(s, d)| (s, tokenize(d)))
         .collect_vec()
-}
-
-#[derive(Eq, PartialEq, Hash, Clone)]
-enum Term<'i> {
-    Terminal(&'i str),
-    Nonterminal(&'i str),
-}
-
-impl Display for Term<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Term::Terminal(t) => f.write_fmt(format_args!("'{}'", t)),
-            Term::Nonterminal(nt) => f.write_fmt(format_args!("<{}>", nt)),
-        }
-    }
-}
-
-impl std::fmt::Debug for Term<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self.to_string()))
-    }
-}
-
-impl<'i> Term<'i> {
-    fn get_value(&self) -> &'i str {
-        match self {
-            Term::Terminal(t) => t,
-            Term::Nonterminal(nt) => nt,
-        }
-    }
-}
-
-#[derive(Eq, PartialEq, Constructor)]
-struct Rule<'i> {
-    matches: Term<'i>,
-    expansion: Vec<Term<'i>>,
-}
-
-impl std::fmt::Debug for Rule<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{:?} => {:?}", self.matches, self.expansion))
-    }
 }
 
 fn tokenize(input: &str) -> Vec<&str> {
