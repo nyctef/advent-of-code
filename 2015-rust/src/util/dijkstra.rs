@@ -27,8 +27,8 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
     }
 
     pub fn run_single(mut self, 
-        mut get_next_candidates: impl FnMut(T) -> Vec<T>,
-        mut is_target_state: impl Fn(&T) -> bool,
+        get_next_candidates: impl FnMut(T) -> Vec<T>,
+        is_target_state: impl Fn(&T) -> bool,
         ) -> T {
 
         self.run(get_next_candidates, &is_target_state);
@@ -46,7 +46,7 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
     fn run(
         &mut self,
         mut get_next_candidates: impl FnMut(T) -> Vec<T>,
-        mut is_target_state: impl Fn(&T) -> bool,
+        is_target_state: impl Fn(&T) -> bool,
     ) {
         let mut count: u64 = 0;
         while let Some(Reverse(current_state)) = self.queue.pop() {

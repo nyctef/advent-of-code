@@ -1,6 +1,6 @@
 use aoc_2015_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
+
 use serde_json::Value;
 
 pub fn main() -> Result<()> {
