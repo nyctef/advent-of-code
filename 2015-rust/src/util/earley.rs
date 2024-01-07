@@ -166,7 +166,7 @@ impl<'r, 'i> Chart<'r, 'i> {
                 .chain(input_tokens.iter().map(|t| Some(t)))
                 .enumerate()
                 // TODO: nicer way to convert from Option<&&_> to Option<&_>?
-                .map(|(i, Some(&t))| Column::new(i, Some(t)))
+                .map(|(i, t)| Column::new(i, t.map(|x| *x)))
                 .collect_vec(),
         }
     }
@@ -211,7 +211,23 @@ impl<'i> Parser<'i> {
 
         let num_columns = chart.columns.len();
         for c in 0..num_columns {
-            let col = &mut chart.columns[c];
+            // some messy code with split_at_mut to be able to get mutable references
+            // to different vec entries at the same time.
+            //
+            // `prev_cols` ends up containing all the columns up to (but not including)
+            // the current chart column we're looking at. This should preserve column
+            // indexes, so indexing into this with `state.start_col` should do the right
+            // thing. Fortunately we only need to reference one of these columns at a
+            // time, so we don't need to do further splitting here.
+            //
+            // `col` ends up containing a mutable reference just to the current column
+            // we're looking at.
+            //
+            // `next_col` has an optional reference to col + 1, used for advancing states
+            let (prev_cols, these_cols) = chart.columns.split_at_mut(c);
+            let (col, next_cols) = these_cols.split_at_mut(1);
+            let col = &mut col[0];
+            let next_col = next_cols.iter().nth(1);
 
             // slightly weird way to loop over states in the column, since `predict`
             // can keep adding more states in front of us
@@ -219,70 +235,48 @@ impl<'i> Parser<'i> {
             while s < col.states.len() {
                 let state = col.states[s].clone();
                 if state.finished() {
-                    Self::complete(&mut chart, &state, col);
+                    // if we've finished matching a rule <X> => ...| then go back and find all the
+                    // parent rules that were trying to match an <X> and advance those by one.
+                    //
+                    // The advanced states get added to the current column since that's how far we've
+                    // progressed through the string at the point the advancement happens.
+                    let starting_col = &mut prev_cols[state.start_col];
+                    let parent_states = starting_col
+                        .states
+                        .iter()
+                        .filter(|s| s.at_dot() == Some(state.name()));
+
+                    for st in parent_states {
+                        col.add(st.advance());
+                    }
                 } else {
                     let sym = state
                         .at_dot()
                         .expect("unfinished state should have term at dot");
                     match sym {
-                        Term::Nonterminal(_) => Self::predict(&self.grammar, col, sym, &state),
+                        Term::Nonterminal(_) => {
+                            // one of our states has arrived at a nonterminal `to_predict`, so add its expansions
+                            // to the current column.
+                            for alt in (&self.grammar).rules_for(sym) {
+                                col.add(State::new(&alt, col.col_index))
+                            }
+                            /*
+                            if sym in epsilon: _state.advance()
+                            */
+                        }
                         Term::Terminal(t) => {
-                            if c + 1 < num_columns {
-                                Self::scan(&mut chart.columns[c + 1], &state, t)
+                            if let Some(next_col) = next_col {
+                                // if the next column's token matches a terminal we're expecting, then we can
+                                // advance a state and move it to the next column
+                                if Some(*t) == next_col.col_token {
+                                    col.add(state.advance());
+                                }
                             }
                         }
                     }
                 }
                 s += 1;
             }
-        }
-    }
-
-    /// one of our states has arrived at a nonterminal `to_predict`, so add its expansions
-    /// to the current column.
-    ///
-    /// TODO: I think the 'g:'i bound is backwards? we need the input string to outlive the
-    /// rules/grammar surely
-    fn predict<'r, 'g: 'i>(
-        grammar: &'g Grammar<'i>,
-        col: &mut Column<'r, 'i>,
-        to_predict: &Term<'i>,
-        _state: &State,
-    ) {
-        for alt in grammar.rules_for(to_predict) {
-            col.add(State::new(&alt, col.col_index))
-        }
-        /*
-        if sym in epsilon: _state.advance()
-        */
-    }
-
-    /// if the next column's token matches a terminal we're expecting, then we can
-    /// advance a state and move it to the next column
-    fn scan<'r>(col: &mut Column<'r, 'i>, state: &State<'r, 'i>, token: &'i str) {
-        if Some(token) == col.col_token {
-            col.add(state.advance());
-        }
-    }
-
-    /// if we've finished matching a rule <X> => ...| then go back and find all the
-    /// parent rules that were trying to match an <X> and advance those by one.
-    ///
-    /// The advanced states get added to the current column since that's how far we've
-    /// progressed through the string at the point the advancement happens.
-    fn complete<'r>(
-        chart: &mut Chart<'r, 'i>,
-        state: &State<'r, 'i>,
-        current_col: &mut Column<'r, 'i>,
-    ) {
-        let starting_col = &mut chart.columns[state.start_col];
-        let parent_states = starting_col
-            .states
-            .iter()
-            .filter(|s| s.at_dot() == Some(state.name()));
-
-        for st in parent_states {
-            current_col.add(st.advance());
         }
     }
 }
