@@ -200,10 +200,20 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn predict<'r>(&mut self, col: &mut Column<'r, 'i>, to_predict: &Term<'i>, _state: &mut State) {
-        for alt in self.grammar.rules_for(to_predict) {
-            col.add(State::new(alt, col.col_index))
+    /// TODO: I think the 'g:'i bound is backwards? we need the input string to outlive the
+    /// rules/grammar surely
+    fn predict<'r, 'g: 'i>(
+        grammar: &'g Grammar<'i>,
+        col: &mut Column<'r, 'i>,
+        to_predict: &Term<'i>,
+        _state: &mut State,
+    ) {
+        for alt in grammar.rules_for(to_predict) {
+            col.add(State::new(&alt, col.col_index))
         }
+        /*
+        if sym in epsilon: _state.advance()
+        */
     }
 }
 
