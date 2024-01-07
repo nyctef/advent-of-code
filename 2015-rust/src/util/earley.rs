@@ -211,6 +211,7 @@ impl<'i> Parser<'i> {
 
         let num_columns = chart.columns.len();
         for c in 0..num_columns {
+            println!("running column {c}");
             // some messy code with split_at_mut to be able to get mutable references
             // to different vec entries at the same time.
             //
@@ -227,13 +228,14 @@ impl<'i> Parser<'i> {
             let (prev_cols, these_cols) = chart.columns.split_at_mut(c);
             let (col, next_cols) = these_cols.split_at_mut(1);
             let col = &mut col[0];
-            let next_col = next_cols.iter().nth(1);
+            let mut next_col = next_cols.iter_mut().nth(1);
 
             // slightly weird way to loop over states in the column, since `predict`
             // can keep adding more states in front of us
             let mut s = 0;
             while s < col.states.len() {
                 let state = col.states[s].clone();
+                println!("testing state {state:?}");
                 if state.finished() {
                     // if we've finished matching a rule <X> => ...| then go back and find all the
                     // parent rules that were trying to match an <X> and advance those by one.
@@ -257,6 +259,7 @@ impl<'i> Parser<'i> {
                         Term::Nonterminal(_) => {
                             // one of our states has arrived at a nonterminal `to_predict`, so add its expansions
                             // to the current column.
+                            println!("adding expansions for {sym:?} to col");
                             for alt in (&self.grammar).rules_for(sym) {
                                 col.add(State::new(&alt, col.col_index))
                             }
@@ -265,11 +268,11 @@ impl<'i> Parser<'i> {
                             */
                         }
                         Term::Terminal(t) => {
-                            if let Some(next_col) = next_col {
+                            if let Some(ref mut next_col) = next_col {
                                 // if the next column's token matches a terminal we're expecting, then we can
                                 // advance a state and move it to the next column
                                 if Some(*t) == next_col.col_token {
-                                    col.add(state.advance());
+                                    next_col.add(state.advance());
                                 }
                             }
                         }
@@ -277,6 +280,7 @@ impl<'i> Parser<'i> {
                 }
                 s += 1;
             }
+            dbg!(&chart);
         }
     }
 }
