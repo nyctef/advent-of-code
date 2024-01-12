@@ -151,8 +151,9 @@ impl<'r, 'i> Column<'r, 'i> {
     }
 }
 
+// TODO: make chart private and return a parse tree instead
 #[derive(Debug)]
-struct Chart<'r, 'i> {
+pub struct Chart<'r, 'i> {
     columns: Vec<Column<'r, 'i>>,
 }
 
@@ -200,7 +201,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    pub fn run(&self, input_tokens: &[&'i str]) -> () {
+    pub fn run(&self, input_tokens: &[&'i str]) -> Chart {
         let mut chart = Chart::from_tokens(input_tokens);
 
         // slightly nonstandard: like in the gopinath.org article, we allow multiple
@@ -228,7 +229,7 @@ impl<'i> Parser<'i> {
             let (prev_cols, these_cols) = chart.columns.split_at_mut(c);
             let (col, next_cols) = these_cols.split_at_mut(1);
             let col = &mut col[0];
-            let mut next_col = next_cols.iter_mut().nth(1);
+            let mut next_col = next_cols.iter_mut().nth(0);
 
             // slightly weird way to loop over states in the column, since `predict`
             // can keep adding more states in front of us
@@ -271,6 +272,7 @@ impl<'i> Parser<'i> {
                             if let Some(ref mut next_col) = next_col {
                                 // if the next column's token matches a terminal we're expecting, then we can
                                 // advance a state and move it to the next column
+                                println!("checking current token {} against next col token {:?}", t, next_col.col_token);
                                 if Some(*t) == next_col.col_token {
                                     next_col.add(state.advance());
                                 }
@@ -282,6 +284,7 @@ impl<'i> Parser<'i> {
             }
             dbg!(&chart);
         }
+        chart
     }
 }
 
@@ -300,5 +303,18 @@ mod test {
         state = state.advance();
 
         assert_eq!(format!("{:?}", state), "<A> => ['a'] | ['b'] (0, None)");
+    }
+
+    #[test]
+    fn test_basic_example_1() {
+        let rules = vec![Rule::new(
+            Nonterminal("S"),
+            vec![Terminal("a"), Terminal("b"), Terminal("c")],
+        )];
+        let parser = Parser::from_rules(rules, Nonterminal("S"));
+        let result = parser.run(&vec!["a", "b", "c"]);
+
+        println!("{:?}", result);
+        todo!()
     }
 }
