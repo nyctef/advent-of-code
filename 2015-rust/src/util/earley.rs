@@ -272,7 +272,10 @@ impl<'i> Parser<'i> {
                             if let Some(ref mut next_col) = next_col {
                                 // if the next column's token matches a terminal we're expecting, then we can
                                 // advance a state and move it to the next column
-                                println!("checking current token {} against next col token {:?}", t, next_col.col_token);
+                                println!(
+                                    "checking current token {} against next col token {:?}",
+                                    t, next_col.col_token
+                                );
                                 if Some(*t) == next_col.col_token {
                                     next_col.add(state.advance());
                                 }
@@ -283,6 +286,17 @@ impl<'i> Parser<'i> {
                 s += 1;
             }
             dbg!(&chart);
+        }
+
+        // now we look for any states in the final column that match the start rule
+        // and have consumed the entire input string
+        for final_state in &chart.columns.last().unwrap().states {
+            if final_state.rule.matches == self.grammar.start
+                && final_state.start_col == 0
+                && final_state.finished()
+            {
+                println!("found final state {:?}", final_state);
+            }
         }
         chart
     }
@@ -313,6 +327,23 @@ mod test {
         )];
         let parser = Parser::from_rules(rules, Nonterminal("S"));
         let result = parser.run(&vec!["a", "b", "c"]);
+
+        println!("{:?}", result);
+        todo!()
+    }
+
+    #[test]
+    fn test_basic_example_2() {
+        // S -> A A
+        // A -> a B
+        // B -> b
+        let rules = vec![
+            Rule::new(Nonterminal("S"), vec![Nonterminal("A"), Nonterminal("A")]),
+            Rule::new(Nonterminal("A"), vec![Terminal("a"), Nonterminal("B")]),
+            Rule::new(Nonterminal("B"), vec![Terminal("b")]),
+        ];
+        let parser = Parser::from_rules(rules, Nonterminal("S"));
+        let result = parser.run(&vec!["a", "b", "a", "b"]);
 
         println!("{:?}", result);
         todo!()
