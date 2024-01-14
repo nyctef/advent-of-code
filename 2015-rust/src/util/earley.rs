@@ -296,8 +296,8 @@ impl<'i> Parser<'i> {
             }
         }
 
-        chart.retain_finished();
-        // dbg!(&chart);
+        // chart.retain_finished();
+        dbg!(&chart);
 
         // now we look for any states in the final column that match the start rule
         // and have consumed the entire input string
@@ -347,7 +347,13 @@ impl<'i> Parser<'i> {
         // expansion)
         //
         // Once we've matched the second state at some range `x`->`last`, we then look for
-        // a first state matching `first`->`x-1`
+        // a first state matching `first`->`x`
+        //
+        // (note that these ranges overlap - since col 0 represents the stage before
+        // parsing the first character, and then successive cols `n` represent the state
+        // after parsing the nth character but before parsing the `n+1`th character.
+        // This means a state that starts at eg col 100 hasn't actually accepted any
+        // characters in col 100 - it only accepts its first character in col 101 or later)
         //
         // this first state might not exist, in which case we have to backtrack and
         // consider an alternative second state.
@@ -359,7 +365,7 @@ impl<'i> Parser<'i> {
 
         // state: current end position (exclusive / plus one), states matched
         let mut queue: VecDeque<(usize, Vec<&'c State<'r, 'i2>>)> = VecDeque::new();
-        queue.push_front((last + 1, vec![]));
+        queue.push_front((last, vec![]));
 
         while let Some((end, mut matched)) = queue.pop_front() {
             if end <= first || matched.len() >= terms.len() {
@@ -374,7 +380,7 @@ impl<'i> Parser<'i> {
             }
 
             let next_term_to_match = &terms[terms.len() - 1 - matched.len()];
-            let col = &chart.columns[end - 1];
+            let col = &chart.columns[end];
 
             for state in &col.states {
                 if state.finished() && state.name() == next_term_to_match {
