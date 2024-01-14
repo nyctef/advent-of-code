@@ -1,10 +1,11 @@
 use derive_more::Constructor;
 use itertools::Itertools;
-use std::{fmt::Display, iter};
+use std::{collections::VecDeque, fmt::Display, iter};
 
 // TODO: make this generic in the token type rather than assuming `&'input str` ?
 
 // largely following https://rahul.gopinath.org/post/2021/02/06/earley-parsing/
+// also using some of the ideas from https://loup-vaillant.fr/tutorials/earley-parsing/parser
 
 #[derive(Eq, PartialEq, Hash, Clone)]
 pub enum Term<'i> {
@@ -306,9 +307,83 @@ impl<'i> Parser<'i> {
                 && final_state.finished()
             {
                 println!("found final state {:?}", final_state);
+
+                let first_layer = Self::try_match_sequence(
+                    &chart,
+                    &final_state.rule.expansion,
+                    final_state.start_col,
+                    final_state.end_col.unwrap(),
+                );
+                dbg!(&first_layer);
             }
         }
         chart
+    }
+
+    fn try_match_sequence<'c, 'r, 'i2>(
+        chart: &'c Chart<'r, 'i2>,
+        terms: &Vec<Term>,
+        first: usize,
+        last: usize,
+    ) -> Vec<Vec<&'c State<'r, 'i2>>> {
+        let mut result = vec![];
+
+        // result.push(vec![chart.columns.first().unwrap().states.first().unwrap()]);
+
+        // we have a sequence of terms `terms` (the expansion of some parent rule)
+        // which we're told has at least one match beginning at `first` and ending
+        // at `last`.
+        // Given the grammar may be ambiguous, there could be more than one match,
+        // and we want to return them all.
+        //
+        // If `terms` just contained a single item, there should be one unique state
+        // in charts[last] with a start column of `first` (since we dedupe those states
+        // in the initial pass).
+        //
+        // If `terms` contains two items, then the first step is to find states matching
+        // the second item ending at last with some start column >= `first`.
+        //
+        // (for now we assume there are no nullable rules - ie no rules with an empty
+        // expansion)
+        //
+        // Once we've matched the second state at some range `x`->`last`, we then look for
+        // a first state matching `first`->`x-1`
+        //
+        // this first state might not exist, in which case we have to backtrack and
+        // consider an alternative second state.
+        //
+        // As we introduce more entries in `terms`, this generalizes to a graph search
+        // (eg DFS) where we start at `last` with no terms matched and want to end at
+        // `first` with everything in `terms` consumed.
+        //
+
+        // state: current end position (exclusive / plus one), states matched
+        let mut queue: VecDeque<(usize, Vec<&'c State<'r, 'i2>>)> = VecDeque::new();
+        queue.push_front((last + 1, vec![]));
+
+        while let Some((end, matched)) = queue.pop_front() {
+            if end <= first || matched.len() >= terms.len() {
+                // have we actually found a match?
+                if end == first && matched.len() == terms.len() {
+                    result.push(matched);
+                }
+                // either way we don't want to search any deeper
+                continue;
+            }
+
+            let next_term_to_match = &terms[terms.len() - 1 - matched.len()];
+            let col = &chart.columns[end - 1];
+
+            for state in &col.states {
+                if state.finished() && state.name() == next_term_to_match {
+                    let mut next_matched = matched.clone();
+                    next_matched.push(&state);
+                    queue.push_front((state.start_col, next_matched));
+                }
+            }
+        }
+
+        result
     }
 }
 
