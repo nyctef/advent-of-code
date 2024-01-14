@@ -171,6 +171,14 @@ impl<'r, 'i> Chart<'r, 'i> {
                 .collect_vec(),
         }
     }
+
+    /// Once we've finished recognising rules, we can remove any unfinished
+    /// states since they won't be useful for constructing a parse tree.
+    fn retain_finished(&mut self) {
+        for col in &mut self.columns {
+            col.states.retain(|s| s.finished());
+        }
+    }
 }
 
 #[derive(Debug, Constructor)]
@@ -286,6 +294,9 @@ impl<'i> Parser<'i> {
                 s += 1;
             }
         }
+
+        chart.retain_finished();
+        // dbg!(&chart);
 
         // now we look for any states in the final column that match the start rule
         // and have consumed the entire input string
