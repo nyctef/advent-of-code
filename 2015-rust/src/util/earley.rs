@@ -296,8 +296,8 @@ impl<'i> Parser<'i> {
             }
         }
 
-        // chart.retain_finished();
-        dbg!(&chart);
+        chart.retain_finished();
+        // dbg!(&chart);
 
         // now we look for any states in the final column that match the start rule
         // and have consumed the entire input string
