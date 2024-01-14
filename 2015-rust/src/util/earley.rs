@@ -236,7 +236,7 @@ impl<'i> Parser<'i> {
             let mut s = 0;
             while s < col.states.len() {
                 let state = col.states[s].clone();
-                println!("testing state {state:?}");
+                // println!("testing state {state:?}");
                 if state.finished() {
                     // if we've finished matching a rule <X> => ...| then go back and find all the
                     // parent rules that were trying to match an <X> and advance those by one.
@@ -260,7 +260,7 @@ impl<'i> Parser<'i> {
                         Term::Nonterminal(_) => {
                             // one of our states has arrived at a nonterminal `to_predict`, so add its expansions
                             // to the current column.
-                            println!("adding expansions for {sym:?} to col");
+                            // println!("adding expansions for {sym:?} to col");
                             for alt in (&self.grammar).rules_for(sym) {
                                 col.add(State::new(&alt, col.col_index))
                             }
@@ -272,10 +272,10 @@ impl<'i> Parser<'i> {
                             if let Some(ref mut next_col) = next_col {
                                 // if the next column's token matches a terminal we're expecting, then we can
                                 // advance a state and move it to the next column
-                                println!(
-                                    "checking current token {} against next col token {:?}",
-                                    t, next_col.col_token
-                                );
+                                // println!(
+                                //     "checking current token {} against next col token {:?}",
+                                //     t, next_col.col_token
+                                // );
                                 if Some(*t) == next_col.col_token {
                                     next_col.add(state.advance());
                                 }
@@ -285,7 +285,6 @@ impl<'i> Parser<'i> {
                 }
                 s += 1;
             }
-            dbg!(&chart);
         }
 
         // now we look for any states in the final column that match the start rule
