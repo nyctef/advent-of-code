@@ -361,10 +361,12 @@ impl<'i> Parser<'i> {
         let mut queue: VecDeque<(usize, Vec<&'c State<'r, 'i2>>)> = VecDeque::new();
         queue.push_front((last + 1, vec![]));
 
-        while let Some((end, matched)) = queue.pop_front() {
+        while let Some((end, mut matched)) = queue.pop_front() {
             if end <= first || matched.len() >= terms.len() {
                 // have we actually found a match?
                 if end == first && matched.len() == terms.len() {
+                    // we've been searching from the back, so make the result the right way round
+                    matched.reverse();
                     result.push(matched);
                 }
                 // either way we don't want to search any deeper
