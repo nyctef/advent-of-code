@@ -385,6 +385,8 @@ impl<'i> Parser<'i> {
             }
         }
 
+        assert!(result.len() >= 1, "there should be at least one path that matches in order for the original rule to match");
+
         result
     }
 }
