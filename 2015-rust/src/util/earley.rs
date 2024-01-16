@@ -363,7 +363,7 @@ impl<'i> Parser<'i> {
         // `first` with everything in `terms` consumed.
         //
 
-        // state: current end position (exclusive / plus one), states matched
+        // state: current end position, num states matched
         let mut queue: VecDeque<(usize, Vec<&'c State<'r, 'i2>>)> = VecDeque::new();
         queue.push_front((last, vec![]));
 
