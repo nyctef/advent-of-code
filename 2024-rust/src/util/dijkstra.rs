@@ -26,18 +26,27 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
         }
     }
 
-    pub fn run_single(mut self, 
+    pub fn run_single(
+        mut self,
         get_next_candidates: impl FnMut(T) -> Vec<T>,
         is_target_state: impl Fn(&T) -> bool,
-        ) -> T {
-
+    ) -> T {
         self.run(get_next_candidates, &is_target_state);
 
-        dbg!(&self.bests.values().filter(|b| is_target_state(b)).collect_vec());
+        dbg!(&self
+            .bests
+            .values()
+            .filter(|b| is_target_state(b))
+            .collect_vec());
 
         // we may have queued up several candidates for the final state
         // before processing one and quitting the loop, so now we find the smallest here:
-        let result = self.bests.values().filter(|b| is_target_state(b)).min().unwrap_or_else(|| panic!("expected a result"));
+        let result = self
+            .bests
+            .values()
+            .filter(|b| is_target_state(b))
+            .min()
+            .unwrap_or_else(|| panic!("expected a result"));
 
         // TODO: how do we remove this clone?
         result.clone()

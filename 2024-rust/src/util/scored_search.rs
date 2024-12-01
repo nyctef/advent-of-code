@@ -88,7 +88,6 @@ impl<
             let candidates = get_next_candidates(current_state.clone());
             if candidates.is_empty() {
                 println!("got no candidates for state {current_state:?}");
-
             }
             for c in candidates {
                 /*
