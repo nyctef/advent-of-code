@@ -15,7 +15,7 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-    let nums = input.trim().lines().map(|l| all_numbers(l)).collect_vec();
+    let nums = input.trim().lines().map(all_numbers).collect_vec();
     let mut list_1 = nums.iter().map(|n| n[0]).collect_vec();
     list_1.sort();
     let mut list_2 = nums.iter().map(|n| n[1]).collect_vec();
