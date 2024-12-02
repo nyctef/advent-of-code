@@ -16,29 +16,41 @@ pub fn main() -> Result<()> {
 fn solve_for(input: &str) -> Result<String> {
     let reports = input.trim().lines().map(all_numbers_i64).collect_vec();
     let mut safe_report_count = 0;
-    for report in reports {
-        let all_diffs_small = report
-            .windows(2)
-            .map(|w| (w[1] - w[0]).abs() <= 3)
-            .all(|b| b);
-        let all_diffs_ascending = report.windows(2).map(|w| w[0] < w[1]).all(|b| b);
-        let all_diffs_descending = report.windows(2).map(|w| w[0] > w[1]).all(|b| b);
-
-        dbg!(
-            &report,
-            &all_diffs_small,
-            &all_diffs_ascending,
-            &all_diffs_descending
-        );
-
-        if all_diffs_small && (all_diffs_ascending || all_diffs_descending) {
+    let mut safe_damped_report_count = 0;
+    'report: for report in reports {
+        if is_safe(&report) {
             safe_report_count += 1;
+            continue;
+        }
+
+        // otherwise try removing one element and see if that makes it safe
+        for removed_elem in 0..report.len() {
+            let prefix = report.iter().copied().take(removed_elem);
+            // take(999) will limit itself to however many elements are remaining rather than panic
+            let suffix = report.iter().copied().skip(removed_elem + 1).take(999);
+            let new_report = prefix.chain(suffix).collect_vec();
+            dbg!(&report, &removed_elem, &new_report);
+            if is_safe(&new_report) {
+                safe_damped_report_count += 1;
+                continue 'report;
+            }
         }
     }
 
     let part1 = safe_report_count;
-    let part2 = "";
+    let part2 = safe_report_count + safe_damped_report_count;
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+}
+
+fn is_safe(report: &[i64]) -> bool {
+    let all_diffs_small = report
+        .windows(2)
+        .map(|w| (w[1] - w[0]).abs() <= 3)
+        .all(|b| b);
+    let all_diffs_ascending = report.windows(2).map(|w| w[0] < w[1]).all(|b| b);
+    let all_diffs_descending = report.windows(2).map(|w| w[0] > w[1]).all(|b| b);
+
+    all_diffs_small && (all_diffs_ascending || all_diffs_descending)
 }
 
 #[test]
@@ -53,6 +65,6 @@ fn test_example1() -> Result<()> {
 "###;
     let result = solve_for(input)?;
 
-    assert_eq!("Part 1: 2 | Part 2: ", result);
+    assert_eq!("Part 1: 2 | Part 2: 4", result);
     Ok(())
 }
