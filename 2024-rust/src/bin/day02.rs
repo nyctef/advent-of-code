@@ -29,7 +29,7 @@ fn solve_for(input: &str) -> Result<String> {
             // take(999) will limit itself to however many elements are remaining rather than panic
             let suffix = report.iter().copied().skip(removed_elem + 1).take(999);
             let new_report = prefix.chain(suffix).collect_vec();
-            dbg!(&report, &removed_elem, &new_report);
+
             if is_safe(&new_report) {
                 safe_damped_report_count += 1;
                 continue 'report;
@@ -43,12 +43,10 @@ fn solve_for(input: &str) -> Result<String> {
 }
 
 fn is_safe(report: &[i64]) -> bool {
-    let all_diffs_small = report
-        .windows(2)
-        .map(|w| (w[1] - w[0]).abs() <= 3)
-        .all(|b| b);
-    let all_diffs_ascending = report.windows(2).map(|w| w[0] < w[1]).all(|b| b);
-    let all_diffs_descending = report.windows(2).map(|w| w[0] > w[1]).all(|b| b);
+    let diffs = report.windows(2).map(|w| w[1] - w[0]).collect_vec();
+    let all_diffs_small = diffs.iter().all(|&d| d.abs() <= 3);
+    let all_diffs_ascending = diffs.iter().all(|&d| d > 0);
+    let all_diffs_descending = diffs.iter().all(|&d| d < 0);
 
     all_diffs_small && (all_diffs_ascending || all_diffs_descending)
 }
