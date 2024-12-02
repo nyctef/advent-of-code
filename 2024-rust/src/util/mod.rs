@@ -1,6 +1,5 @@
 mod aoc_util;
 mod dijkstra;
-pub mod earley;
 mod grid;
 mod scored_search;
 mod scraping;
