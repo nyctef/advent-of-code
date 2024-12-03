@@ -7,19 +7,19 @@ pub fn main() -> Result<()> {
 
     let input = get_input(2024, __DAY__)?;
 
-    let result = solve_for(&input)?;
+    let (part1, part2) = solve_for(&input)?;
 
-    println!("{}", result);
+    println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<String> {
+fn solve_for(input: &str) -> Result<(u64, u64)> {
     // ...
 
     todo!();
-    let part1 = "";
-    let part2 = "";
-    Ok(format!("Part 1: {part1} | Part 2: {part2}"))
+    let part1 = 0;
+    let part2 = 0;
+    Ok((part1, part2))
 }
 
 #[test]
@@ -27,8 +27,9 @@ fn test_example1() -> Result<()> {
     let input = r###"
     
 "###;
-    let result = solve_for(input)?;
+    let (part1, part2) = solve_for(input)?;
 
-    assert_eq!("Part 1: | Part 2: ", result);
+    assert_eq!(part1, 0);
+    assert_eq!(part2, 0);
     Ok(())
 }
