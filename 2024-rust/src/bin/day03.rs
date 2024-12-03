@@ -1,6 +1,5 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 use regex::Regex;
 
 pub fn main() -> Result<()> {
