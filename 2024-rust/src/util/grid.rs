@@ -100,6 +100,14 @@ impl CharGrid {
         self.index_rc(index.row, index.col)
     }
 
+    pub fn index_opt(&self, index: CharGridIndexRC) -> Option<char> {
+        if !self.is_in_bounds(index) {
+            None
+        } else {
+            Some(self.index(index))
+        }
+    }
+
     pub fn iter_positions_rc(&self) -> impl Iterator<Item = CharGridIndexRC> + '_ {
         self.enumerate_chars_rc().map(|(pos, _)| pos)
     }
@@ -423,6 +431,15 @@ impl RCDirection {
             Self::left() + Self::down(),
             Self::down(),
             Self::down() + Self::right(),
+        ]
+    }
+
+    pub fn intercard() -> Vec<RCDirection> {
+        vec![
+            Self::right() + Self::down(),
+            Self::down() + Self::left(),
+            Self::left() + Self::up(),
+            Self::up() + Self::right(),
         ]
     }
 
