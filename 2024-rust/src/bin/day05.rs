@@ -6,7 +6,6 @@ use std::{
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -31,7 +30,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             acc
         });
 
-    let mut updates = updates.lines().map(all_numbers).collect_vec();
+    let updates = updates.lines().map(all_numbers).collect_vec();
 
     let empty = Vec::<u32>::new();
     let mut ordered_updates = 0;
@@ -53,7 +52,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         }
         // all entries validated
 
-        if (is_ordered_already) {
+        if is_ordered_already {
             // len/2 produces the correct index even though integer division
             // gets truncated downwards, because the len is 1-based but the index
             // we want is 0-based
@@ -61,9 +60,9 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             ordered_updates += update[update.len() / 2];
         } else {
             update.sort_by(|a, b| {
-                if prerequisites_of.get(a).unwrap_or(&empty).contains(&b) {
+                if prerequisites_of.get(a).unwrap_or(&empty).contains(b) {
                     Ordering::Less
-                } else if prerequisites_of.get(&b).unwrap_or(&empty).contains(&a) {
+                } else if prerequisites_of.get(b).unwrap_or(&empty).contains(a) {
                     Ordering::Greater
                 } else {
                     Ordering::Equal
