@@ -33,41 +33,31 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     let updates = updates.lines().map(all_numbers).collect_vec();
 
     let empty = Vec::<u32>::new();
+    let compare = |a: u32, b: u32| {
+        if prerequisites_of.get(&a).unwrap_or(&empty).contains(&b) {
+            Ordering::Greater
+        } else if prerequisites_of.get(&b).unwrap_or(&empty).contains(&a) {
+            Ordering::Less
+        } else {
+            Ordering::Equal
+        }
+    };
+
     let mut ordered_updates = 0;
     let mut unordered_updates = 0;
     for mut update in updates {
-        let mut seen = HashSet::new();
-        let mut is_ordered_already = true;
-        for entry in &update {
-            if seen
-                .iter()
-                .any(|s| prerequisites_of.get(s).unwrap_or(&empty).contains(entry))
-            {
-                // we broke a rule (one of the previously-seen items has this entry as a prerequisite, so they're the wrong way round)
-                is_ordered_already = false;
-                break;
-            }
+        // the update only has a well-defined middle point if the length is odd
+        // we assume this to be true since the puzzle wouldn't work otherwise
+        //
+        // len/2 produces the correct index even though integer division
+        // gets truncated downwards, because the len is 1-based but the index
+        // we want is 0-based
+        assert!(&update.len() % 2 == 1);
 
-            seen.insert(*entry);
-        }
-        // all entries validated
-
-        if is_ordered_already {
-            // len/2 produces the correct index even though integer division
-            // gets truncated downwards, because the len is 1-based but the index
-            // we want is 0-based
-            assert!(&update.len() % 2 == 1);
+        if update.is_sorted_by(|a, b| compare(*a, *b) != Ordering::Greater) {
             ordered_updates += update[update.len() / 2];
         } else {
-            update.sort_by(|a, b| {
-                if prerequisites_of.get(a).unwrap_or(&empty).contains(b) {
-                    Ordering::Less
-                } else if prerequisites_of.get(b).unwrap_or(&empty).contains(a) {
-                    Ordering::Greater
-                } else {
-                    Ordering::Equal
-                }
-            });
+            update.sort_by(|a, b| compare(*a, *b));
             unordered_updates += update[update.len() / 2];
         }
     }
