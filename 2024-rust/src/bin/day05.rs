@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    cmp::Ordering,
+    collections::{HashMap, HashSet},
+};
 
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
@@ -28,33 +31,57 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             acc
         });
 
-    let updates = updates.lines().map(all_numbers).collect_vec();
+    let mut updates = updates.lines().map(all_numbers).collect_vec();
 
+    let empty = Vec::<u32>::new();
     let mut ordered_updates = 0;
-    'update: for update in updates {
+    let mut unordered_updates = 0;
+    'update: for mut update in updates {
         let mut seen = HashSet::new();
+        let mut is_ordered_already = true;
         for entry in &update {
-            if seen.iter().any(|s| {
-                prerequisites_of
-                    .get(s)
-                    .unwrap_or(&Vec::<u32>::new())
-                    .contains(entry)
-            }) {
+            if seen
+                .iter()
+                .any(|s| prerequisites_of.get(s).unwrap_or(&empty).contains(entry))
+            {
                 // we broke a rule (one of the previously-seen items has this entry as a prerequisite, so they're the wrong way round)
-                dbg!(&update, entry, seen);
-                continue 'update;
+                is_ordered_already = false;
+                break;
             }
 
             seen.insert(*entry);
         }
         // all entries validated
-        assert!(&update.len() % 2 == 1);
 
-        ordered_updates += dbg!(update[(update.len() / 2)]);
+        if (is_ordered_already) {
+            // len/2 produces the correct index even though integer division
+            // gets truncated downwards, because the len is 1-based but the index
+            // we want is 0-based
+            assert!(&update.len() % 2 == 1);
+            ordered_updates += update[update.len() / 2];
+        } else {
+            update.sort_by(|a, b| {
+                if prerequisites_of.get(a).unwrap_or(&empty).contains(&b) {
+                    Ordering::Less
+                } else if prerequisites_of.get(&b).unwrap_or(&empty).contains(&a) {
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
+                }
+            });
+            unordered_updates += update[update.len() / 2];
+        }
     }
 
-    let part2 = 0;
-    Ok((ordered_updates.into(), part2))
+    // println!("digraph {{");
+    // for (after, before) in prerequisites_of.iter() {
+    //     for b in before.iter() {
+    //         println!("{} -> {}", after, b);
+    //     }
+    // }
+    // println!("}}");
+
+    Ok((ordered_updates.into(), unordered_updates.into()))
 }
 
 #[test]
@@ -92,6 +119,6 @@ fn test_example1() -> Result<()> {
     let (part1, part2) = solve_for(input)?;
 
     assert_eq!(part1, 143);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 123);
     Ok(())
 }
