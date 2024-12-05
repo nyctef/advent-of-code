@@ -35,7 +35,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     let empty = Vec::<u32>::new();
     let mut ordered_updates = 0;
     let mut unordered_updates = 0;
-    'update: for mut update in updates {
+    for mut update in updates {
         let mut seen = HashSet::new();
         let mut is_ordered_already = true;
         for entry in &update {
