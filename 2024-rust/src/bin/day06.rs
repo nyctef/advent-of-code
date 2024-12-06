@@ -46,7 +46,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     }
 
     let mut obstacle_placements = HashSet::new();
-    for possible_obstacle in grid.iter_positions_rc() {
+    for &possible_obstacle in guard_visited_positions.iter() {
         if does_guard_loop(&grid, possible_obstacle) && possible_obstacle != guard_original_pos {
             obstacle_placements.insert(possible_obstacle);
         }
