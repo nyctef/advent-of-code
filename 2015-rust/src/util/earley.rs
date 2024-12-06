@@ -314,7 +314,24 @@ impl<'i> Parser<'i> {
                     final_state.start_col,
                     final_state.end_col.unwrap(),
                 );
-                dbg!(&first_layer);
+
+                let initial_candidate = &first_layer[0];
+                let second_layer = initial_candidate
+                    .iter()
+                    .map(|ic| {
+                        Self::try_match_sequence(
+                            &chart,
+                            &ic.rule.expansion,
+                            ic.start_col,
+                            ic.end_col.unwrap(),
+                        )
+                    })
+                    .collect_vec();
+                dbg!(initial_candidate, second_layer);
+
+                // TODO: BFS through the layers - as soon as we find a full result then we're done?
+
+                // break;
             }
         }
         chart
@@ -391,7 +408,7 @@ impl<'i> Parser<'i> {
             }
         }
 
-        assert!(result.len() >= 1, "there should be at least one path that matches in order for the original rule to match");
+        assert!(result.len() >= 1, "[ {:?} {} {} ] there should be at least one path that matches in order for the original rule to match", terms, first, last);
 
         result
     }
