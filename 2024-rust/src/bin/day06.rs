@@ -1,7 +1,7 @@
-use std::collections::HashSet;
-
 use aoc_2024_rust::util::*;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{eyre, Result};
+use itertools::Itertools;
+use std::collections::HashSet;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -16,15 +16,11 @@ pub fn main() -> Result<()> {
 
 fn solve_for(input: &str) -> Result<(u64, u64)> {
     let grid = CharGrid::from_string(input);
-    // TODO: why doesn't this compile?
-    // let (guard_pos, _) = grid.enumerate_chars_rc().filter(|(pos, c): &(CharGridIndexRC, char)| *c == '^').exactly_one()?;
-    let mut guard_original_pos = CharGridIndexRC::zero();
-    for (pos, char) in grid.enumerate_chars_rc() {
-        if char == '^' {
-            guard_original_pos = pos;
-            break;
-        }
-    }
+    let (guard_original_pos, _) = grid
+        .enumerate_chars_rc()
+        .filter(|&(_, c)| c == '^')
+        .exactly_one()
+        .map_err(|_| eyre!("can't find guard position"))?;
 
     let mut guard_pos = guard_original_pos;
     let mut guard_direction = RCDirection::up();
@@ -58,13 +54,11 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 }
 
 fn does_guard_loop(grid: &CharGrid, extra_obstacle: CharGridIndexRC) -> bool {
-    let mut guard_original_pos = CharGridIndexRC::zero();
-    for (pos, char) in grid.enumerate_chars_rc() {
-        if char == '^' {
-            guard_original_pos = pos;
-            break;
-        }
-    }
+    let (guard_original_pos, _) = grid
+        .enumerate_chars_rc()
+        .filter(|&(_, c)| c == '^')
+        .exactly_one()
+        .unwrap();
 
     let mut guard_pos = guard_original_pos;
     let mut guard_direction = RCDirection::up();
