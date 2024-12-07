@@ -57,14 +57,13 @@ fn solve_for(input: &str) -> Result<String> {
     let target = tokenize(target);
 
     let parser = Parser::from_rules(rules, Term::Nonterminal("e"));
-    parser.run(&target);
+    let part2 = parser.run(&target);
 
     // println!("r {:?} t {:?}", replacements, target);
 
     // solve(&replacements, target);
 
     let part1 = "";
-    let part2 = "";
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
@@ -112,7 +111,7 @@ O => HH
 HOH
 ";
 
-    assert_eq!(solve_for(input).unwrap(), "Part 1: | Part 2: 3");
+    assert_eq!(solve_for(input).unwrap(), "Part 1:  | Part 2: 3");
 }
 
 #[test]
@@ -127,5 +126,5 @@ O => HH
 HOHOHO
 ";
 
-    assert_eq!(solve_for(input).unwrap(), "Part 1: | Part 2: 6");
+    assert_eq!(solve_for(input).unwrap(), "Part 1:  | Part 2: 6");
 }

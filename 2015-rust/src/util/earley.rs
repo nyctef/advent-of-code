@@ -62,10 +62,18 @@ impl std::fmt::Debug for State<'_, '_> {
         f.write_fmt(format_args!(
             "{{ {:?} => {} |{} ({}, {}) }}",
             self.rule.matches,
-            &self.rule.expansion[..self.dot].iter().map(|e| format!("{:?}", e)).join(" "),
-            &self.rule.expansion[self.dot..].iter().map(|e| format!("{:?}", e)).join(" "),
+            &self.rule.expansion[..self.dot]
+                .iter()
+                .map(|e| format!("{:?}", e))
+                .join(" "),
+            &self.rule.expansion[self.dot..]
+                .iter()
+                .map(|e| format!("{:?}", e))
+                .join(" "),
             self.start_col,
-            self.end_col.map(|e| format!("{}", e)).unwrap_or("?".to_owned())
+            self.end_col
+                .map(|e| format!("{}", e))
+                .unwrap_or("?".to_owned())
         ))
     }
 }
@@ -210,7 +218,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    pub fn run(&self, input_tokens: &[&'i str]) -> Chart {
+    pub fn run(&self, input_tokens: &[&'i str]) -> usize {
         let mut chart = Chart::from_tokens(input_tokens);
 
         // slightly nonstandard: like in the gopinath.org article, we allow multiple
@@ -308,12 +316,8 @@ impl<'i> Parser<'i> {
                 && final_state.start_col == 0
                 && final_state.finished()
             {
-                println!("found final state {:?}", final_state);
-                queue.push_front((1, vec![final_state]));
-
-                // TODO: BFS through the layers - as soon as we find a full result then we're done?
-
-                // break;
+                // println!("found final state {:?}", final_state);
+                queue.push_front((0, vec![final_state]));
             }
         }
 
@@ -325,33 +329,79 @@ impl<'i> Parser<'i> {
                     .all(|e| matches!(e, Term::Terminal(_)))
             }) {
                 // this is a complete state
-                panic!("d{} {:?}", depth, to_expand);
+                println!("complete state: {} {:?}", depth, to_expand);
+                return depth;
             }
 
-            let next_layer_candidates = to_expand.iter().map(|x| {
-                Self::try_match_sequence(&chart, &x.rule.expansion, x.start_col, x.end_col.unwrap())
-            });
+            // eprintln!("next step: {} {:?}", depth, to_expand);
 
+            let next_layer_candidates = to_expand
+                .iter()
+                .map(|x| {
+                    Self::try_match_sequence(
+                        &chart,
+                        &x.rule.expansion,
+                        x.start_col,
+                        x.end_col.unwrap(),
+                    )
+                })
+                .collect_vec();
+
+            // to_expand is a Vec<State>, representing a set of complete rules that should
+            // span the input string (but haven't necessarily been completely resolved yet).
+            // for each of those states, we recurse into try_match_sequence to resolve them
+            // further.
+            //
+            // next_layer_candidates is a Vec<Vec<Vec<State>>> ... :/
+            //
             // given a to_expand of something like [A B] then
             // `next_layer_candidates` looks something like
-            // [ [A expansion, A expansion ], [ B expansion, B expansion] ]
-            // and the actual candidates for the next layer are each possible
-            // combination of the A expansion and the B expansion
-            for terms_to_expand in next_layer_candidates {
-                eprintln!("to expand: {:?}", &terms_to_expand);
-                let possible_expansions = terms_to_expand
-                    .into_iter()
-                    .multi_cartesian_product()
-                    .collect_vec();
+            // [ [ [A expansion], [A expansion] ], [ [B expansion], [B expansion] ] ]
+            //
+            // the outermost vec maps to each of the input states in to_expand
+            // the nextmost vec is a range of possible alternatives
+            // the innermost vec is an expansion of that single input state
+            //
+            // so the thing we want to push back into the queue needs to have one item
+            // from each element of the outermost vec
+            // it needs to choose one of the possibilities from the middle vec
+            // and it needs to flatten out the contents of the innermost vec
 
-                for expansion in possible_expansions {
-                    eprintln!(" d: {} exp {:?} ", depth, expansion);
-                    queue.push_back((depth + 1, expansion));
+            assert!(
+                next_layer_candidates.len() > 0
+                    && next_layer_candidates.iter().all(|x| x.len() > 0)
+                    && next_layer_candidates
+                        .iter()
+                        .all(|x| x.iter().all(|y| y.len() > 0))
+            );
+
+            let expansions_per_element = next_layer_candidates.iter().map(|x| x.len()).collect_vec();
+            let total_possible_expansions = expansions_per_element.iter().fold(1_usize, |acc, n| acc * n);
+
+            // dbg!(&next_layer_candidates, total_possible_expansions);
+
+            for mut expansion_num in 0..total_possible_expansions {
+                // for each element we can choose one of expansions_per_element[element] choices
+                // and we need to try them all. 
+                let mut choices = vec![0; to_expand.len()];
+                for i in 0..to_expand.len() {
+                    choices[i] = expansion_num % expansions_per_element[i];
+                    expansion_num /= expansions_per_element[i];
                 }
+
+                let mut expansion:Vec<&State> = vec![];
+                for i in 0..to_expand.len() {
+                    expansion.extend(&next_layer_candidates[i][choices[i]]);
+                }
+
+                // increase depth by the number of states we've expanded in this pass
+                // TODO: why does this overcount for example 2?
+                queue.push_back((depth + choices.len(), expansion));
+
             }
         }
 
-        chart
+        usize::max_value()
     }
 
     fn try_match_sequence<'c, 'r, 'i2>(
@@ -427,10 +477,10 @@ impl<'i> Parser<'i> {
                     }
                 }
                 Term::Terminal(token) => {
+                    // TODO: this probably isn't correct yet
                     if col.col_token == Some(*token) {
                         for state in &col.states {
-                            if state.finished() && &state.rule.expansion[0] == next_term_to_match
-                            {
+                            if state.finished() && &state.rule.expansion[0] == next_term_to_match {
                                 let mut next_matched = matched.clone();
                                 next_matched.push(&state);
                                 queue.push_front((end - 1, next_matched));
