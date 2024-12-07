@@ -28,10 +28,9 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         .map(|(target, values)| (target.parse::<u64>().unwrap(), all_numbers_u64(values)))
         .collect_vec();
 
-    // dbg!(&calibrations);
     let part_1_choices = vec![Operator::Add, Operator::Multiply];
-
     let calibration_result = calibrate(&calibrations, part_1_choices);
+
     let part_2_choices = vec![Operator::Add, Operator::Multiply, Operator::Concatenate];
     let calibration_result_2 = calibrate(&calibrations, part_2_choices);
 
@@ -41,18 +40,18 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 fn calibrate(calibrations: &Vec<(u64, Vec<u64>)>, available_choices: Vec<Operator>) -> u64 {
     let mut calibration_result = 0;
     'next_calibration: for (target, values) in calibrations {
-        // eprintln!("{} {:?}", target, values);
-        // choose a set of + and * operations to fit between the gaps of `values`
+        // choose a set of operations to fit between the gaps of `values`
+        //
         // from docs in itertools::permutations: apparently this is how you do
         // permutations with replacement
         let choices = repeat_n(available_choices.iter(), values.len() - 1)
             .multi_cartesian_product()
             .collect_vec();
-        // dbg!(&choices);
 
         for choice in choices.iter() {
             let mut total = values[0];
             let mut i = 1;
+
             for operator in choice {
                 match operator {
                     Operator::Add => {
@@ -75,15 +74,8 @@ fn calibrate(calibrations: &Vec<(u64, Vec<u64>)>, available_choices: Vec<Operato
                 i += 1;
             }
             assert!(i == values.len());
-            // eprintln!(
-            //     "trying to match target {} with values {:?} choice {:?} : got {}",
-            //     target, values, choice, total
-            // );
+
             if total == *target {
-                // eprintln!(
-                //     "found match for target {} : {:?} {:?}",
-                //     target, values, choice
-                // );
                 calibration_result += total;
                 continue 'next_calibration;
             }
