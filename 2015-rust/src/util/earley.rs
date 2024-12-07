@@ -325,6 +325,7 @@ impl<'i> Parser<'i> {
                     .all(|e| matches!(e, Term::Terminal(_)))
             }) {
                 // this is a complete state
+                panic!("d{} {:?}", depth, to_expand);
             }
 
             let next_layer_candidates = to_expand.iter().map(|x| {
@@ -336,7 +337,18 @@ impl<'i> Parser<'i> {
             // [ [A expansion, A expansion ], [ B expansion, B expansion] ]
             // and the actual candidates for the next layer are each possible
             // combination of the A expansion and the B expansion
-            for terms_to_expand in next_layer_candidate {}
+            for terms_to_expand in next_layer_candidates {
+                eprintln!("to expand: {:?}", &terms_to_expand);
+                let possible_expansions = terms_to_expand
+                    .into_iter()
+                    .multi_cartesian_product()
+                    .collect_vec();
+
+                for expansion in possible_expansions {
+                    eprintln!(" d: {} exp {:?} ", depth, expansion);
+                    queue.push_back((depth + 1, expansion));
+                }
+            }
         }
 
         chart
@@ -404,13 +416,27 @@ impl<'i> Parser<'i> {
             let next_term_to_match = &terms[terms.len() - 1 - matched.len()];
             let col = &chart.columns[end];
 
-            for state in &col.states {
-                // TODO: this also needs to handle terminals
-
-                if state.finished() && state.name() == next_term_to_match {
-                    let mut next_matched = matched.clone();
-                    next_matched.push(&state);
-                    queue.push_front((state.start_col, next_matched));
+            match next_term_to_match {
+                Term::Nonterminal(_) => {
+                    for state in &col.states {
+                        if state.finished() && state.name() == next_term_to_match {
+                            let mut next_matched = matched.clone();
+                            next_matched.push(&state);
+                            queue.push_front((state.start_col, next_matched));
+                        }
+                    }
+                }
+                Term::Terminal(token) => {
+                    if col.col_token == Some(*token) {
+                        for state in &col.states {
+                            if state.finished() && &state.rule.expansion[0] == next_term_to_match
+                            {
+                                let mut next_matched = matched.clone();
+                                next_matched.push(&state);
+                                queue.push_front((end - 1, next_matched));
+                            }
+                        }
+                    }
                 }
             }
         }
