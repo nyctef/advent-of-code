@@ -60,12 +60,12 @@ struct State<'r, 'i> {
 impl std::fmt::Debug for State<'_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(
-            "{:?} => {:?} | {:?} ({}, {:?})",
+            "{{ {:?} => {} |{} ({}, {}) }}",
             self.rule.matches,
-            &self.rule.expansion[..self.dot],
-            &self.rule.expansion[self.dot..],
+            &self.rule.expansion[..self.dot].iter().map(|e| format!("{:?}", e)).join(" "),
+            &self.rule.expansion[self.dot..].iter().map(|e| format!("{:?}", e)).join(" "),
             self.start_col,
-            self.end_col
+            self.end_col.map(|e| format!("{}", e)).unwrap_or("?".to_owned())
         ))
     }
 }
