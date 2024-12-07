@@ -299,6 +299,8 @@ impl<'i> Parser<'i> {
         chart.retain_finished();
         // dbg!(&chart);
 
+        let mut queue: VecDeque<(usize, Vec<&State<'_, '_>>)> = VecDeque::new();
+
         // now we look for any states in the final column that match the start rule
         // and have consumed the entire input string
         for final_state in &chart.columns.last().unwrap().states {
@@ -307,33 +309,36 @@ impl<'i> Parser<'i> {
                 && final_state.finished()
             {
                 println!("found final state {:?}", final_state);
-
-                let first_layer = Self::try_match_sequence(
-                    &chart,
-                    &final_state.rule.expansion,
-                    final_state.start_col,
-                    final_state.end_col.unwrap(),
-                );
-
-                let initial_candidate = &first_layer[0];
-                let second_layer = initial_candidate
-                    .iter()
-                    .map(|ic| {
-                        Self::try_match_sequence(
-                            &chart,
-                            &ic.rule.expansion,
-                            ic.start_col,
-                            ic.end_col.unwrap(),
-                        )
-                    })
-                    .collect_vec();
-                dbg!(initial_candidate, second_layer);
+                queue.push_front((1, vec![final_state]));
 
                 // TODO: BFS through the layers - as soon as we find a full result then we're done?
 
                 // break;
             }
         }
+
+        while let Some((depth, to_expand)) = queue.pop_front() {
+            if to_expand.iter().all(|x| {
+                x.rule
+                    .expansion
+                    .iter()
+                    .all(|e| matches!(e, Term::Terminal(_)))
+            }) {
+                // this is a complete state
+            }
+
+            let next_layer_candidates = to_expand.iter().map(|x| {
+                Self::try_match_sequence(&chart, &x.rule.expansion, x.start_col, x.end_col.unwrap())
+            });
+
+            // given a to_expand of something like [A B] then
+            // `next_layer_candidates` looks something like
+            // [ [A expansion, A expansion ], [ B expansion, B expansion] ]
+            // and the actual candidates for the next layer are each possible
+            // combination of the A expansion and the B expansion
+            for terms_to_expand in next_layer_candidate {}
+        }
+
         chart
     }
 
@@ -400,6 +405,8 @@ impl<'i> Parser<'i> {
             let col = &chart.columns[end];
 
             for state in &col.states {
+                // TODO: this also needs to handle terminals
+
                 if state.finished() && state.name() == next_term_to_match {
                     let mut next_matched = matched.clone();
                     next_matched.push(&state);
