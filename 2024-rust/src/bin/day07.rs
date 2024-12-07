@@ -17,7 +17,7 @@ pub fn main() -> Result<()> {
 enum Operator {
     Add,
     Multiply,
-    Concatenate
+    Concatenate,
 }
 
 fn solve_for(input: &str) -> Result<(u64, u64)> {
@@ -68,10 +68,8 @@ fn calibrate(calibrations: &Vec<(u64, Vec<u64>)>, available_choices: Vec<Operato
                         //
                         let next = values[i];
                         let zeros = next.ilog10() + 1;
-                        total *= (10_u64.pow(zeros));
+                        total *= 10_u64.pow(zeros);
                         total += next;
-
-
                     }
                 };
                 i += 1;
