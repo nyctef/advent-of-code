@@ -305,198 +305,97 @@ impl<'i> Parser<'i> {
         }
 
         chart.retain_finished();
-        // dbg!(&chart);
 
-        let mut queue: VecDeque<(usize, Vec<&State<'_, '_>>)> = VecDeque::new();
+        // now we need to extract the possible parse trees from the chart, and find the shortest
 
-        // now we look for any states in the final column that match the start rule
-        // and have consumed the entire input string
-        for final_state in &chart.columns.last().unwrap().states {
-            if final_state.rule.matches == self.grammar.start
-                && final_state.start_col == 0
-                && final_state.finished()
-            {
-                // println!("found final state {:?}", final_state);
-                queue.push_front((0, vec![final_state]));
-            }
-        }
+        // the first step is to find all the rules from the starting token that have matched the
+        // entire string
+        let final_states = &chart
+            .columns
+            .last()
+            .unwrap()
+            .states
+            .iter()
+            .filter(|s| s.rule.matches == self.grammar.start && s.finished() && s.start_col == 0)
+            .collect_vec();
 
-        while let Some((depth, to_expand)) = queue.pop_front() {
-            if to_expand.iter().all(|x| {
-                x.rule
-                    .expansion
-                    .iter()
-                    .all(|e| matches!(e, Term::Terminal(_)))
-            }) {
-                // this is a complete state
-                println!("complete state: {} {:?}", depth, to_expand);
-                return depth;
-            }
-
-            // eprintln!("next step: {} {:?}", depth, to_expand);
-
-            let next_layer_candidates = to_expand
-                .iter()
-                .map(|x| {
-                    Self::try_match_sequence(
-                        &chart,
-                        &x.rule.expansion,
-                        x.start_col,
-                        x.end_col.unwrap(),
-                    )
-                })
-                .collect_vec();
-
-            // to_expand is a Vec<State>, representing a set of complete rules that should
-            // span the input string (but haven't necessarily been completely resolved yet).
-            // for each of those states, we recurse into try_match_sequence to resolve them
-            // further.
-            //
-            // next_layer_candidates is a Vec<Vec<Vec<State>>> ... :/
-            //
-            // given a to_expand of something like [A B] then
-            // `next_layer_candidates` looks something like
-            // [ [ [A expansion], [A expansion] ], [ [B expansion], [B expansion] ] ]
-            //
-            // the outermost vec maps to each of the input states in to_expand
-            // the nextmost vec is a range of possible alternatives
-            // the innermost vec is an expansion of that single input state
-            //
-            // so the thing we want to push back into the queue needs to have one item
-            // from each element of the outermost vec
-            // it needs to choose one of the possibilities from the middle vec
-            // and it needs to flatten out the contents of the innermost vec
-
-            assert!(
-                next_layer_candidates.len() > 0
-                    && next_layer_candidates.iter().all(|x| x.len() > 0)
-                    && next_layer_candidates
-                        .iter()
-                        .all(|x| x.iter().all(|y| y.len() > 0))
-            );
-
-            let expansions_per_element = next_layer_candidates.iter().map(|x| x.len()).collect_vec();
-            let total_possible_expansions = expansions_per_element.iter().fold(1_usize, |acc, n| acc * n);
-
-            // dbg!(&next_layer_candidates, total_possible_expansions);
-
-            for mut expansion_num in 0..total_possible_expansions {
-                // for each element we can choose one of expansions_per_element[element] choices
-                // and we need to try them all. 
-                let mut choices = vec![0; to_expand.len()];
-                for i in 0..to_expand.len() {
-                    choices[i] = expansion_num % expansions_per_element[i];
-                    expansion_num /= expansions_per_element[i];
-                }
-
-                let mut expansion:Vec<&State> = vec![];
-                for i in 0..to_expand.len() {
-                    expansion.extend(&next_layer_candidates[i][choices[i]]);
-                }
-
-                // increase depth by the number of states we've expanded in this pass
-                // TODO: why does this overcount for example 2?
-                // does try_match_sequence need to return the number of replacements it did, and
-                // the number of things it just left alone?
-                queue.push_back((depth + choices.len(), expansion));
-
-            }
-        }
+        let forest = Self::parse_forest(&chart, final_states);
+        let trees = Self::extract_trees(forest);
 
         usize::max_value()
     }
 
-    fn try_match_sequence<'c, 'r, 'i2>(
-        chart: &'c Chart<'r, 'i2>,
-        terms: &Vec<Term>,
-        first: usize,
-        last: usize,
-    ) -> Vec<Vec<&'c State<'r, 'i2>>> {
-        let mut result = vec![];
-
-        // result.push(vec![chart.columns.first().unwrap().states.first().unwrap()]);
-
-        // we have a sequence of terms `terms` (the expansion of some parent rule)
-        // which we're told has at least one match beginning at `first` and ending
-        // at `last`.
-        // Given the grammar may be ambiguous, there could be more than one match,
-        // and we want to return them all.
-        //
-        // If `terms` just contained a single item, there should be one unique state
-        // in charts[last] with a start column of `first` (since we dedupe those states
-        // in the initial pass).
-        //
-        // If `terms` contains two items, then the first step is to find states matching
-        // the second item ending at last with some start column >= `first`.
-        //
-        // (for now we assume there are no nullable rules - ie no rules with an empty
-        // expansion)
-        //
-        // Once we've matched the second state at some range `x`->`last`, we then look for
-        // a first state matching `first`->`x`
-        //
-        // (note that these ranges overlap - since col 0 represents the stage before
-        // parsing the first character, and then successive cols `n` represent the state
-        // after parsing the nth character but before parsing the `n+1`th character.
-        // This means a state that starts at eg col 100 hasn't actually accepted any
-        // characters in col 100 - it only accepts its first character in col 101 or later)
-        //
-        // this first state might not exist, in which case we have to backtrack and
-        // consider an alternative second state.
-        //
-        // As we introduce more entries in `terms`, this generalizes to a graph search
-        // (eg DFS) where we start at `last` with no terms matched and want to end at
-        // `first` with everything in `terms` consumed.
-        //
-
-        // state: current end position, num states matched
-        let mut queue: VecDeque<(usize, Vec<&'c State<'r, 'i2>>)> = VecDeque::new();
-        queue.push_front((last, vec![]));
-
-        while let Some((end, mut matched)) = queue.pop_front() {
-            if end <= first || matched.len() >= terms.len() {
-                // have we actually found a match?
-                if end == first && matched.len() == terms.len() {
-                    // we've been searching from the back, so make the result the right way round
-                    matched.reverse();
-                    result.push(matched);
-                }
-                // either way we don't want to search any deeper
-                continue;
+    // named_expr is a list of terms that we know matches the input string between `from` and
+    // `until`.
+    //
+    // we pop one term off the end of this list:
+    //  - if it's a terminal, we can just check it directly against the input string at `until`
+    //  - if it's a nonterminal, we find all the states ending at `until` which were parsing that
+    //    nonterminal, and record their start positions. These are the possible end positions for
+    //    the remaining prefix of `named_expr`
+    fn parse_paths<'r, 'c>(
+        named_expr: &[&'i Term],
+        chart: &'c Chart<'r, 'i>,
+        from: usize,
+        until: usize,
+    ) -> Vec<Vec<StateOrTerminal<'c, 'r, 'i>>> {
+        let paths = |state, start: usize, remaining_prefix: &[&'i Term]| {
+            if remaining_prefix.len() == 0 {
+                return if start == from {
+                    vec![vec![state]]
+                } else {
+                    vec![]
+                };
+            } else {
+                let mut result = vec![];
+                result.push(vec![state]);
+                result.append(&mut Self::parse_paths(remaining_prefix, chart, from, until));
+                return result;
             }
+        };
 
-            let next_term_to_match = &terms[terms.len() - 1 - matched.len()];
-            let col = &chart.columns[end];
-
-            match next_term_to_match {
-                Term::Nonterminal(_) => {
-                    for state in &col.states {
-                        if state.finished() && state.name() == next_term_to_match {
-                            let mut next_matched = matched.clone();
-                            next_matched.push(&state);
-                            queue.push_front((state.start_col, next_matched));
-                        }
-                    }
-                }
-                Term::Terminal(token) => {
-                    // TODO: this probably isn't correct yet
-                    if col.col_token == Some(*token) {
-                        for state in &col.states {
-                            if state.finished() && &state.rule.expansion[0] == next_term_to_match {
-                                let mut next_matched = matched.clone();
-                                next_matched.push(&state);
-                                queue.push_front((end - 1, next_matched));
-                            }
-                        }
-                    }
+        let (remaining, last) = named_expr.split_at(named_expr.len() - 1);
+        let last = last[0];
+        let starts = match last {
+            Term::Terminal(t) => {
+                if until > 0 && chart.columns[until].col_token == Some(t) {
+                    vec![(StateOrTerminal::Terminal(t), until - 1)]
+                } else {
+                    vec![]
                 }
             }
-        }
+            Term::Nonterminal(_) => chart.columns[until]
+                .states
+                .iter()
+                .filter_map(|s| {
+                    if &s.rule.matches == last && s.finished() {
+                        Some((StateOrTerminal::State(s), s.start_col))
+                    } else {
+                        None
+                    }
+                })
+                .collect_vec(),
+        };
 
-        assert!(result.len() >= 1, "[ {:?} {} {} ] there should be at least one path that matches in order for the original rule to match", terms, first, last);
-
-        result
+        starts
+            .into_iter()
+            .flat_map(|(s, start)| paths(s, start, remaining))
+            .collect_vec()
     }
+
+    fn extract_trees(forest: ()) -> () {
+        todo!()
+    }
+
+    fn parse_forest(chart: &Chart<'_, '_>, final_states: &[&State<'_, '_>]) -> () {
+        todo!()
+    }
+}
+
+// TODO: do we need this lifetime 'c for borrowing from the chart?
+enum StateOrTerminal<'c, 'r, 'i> {
+    State(&'c State<'r, 'i>),
+    Terminal(&'i str),
 }
 
 #[cfg(test)]
