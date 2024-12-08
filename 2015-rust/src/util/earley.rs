@@ -426,6 +426,9 @@ impl<'i> Parser<'i> {
         );
     }
 
+    // https://rahul.gopinath.org/post/2021/02/06/earley-parsing/#parse_forest
+    //
+    //
     fn parse_forest<'c, 'r>(
         chart: &'c Chart<'r, 'i>,
         states: &[&'i State<'r, 'i>],
