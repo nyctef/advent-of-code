@@ -345,6 +345,18 @@ impl Add<RCDirection> for CharGridIndexRC {
     }
 }
 
+impl Sub<RCDirection> for CharGridIndexRC {
+    type Output = CharGridIndexRC;
+
+    fn sub(self, rhs: RCDirection) -> Self::Output {
+        Self {
+            // todo: is it confusing that we don't actually go negative here?
+            col: (self.col as isize).saturating_sub(rhs.coldiff) as usize,
+            row: (self.row as isize).saturating_sub(rhs.rowdiff) as usize,
+        }
+    }
+}
+
 impl Index<CharGridIndexRC> for CharGrid {
     type Output = char;
 
