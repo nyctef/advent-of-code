@@ -321,7 +321,8 @@ impl<'i> Parser<'i> {
             .collect_vec();
 
         let forest = Self::parse_forest(&chart, final_states);
-        let trees = Self::extract_trees(forest);
+        // dbg!(&forest);
+        // let trees = Self::extract_trees(forest);
 
         usize::max_value()
     }
@@ -410,7 +411,7 @@ impl<'i> Parser<'i> {
 
     fn _parse_forest<'c, 'r>(
         chart: &'c Chart<'r, 'i>,
-        state: &'i State,
+        state: &'c State<'r, 'i>,
     ) -> (&'c Term<'i>, Vec<Vec<StateOrTerminal<'c, 'r, 'i>>>) {
         let named_expr = &state.rule.expansion;
         let pathexprs =
@@ -429,7 +430,7 @@ impl<'i> Parser<'i> {
     //
     fn parse_forest<'c, 'r>(
         chart: &'c Chart<'r, 'i>,
-        states: &[&'i State<'r, 'i>],
+        states: &[&'c State<'r, 'i>],
     ) -> (&'c Term<'i>, Vec<StateOrTerminal<'c, 'r, 'i>>) {
         assert!(states.len() > 0);
         assert!(states.iter().all(|s| s.finished()));
@@ -437,9 +438,7 @@ impl<'i> Parser<'i> {
             .iter()
             .all(|s| s.rule.matches == states[0].rule.matches));
 
-        let forest = states
-            .iter()
-            .flat_map(|s| Self::_parse_forest(chart, s).1);
+        let forest = states.iter().flat_map(|s| Self::_parse_forest(chart, s).1);
 
         (&states[0].rule.matches, forest.flatten().collect_vec())
     }
