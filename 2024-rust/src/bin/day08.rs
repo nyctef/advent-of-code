@@ -46,27 +46,24 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     let part1 = nodes.len();
 
     nodes.clear();
-
     for (_, ant) in antennas.iter() {
         for (&a1, &a2) in ant.iter().tuple_combinations() {
             let dir = RCDirection::from_to(a1, a2);
 
-            nodes.insert(a1);
-            nodes.insert(a2);
-
-            let mut a = a1;
-            while grid.is_in_bounds(a) {
-                nodes.insert(a);
-                a = a - dir;
+            let mut node1 = a1;
+            while grid.is_in_bounds(node1) {
+                nodes.insert(node1);
+                node1 = node1 - dir;
             }
-            let mut a = a2;
-            while grid.is_in_bounds(a) {
-                nodes.insert(a);
-                a = a + dir;
+            let mut node2 = a2;
+            while grid.is_in_bounds(node2) {
+                nodes.insert(node2);
+                node2 = node2 + dir;
             }
         }
     }
     let part2 = nodes.len();
+    
     Ok((part1, part2))
 }
 
