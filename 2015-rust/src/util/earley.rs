@@ -79,7 +79,7 @@ impl std::fmt::Debug for State<'_, '_> {
     }
 }
 
-impl<'i, 'r> State<'i, 'r> {
+impl<'r, 'i> State<'r, 'i> {
     fn new(rule: &'r Rule<'i>, start_col: usize) -> Self {
         Self {
             rule,
@@ -101,7 +101,7 @@ impl<'i, 'r> State<'i, 'r> {
         self.dot >= self.rule.expansion.len()
     }
 
-    fn at_dot(&self) -> Option<&'r Term<'i>> {
+    fn at_dot(&self) -> Option<&'i Term<'r>> {
         if self.dot < self.rule.expansion.len() {
             Some(&self.rule.expansion[self.dot])
         } else {
@@ -122,13 +122,13 @@ impl<'i, 'r> State<'i, 'r> {
     }
 }
 
-impl<'i, 'r> Eq for State<'i, 'r> {}
-impl<'i, 'r> PartialEq for State<'i, 'r> {
+impl<'r, 'i> Eq for State<'r, 'i> {}
+impl<'r, 'i> PartialEq for State<'r, 'i> {
     fn eq(&self, other: &Self) -> bool {
         self.as_tuple().eq(&other.as_tuple())
     }
 }
-impl<'i, 'r> std::hash::Hash for State<'i, 'r> {
+impl<'r, 'i> std::hash::Hash for State<'r, 'i> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.as_tuple().hash(state)
     }
