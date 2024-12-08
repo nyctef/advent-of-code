@@ -396,6 +396,8 @@ impl<'i> Parser<'i> {
 
                 // increase depth by the number of states we've expanded in this pass
                 // TODO: why does this overcount for example 2?
+                // does try_match_sequence need to return the number of replacements it did, and
+                // the number of things it just left alone?
                 queue.push_back((depth + choices.len(), expansion));
 
             }
