@@ -8,7 +8,7 @@ use std::{collections::VecDeque, fmt::Display, iter};
 // largely following https://rahul.gopinath.org/post/2021/02/06/earley-parsing/
 // also using some of the ideas from https://loup-vaillant.fr/tutorials/earley-parsing/parser
 
-#[derive(Eq, PartialEq, Hash, Clone)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy)]
 pub enum Term<'i> {
     Terminal(&'i str),
     Nonterminal(&'i str),
@@ -337,12 +337,12 @@ impl<'i> Parser<'i> {
     //    nonterminal, and record their start positions. These are the possible end positions for
     //    the remaining prefix of `named_expr`
     fn parse_paths<'r, 'c>(
-        named_expr: &[&'i Term],
+        named_expr: &'r [Term<'i>],
         chart: &'c Chart<'r, 'i>,
         from: usize,
         until: usize,
     ) -> Vec<Vec<StateOrTerminal<'c, 'r, 'i>>> {
-        let paths = |state, start: usize, remaining_prefix: &[&'i Term]| {
+        let paths = |state, start: usize, remaining_prefix: &'r [Term<'i>]| {
             if remaining_prefix.len() == 0 {
                 // base case: we've run out of elements from `named_expr` to match
                 return if start == from {
@@ -385,7 +385,7 @@ impl<'i> Parser<'i> {
                 .states
                 .iter()
                 .filter_map(|s| {
-                    if &s.rule.matches == last && s.finished() {
+                    if s.rule.matches == last && s.finished() {
                         Some((StateOrTerminal::State(s), s.start_col))
                     } else {
                         None
@@ -412,9 +412,7 @@ impl<'i> Parser<'i> {
         chart: &'c Chart<'r, 'i>,
         state: &'i State,
     ) -> (&'c Term<'i>, Vec<Vec<StateOrTerminal<'c, 'r, 'i>>>) {
-        // TODO: change type of parse_paths from &[&Term] to &[Term]?
-        // https://stackoverflow.com/a/37797736/895407
-        let named_expr = &state.rule.expansion.iter().collect_vec();
+        let named_expr = &state.rule.expansion;
         let pathexprs =
             Self::parse_paths(named_expr, chart, state.start_col, state.end_col.unwrap());
         return (
