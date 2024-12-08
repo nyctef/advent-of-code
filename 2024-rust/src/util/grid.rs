@@ -505,7 +505,7 @@ impl RCDirection {
         (self.rowdiff.abs() == 1) ^ (self.coldiff.abs() == 1)
     }
 
-    pub fn from_to(start: &CharGridIndexRC, end: &CharGridIndexRC) -> RCDirection {
+    pub fn from_to(start: CharGridIndexRC, end: CharGridIndexRC) -> RCDirection {
         RCDirection {
             rowdiff: end.row as isize - start.row as isize,
             coldiff: end.col as isize - start.col as isize,
