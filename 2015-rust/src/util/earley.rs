@@ -362,7 +362,7 @@ impl Parser {
                 // paths for the remaining elements
                 let mut result = vec![];
                 for possible_remaining_path in
-                    Self::parse_paths(remaining_prefix, chart, start, until)
+                    Self::parse_paths(remaining_prefix, chart, from, start)
                 {
                     let mut path = vec![state];
                     path.extend(possible_remaining_path);
