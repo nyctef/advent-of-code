@@ -16,7 +16,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(usize, u64)> {
+fn solve_for(input: &str) -> Result<(usize, usize)> {
     let grid = CharGrid::from_string(input);
 
     let mut antennas = FxHashMap::default();
@@ -30,10 +30,9 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
     }
 
     let mut nodes = HashSet::new();
-
     for (_, ant) in antennas.iter() {
         for (a1, a2) in ant.iter().tuple_combinations() {
-            let mut dir = RCDirection::from_to(a1, a2);
+            let dir = RCDirection::from_to(a1, a2);
             let node1 = *a2 + dir;
             let node2 = *a1 - dir;
             if grid.is_in_bounds(node1) {
@@ -42,13 +41,34 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
             if grid.is_in_bounds(node2) {
                 nodes.insert(node2);
             }
+        }
+    }
+    let part1 = nodes.len();
+
+    nodes.clear();
+
+    for (_, ant) in antennas.iter() {
+        for (&a1, &a2) in ant.iter().tuple_combinations() {
+            let dir = RCDirection::from_to(&a1, &a2);
+
+            nodes.insert(a1);
+            nodes.insert(a2);
+
+            let mut a = a1;
+            while grid.is_in_bounds(a) {
+                nodes.insert(a);
+                a = a - dir;
+            }
+            let mut a = a2;
+            while grid.is_in_bounds(a) {
+                nodes.insert(a);
+                a = a + dir;
+            }
 
         }
 
     }
-
-    let part1 = nodes.len();
-    let part2 = 0;
+    let part2 = nodes.len();
     Ok((part1, part2))
 }
 
@@ -71,6 +91,6 @@ fn test_example1() -> Result<()> {
     let (part1, part2) = solve_for(input)?;
 
     assert_eq!(part1, 14);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 34);
     Ok(())
 }
