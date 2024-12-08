@@ -324,8 +324,9 @@ impl Parser {
             .collect_vec();
 
         let forest = Self::parse_forest(&chart, final_states);
-        // dbg!(&forest);
-        // let trees = Self::extract_trees(forest);
+        dbg!(&forest);
+        let trees = Self::extract_trees(&chart, forest);
+        dbg!(&trees);
 
         usize::max_value()
     }
@@ -347,6 +348,7 @@ impl Parser {
         until: usize,
     ) -> Vec<Vec<StateOrTerminal<'c, 'r, 'i>>> {
         let paths = |state, start: usize, remaining_prefix: &'r [Term<'i>]| {
+            dbg!(&state, &remaining_prefix, start);
             if remaining_prefix.len() == 0 {
                 // base case: we've run out of elements from `named_expr` to match
                 return if start == from {
@@ -397,6 +399,7 @@ impl Parser {
                 })
                 .collect_vec(),
         };
+        dbg!(&starts);
 
         starts
             .into_iter()
@@ -404,14 +407,18 @@ impl Parser {
             .collect_vec()
     }
 
-    // // TODO: docs
-    // fn forest<'c>(chart: &'c Chart, s: StateOrTerminal<'c, '_, '_>) ->  {
-    //     match s {
-    //         StateOrTerminal::State(state) => (s, Self::parse_forest(chart, vec![state]).1),
-    //         StateOrTerminal::Terminal(_) => (s, vec![]),
-    //     }
-    // }
+    // TODO: docs
+    fn forest<'c, 'r, 'i>(
+        chart: &'c Chart<'r, 'i>,
+        s: StateOrTerminal<'c, 'r, 'i>,
+    ) -> ForestNode<'c, 'r, 'i> {
+        match s {
+            StateOrTerminal::State(state) => (s, Self::parse_forest(chart, &vec![state]).1),
+            StateOrTerminal::Terminal(_) => (s, vec![]),
+        }
+    }
 
+    // TODO: docs
     fn _parse_forest<'c, 'r, 'i>(
         chart: &'c Chart<'r, 'i>,
         state: &'c State<'r, 'i>,
@@ -434,7 +441,7 @@ impl Parser {
     fn parse_forest<'c, 'r, 'i>(
         chart: &'c Chart<'r, 'i>,
         states: &[&'c State<'r, 'i>],
-    ) -> (&'c Term<'i>, Vec<StateOrTerminal<'c, 'r, 'i>>) {
+    ) -> ForestNode<'c, 'r, 'i> {
         assert!(states.len() > 0);
         assert!(states.iter().all(|s| s.finished()));
         assert!(states
@@ -443,12 +450,46 @@ impl Parser {
 
         let forest = states.iter().flat_map(|s| Self::_parse_forest(chart, s).1);
 
-        (&states[0].rule.matches, forest.flatten().collect_vec())
+        (StateOrTerminal::State(states[0]), forest.collect_vec())
     }
 
-    fn extract_trees(forest: ()) -> () {
-        todo!()
+    fn extract_a_tree<'c, 'r, 'i>(chart: &'c Chart<'r, 'i>, forest_node: ForestNode<'c, 'r, 'i>) -> TreeNode<'c, 'r, 'i> {
+        let (name, paths) = forest_node;
+        if paths.is_empty() {
+            return TreeNode::empty(name);
+        }
+
+        TreeNode(
+            name,
+            paths
+                .iter()
+                .map(|p| Self::extract_a_tree(chart, Self::forest(chart, p[0])))
+                .collect_vec(),
+        )
     }
+
+    fn extract_trees<'c, 'r, 'i>(chart: &'c Chart<'r, 'i>, forest: ForestNode<'c, 'r, 'i>) -> Vec<TreeNode<'c, 'r, 'i>> {
+        return vec![Self::extract_a_tree(chart, forest)]
+    }
+}
+
+// a "forest" is a group of possible parse trees (since the grammar is ambiguous)
+type ForestNode<'c, 'r, 'i> = (
+    StateOrTerminal<'c, 'r, 'i>,
+    Vec<Vec<StateOrTerminal<'c, 'r, 'i>>>,
+);
+
+// a "tree" is one particular parse tree extracted from the forest
+#[derive(Debug)]
+struct TreeNode<'c, 'r, 'i>(
+    StateOrTerminal<'c, 'r, 'i>,
+    Vec<TreeNode<'c, 'r, 'i>>);
+
+impl<'c, 'r, 'i> TreeNode<'c, 'r, 'i> {
+    pub fn empty(s: StateOrTerminal<'c, 'r, 'i>) -> Self {
+        Self(s, vec![])
+    }
+
 }
 
 // TODO: do we need this lifetime 'c for borrowing from the chart?
