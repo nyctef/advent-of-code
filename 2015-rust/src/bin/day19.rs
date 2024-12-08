@@ -56,8 +56,8 @@ fn solve_for(input: &str) -> Result<String> {
     dbg!(&rules);
     let target = tokenize(target);
 
-    let parser = Parser::from_rules(rules, Term::Nonterminal("e"));
-    let part2 = parser.run(&target);
+    let grammar = Grammar::from_rules(rules, Term::Nonterminal("e"));
+    let part2 = Parser::run(&grammar, &target);
 
     // println!("r {:?} t {:?}", replacements, target);
 

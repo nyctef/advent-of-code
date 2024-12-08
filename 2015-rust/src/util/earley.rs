@@ -204,27 +204,30 @@ impl<'i> Grammar<'i> {
         let term = term.clone();
         self.rules.iter().filter(move |r| r.matches == term)
     }
+
+    pub fn from_rules(rules: impl IntoIterator<Item = Rule<'i>>, start: Term<'i>) -> Self {
+        // TODO: calculate epsilon here if we ever need to handle nullable rules
+        Grammar::new(rules.into_iter().collect_vec(), start)
+    }
 }
 
 #[derive(Debug)]
-pub struct Parser<'i> {
-    grammar: Grammar<'i>,
-}
+pub struct Parser {}
 
-impl<'i> Parser<'i> {
-    pub fn from_rules(rules: impl IntoIterator<Item = Rule<'i>>, start: Term<'i>) -> Self {
-        Self {
-            // TODO: calculate epsilon here if we ever need to handle nullable rules
-            grammar: Grammar::new(rules.into_iter().collect_vec(), start),
-        }
-    }
+impl Parser {
+    // pub fn from_rules(rules: impl IntoIterator<Item = Rule<'i>>, start: Term<'i>) -> Self {
+    //     Self {
+    //         // TODO: calculate epsilon here if we ever need to handle nullable rules
+    //         grammar: Grammar::new(rules.into_iter().collect_vec(), start),
+    //     }
+    // }
 
-    pub fn run(&self, input_tokens: &[&'i str]) -> usize {
+    pub fn run<'i>(grammar: &Grammar<'i>, input_tokens: &[&'i str]) -> usize {
         let mut chart = Chart::from_tokens(input_tokens);
 
         // slightly nonstandard: like in the gopinath.org article, we allow multiple
         // start rules for a given starting token, rather than requiring a unique starting rule
-        for alt in self.grammar.rules_for(&self.grammar.start) {
+        for alt in grammar.rules_for(&grammar.start) {
             chart.columns[0].add(State::new(alt, 0))
         }
 
@@ -279,7 +282,7 @@ impl<'i> Parser<'i> {
                             // one of our states has arrived at a nonterminal `to_predict`, so add its expansions
                             // to the current column.
                             // println!("adding expansions for {sym:?} to col");
-                            for alt in (&self.grammar).rules_for(sym) {
+                            for alt in (&grammar).rules_for(sym) {
                                 col.add(State::new(&alt, col.col_index))
                             }
                             /*
@@ -317,7 +320,7 @@ impl<'i> Parser<'i> {
             .unwrap()
             .states
             .iter()
-            .filter(|s| s.rule.matches == self.grammar.start && s.finished() && s.start_col == 0)
+            .filter(|s| s.rule.matches == grammar.start && s.finished() && s.start_col == 0)
             .collect_vec();
 
         let forest = Self::parse_forest(&chart, final_states);
@@ -337,7 +340,7 @@ impl<'i> Parser<'i> {
     //  - if it's a nonterminal, we find all the states ending at `until` which were parsing that
     //    nonterminal, and record their start positions. These are the possible end positions for
     //    the remaining prefix of `named_expr`
-    fn parse_paths<'r, 'c>(
+    fn parse_paths<'r, 'c, 'i>(
         named_expr: &'r [Term<'i>],
         chart: &'c Chart<'r, 'i>,
         from: usize,
@@ -409,7 +412,7 @@ impl<'i> Parser<'i> {
     //     }
     // }
 
-    fn _parse_forest<'c, 'r>(
+    fn _parse_forest<'c, 'r, 'i>(
         chart: &'c Chart<'r, 'i>,
         state: &'c State<'r, 'i>,
     ) -> (&'c Term<'i>, Vec<Vec<StateOrTerminal<'c, 'r, 'i>>>) {
@@ -428,7 +431,7 @@ impl<'i> Parser<'i> {
     // https://rahul.gopinath.org/post/2021/02/06/earley-parsing/#parse_forest
     //
     //
-    fn parse_forest<'c, 'r>(
+    fn parse_forest<'c, 'r, 'i>(
         chart: &'c Chart<'r, 'i>,
         states: &[&'c State<'r, 'i>],
     ) -> (&'c Term<'i>, Vec<StateOrTerminal<'c, 'r, 'i>>) {
@@ -478,8 +481,8 @@ mod test {
             Nonterminal("S"),
             vec![Terminal("a"), Terminal("b"), Terminal("c")],
         )];
-        let parser = Parser::from_rules(rules, Nonterminal("S"));
-        let result = parser.run(&vec!["a", "b", "c"]);
+        let grammar = Grammar::from_rules(rules, Nonterminal("S"));
+        let result = Parser::run(&grammar, &vec!["a", "b", "c"]);
 
         println!("{:?}", result);
         todo!()
@@ -495,8 +498,8 @@ mod test {
             Rule::new(Nonterminal("A"), vec![Terminal("a"), Nonterminal("B")]),
             Rule::new(Nonterminal("B"), vec![Terminal("b")]),
         ];
-        let parser = Parser::from_rules(rules, Nonterminal("S"));
-        let result = parser.run(&vec!["a", "b", "a", "b"]);
+        let grammar = Grammar::from_rules(rules, Nonterminal("S"));
+        let result = Parser::run(&grammar, &vec!["a", "b", "a", "b"]);
 
         println!("{:?}", result);
         todo!()
