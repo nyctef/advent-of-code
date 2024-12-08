@@ -464,9 +464,9 @@ impl Parser {
 
         TreeNode(
             name,
-            paths
+            paths[0]
                 .iter()
-                .map(|p| Self::extract_a_tree(chart, Self::forest(chart, p[0])))
+                .map(|p| Self::extract_a_tree(chart, Self::forest(chart, *p)))
                 .collect_vec(),
         )
     }
