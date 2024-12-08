@@ -1,7 +1,6 @@
-use color_eyre::owo_colors::OwoColorize;
 use derive_more::Constructor;
 use itertools::Itertools;
-use std::{collections::VecDeque, fmt::Display, iter};
+use std::{fmt::Display, iter};
 
 // TODO: make this generic in the token type rather than assuming `&'input str` ?
 
@@ -347,8 +346,9 @@ impl Parser {
         from: usize,
         until: usize,
     ) -> Vec<Vec<StateOrTerminal<'c, 'r, 'i>>> {
+        eprintln!("parse_paths({:?}, {}, {})", named_expr, from, until);
         let paths = |state, start: usize, remaining_prefix: &'r [Term<'i>]| {
-            dbg!(&state, &remaining_prefix, start);
+            // dbg!(&state, &remaining_prefix, start);
             if remaining_prefix.len() == 0 {
                 // base case: we've run out of elements from `named_expr` to match
                 return if start == from {
@@ -401,10 +401,13 @@ impl Parser {
         };
         dbg!(&starts);
 
-        starts
+        let paths = starts
             .into_iter()
             .flat_map(|(s, start)| paths(s, start, remaining))
-            .collect_vec()
+            .collect_vec();
+        dbg!(&paths);
+        paths
+
     }
 
     // TODO: docs
@@ -437,7 +440,7 @@ impl Parser {
 
     // https://rahul.gopinath.org/post/2021/02/06/earley-parsing/#parse_forest
     //
-    //
+    // note this only gives us one layer of the forest at a time (?)
     fn parse_forest<'c, 'r, 'i>(
         chart: &'c Chart<'r, 'i>,
         states: &[&'c State<'r, 'i>],
@@ -481,6 +484,7 @@ type ForestNode<'c, 'r, 'i> = (
 
 // a "tree" is one particular parse tree extracted from the forest
 #[derive(Debug)]
+#[allow(dead_code)]
 struct TreeNode<'c, 'r, 'i>(
     StateOrTerminal<'c, 'r, 'i>,
     Vec<TreeNode<'c, 'r, 'i>>);
@@ -494,6 +498,7 @@ impl<'c, 'r, 'i> TreeNode<'c, 'r, 'i> {
 
 // TODO: do we need this lifetime 'c for borrowing from the chart?
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 enum StateOrTerminal<'c, 'r, 'i> {
     State(&'c State<'r, 'i>),
     Terminal(&'i str),
