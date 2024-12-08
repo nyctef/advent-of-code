@@ -1,3 +1,4 @@
+use color_eyre::owo_colors::OwoColorize;
 use derive_more::Constructor;
 use itertools::Itertools;
 use std::{collections::VecDeque, fmt::Display, iter};
@@ -325,6 +326,8 @@ impl<'i> Parser<'i> {
         usize::max_value()
     }
 
+    // https://rahul.gopinath.org/post/2021/02/06/earley-parsing/#parse_paths
+    //
     // named_expr is a list of terms that we know matches the input string between `from` and
     // `until`.
     //
@@ -341,15 +344,24 @@ impl<'i> Parser<'i> {
     ) -> Vec<Vec<StateOrTerminal<'c, 'r, 'i>>> {
         let paths = |state, start: usize, remaining_prefix: &[&'i Term]| {
             if remaining_prefix.len() == 0 {
+                // base case: we've run out of elements from `named_expr` to match
                 return if start == from {
                     vec![vec![state]]
                 } else {
+                    // we failed to match the rule properly, so this path isn't valid
                     vec![]
                 };
             } else {
+                // recursive case: return the element we just matched, plus all the possible
+                // paths for the remaining elements
                 let mut result = vec![];
-                result.push(vec![state]);
-                result.append(&mut Self::parse_paths(remaining_prefix, chart, from, until));
+                for possible_remaining_path in
+                    Self::parse_paths(remaining_prefix, chart, start, until)
+                {
+                    let mut path = vec![state];
+                    path.extend(possible_remaining_path);
+                    result.push(path);
+                }
                 return result;
             }
         };
@@ -357,13 +369,18 @@ impl<'i> Parser<'i> {
         let (remaining, last) = named_expr.split_at(named_expr.len() - 1);
         let last = last[0];
         let starts = match last {
+            // if the last element of the expression is a terminal, then we just check
+            // it against the column directly
             Term::Terminal(t) => {
-                if until > 0 && chart.columns[until].col_token == Some(t) {
+                // only column 0 has a None col_token
+                if chart.columns[until].col_token == Some(t) {
                     vec![(StateOrTerminal::Terminal(t), until - 1)]
                 } else {
                     vec![]
                 }
             }
+            // if the last element is a nonterminal, then we need to find all the states
+            // completing that nonterminal at `until`
             Term::Nonterminal(_) => chart.columns[until]
                 .states
                 .iter()
@@ -383,16 +400,56 @@ impl<'i> Parser<'i> {
             .collect_vec()
     }
 
-    fn extract_trees(forest: ()) -> () {
-        todo!()
+    // // TODO: docs
+    // fn forest<'c>(chart: &'c Chart, s: StateOrTerminal<'c, '_, '_>) ->  {
+    //     match s {
+    //         StateOrTerminal::State(state) => (s, Self::parse_forest(chart, vec![state]).1),
+    //         StateOrTerminal::Terminal(_) => (s, vec![]),
+    //     }
+    // }
+
+    fn _parse_forest<'c, 'r>(
+        chart: &'c Chart<'r, 'i>,
+        state: &'i State,
+    ) -> (&'c Term<'i>, Vec<Vec<StateOrTerminal<'c, 'r, 'i>>>) {
+        // TODO: change type of parse_paths from &[&Term] to &[Term]?
+        // https://stackoverflow.com/a/37797736/895407
+        let named_expr = &state.rule.expansion.iter().collect_vec();
+        let pathexprs =
+            Self::parse_paths(named_expr, chart, state.start_col, state.end_col.unwrap());
+        return (
+            &state.rule.matches,
+            pathexprs
+                .into_iter()
+                .map(|p| p.into_iter().rev().collect_vec())
+                .collect_vec(),
+        );
     }
 
-    fn parse_forest(chart: &Chart<'_, '_>, final_states: &[&State<'_, '_>]) -> () {
+    fn parse_forest<'c, 'r>(
+        chart: &'c Chart<'r, 'i>,
+        states: &[&'i State<'r, 'i>],
+    ) -> (&'c Term<'i>, Vec<StateOrTerminal<'c, 'r, 'i>>) {
+        assert!(states.len() > 0);
+        assert!(states.iter().all(|s| s.finished()));
+        assert!(states
+            .iter()
+            .all(|s| s.rule.matches == states[0].rule.matches));
+
+        let forest = states
+            .iter()
+            .flat_map(|s| Self::_parse_forest(chart, s).1);
+
+        (&states[0].rule.matches, forest.flatten().collect_vec())
+    }
+
+    fn extract_trees(forest: ()) -> () {
         todo!()
     }
 }
 
 // TODO: do we need this lifetime 'c for borrowing from the chart?
+#[derive(Debug, Clone, Copy)]
 enum StateOrTerminal<'c, 'r, 'i> {
     State(&'c State<'r, 'i>),
     Terminal(&'i str),
