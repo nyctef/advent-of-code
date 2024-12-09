@@ -14,6 +14,8 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
+const EMPTY: u32 = u32::MAX;
+
 fn solve_for(input: &str) -> Result<(usize, usize)> {
     let map = all_digits(input.trim());
     // eprintln!("{:?}", &map);
@@ -116,12 +118,12 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
             break;
         }
 
-        while drive[i] == u32::MAX {
+        while drive[i] == EMPTY {
             drive[i] = drive.pop().unwrap();
         }
     }
     assert!(
-        drive.iter().all(|&x| x != u32::MAX),
+        drive.iter().all(|&x| x != EMPTY),
         "we should have filled all the space"
     );
     let part1 = checksum(drive);
@@ -156,21 +158,21 @@ fn move_blocks(
 ) {
     for i in 0..file_length {
         drive2[beginning_of_space + i] = drive2[beginning_of_file + i];
-        drive2[beginning_of_file + i] = u32::MAX;
+        drive2[beginning_of_file + i] = EMPTY;
     }
 }
 
 fn find_space_with_size(drive2: &[u32], file_length: usize) -> Option<usize> {
     let mut beginning_of_space_ptr = 0;
     loop {
-        while beginning_of_space_ptr < drive2.len() && drive2[beginning_of_space_ptr] != u32::MAX {
+        while beginning_of_space_ptr < drive2.len() && drive2[beginning_of_space_ptr] != EMPTY {
             beginning_of_space_ptr += 1;
         }
         if beginning_of_space_ptr >= drive2.len() {
             break;
         }
         let mut end_of_space_ptr = beginning_of_space_ptr;
-        while end_of_space_ptr + 1 < drive2.len() && drive2[end_of_space_ptr + 1] == u32::MAX {
+        while end_of_space_ptr + 1 < drive2.len() && drive2[end_of_space_ptr + 1] == EMPTY {
             end_of_space_ptr += 1;
         }
         let space_length = end_of_space_ptr + 1 - beginning_of_space_ptr;
@@ -217,7 +219,7 @@ fn find_file_by_id(drive2: &[u32], file_id_to_move: u32) -> (usize, usize) {
 fn checksum(drive: Vec<u32>) -> usize {
     let mut checksum = 0;
     for (i, &file_id) in drive.iter().enumerate() {
-        if file_id == u32::MAX {
+        if file_id == EMPTY {
             continue;
         }
         checksum += i * (file_id as usize);
@@ -234,7 +236,7 @@ fn make_drive(map: &[u32]) -> Vec<u32> {
         if is_file {
             drive.extend(iter::repeat(file_id).take(segment as usize));
         } else {
-            drive.extend(iter::repeat(u32::MAX).take(segment as usize));
+            drive.extend(iter::repeat(EMPTY).take(segment as usize));
         }
     }
     drive
