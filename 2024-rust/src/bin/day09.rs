@@ -105,31 +105,46 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
 
     */
 
+    let mut total_free_space = 0;
+    let mut total_file_size = 0;
+    for i in 0..map.len() {
+        if i % 2 == 0 {
+            total_file_size += map[i];
+        } else {
+            total_free_space += map[i];
+        }
+    }
+
     let mut drive = vec![];
     for (i, &segment) in map.iter().enumerate() {
         let is_file = i % 2 == 0;
-        let file_id = i as u8 / 2;
+        let file_id = i as u32 / 2;
 
         if is_file {
             drive.extend(iter::repeat(file_id).take(segment as usize));
         } else {
-            drive.extend(iter::repeat(u8::MAX).take(segment as usize));
+            drive.extend(iter::repeat(u32::MAX).take(segment as usize));
         }
     }
 
-    // eprintln!("before: {:?}", &drive);
+    let drive_len_before = drive.len();
+    eprintln!("before: {:?}", &drive);
 
     for i in 0..drive.len() {
         if i >= drive.len() {
             break;
         }
 
-        while drive[i] == u8::MAX {
+        while drive[i] == u32::MAX {
             drive[i] = drive.pop().unwrap();
         }
     }
 
-    // eprintln!("after: {:?}", &drive);
+    let drive_len_after = drive.len();
+    eprintln!("after: {:?}", &drive);
+    //
+    assert!(drive.iter().all(|&x| x != u32::MAX));
+    dbg!(map.len(), total_free_space, total_file_size, drive_len_before, drive_len_after);
 
     let mut checksum = 0;
     for i in 0..drive.len() {
@@ -155,21 +170,35 @@ fn test_example1() -> Result<()> {
 }
 
 #[test]
-fn test_2() -> Result<()> {
+fn test_one_file_shift() -> Result<()> {
     let input = "111";
     let (part1, _) = solve_for(input)?;
-    // file id 1 moves to position 1
+    // 0.1
+    // 01.
     assert_eq!(part1, 1);
     Ok(())
 }
+
 #[test]
-fn test_3() -> Result<()> {
+fn test_larger_file_shift() -> Result<()> {
     let input = "113";
-    // 0x111
-    // 0111x
+    // 0.111
+    // 0111.
     // = 1*0 + 1*1 + 1*2 + 1*3
     let (part1, _) = solve_for(input)?;
 
     assert_eq!(part1, 6);
+    Ok(())
+}
+
+#[test]
+fn test_no_gaps() -> Result<()> {
+    let input = "10101";
+    // 012
+    // 012
+    // = 0*0 + 1*1 + 2*2
+    let (part1, _) = solve_for(input)?;
+
+    assert_eq!(part1, 5);
     Ok(())
 }
