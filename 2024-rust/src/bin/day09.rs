@@ -134,28 +134,26 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     // eprintln!("after: {:?}", &drive);
     //
     assert!(drive.iter().all(|&x| x != u32::MAX));
-    dbg!(
-        map.len(),
-        total_free_space,
-        total_file_size,
-        drive_len_before,
-        drive_len_after
-    );
+    // dbg!(
+    //     map.len(),
+    //     total_free_space,
+    //     total_file_size,
+    //     drive_len_before,
+    //     drive_len_after
+    // );
 
     let part1 = checksum(drive);
 
     let mut drive2 = make_drive(&map);
 
-    let mut file_to_move_ptr = drive2.len() - 1;
-    let mut highest_file_id_moved = u32::MAX;
-    while file_to_move_ptr > 0 {
-        eprintln!("{:?}", drive2);
-        let file_id_to_move = drive2[file_to_move_ptr];
-        if file_id_to_move >= highest_file_id_moved {
-            eprintln!("trying to move file {}, but already moved file {}", file_id_to_move, highest_file_id_moved);
-            break;
+    let mut file_id_to_move = drive2[drive2.len() - 1];
+    while file_id_to_move > 0 {
+        // eprintln!("{:?}", drive2);
+        // find the end of the file
+        let mut file_to_move_ptr = drive2.len() - 1;
+        while file_to_move_ptr > 0 && drive2[file_to_move_ptr] != file_id_to_move {
+            file_to_move_ptr -= 1;
         }
-        highest_file_id_moved = file_id_to_move;
         // find the beginning of this file
         let mut beginning_of_file = file_to_move_ptr;
         loop {
@@ -171,13 +169,12 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
             break;
         }
         let file_length = file_to_move_ptr + 1 - beginning_of_file;
-        eprintln!(
-            "file id {} at [{}, {}] length {}",
-            file_id_to_move, beginning_of_file, file_to_move_ptr, file_length
-        );
+        // eprintln!(
+        //     "file id {} at [{}, {}] length {}",
+        //     file_id_to_move, beginning_of_file, file_to_move_ptr, file_length
+        // );
 
         let mut beginning_of_space_ptr = 0;
-        let mut hack_count = 0;
         loop {
             while beginning_of_space_ptr < drive2.len()
                 && drive2[beginning_of_space_ptr] != u32::MAX
@@ -192,10 +189,10 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
                 end_of_space_ptr += 1;
             }
             let space_length = end_of_space_ptr + 1 - beginning_of_space_ptr;
-            eprintln!(
-                "space at [{}, {}] length {}",
-                beginning_of_space_ptr, end_of_space_ptr, space_length
-            );
+            // eprintln!(
+            //     "space at [{}, {}] length {}",
+            //     beginning_of_space_ptr, end_of_space_ptr, space_length
+            // );
 
             if space_length >= file_length {
                 break;
@@ -204,25 +201,21 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
             beginning_of_space_ptr = end_of_space_ptr + 1
         }
 
-        // have we found space?
-        if beginning_of_space_ptr < drive2.len() {
-        // move file
-        for i in 0..file_length {
-            drive2[beginning_of_space_ptr + i] = drive2[beginning_of_file + i];
-            drive2[beginning_of_file + i] = u32::MAX;
-
+        // have we found space to the left?
+        if beginning_of_space_ptr < drive2.len() && beginning_of_space_ptr < beginning_of_file {
+            // move file
+            for i in 0..file_length {
+                drive2[beginning_of_space_ptr + i] = drive2[beginning_of_file + i];
+                drive2[beginning_of_file + i] = u32::MAX;
+            }
         }
-        }
 
-        if beginning_of_file == 0 {
+        if file_id_to_move == 0 {
             break;
         }
 
         // look for the next file
-        file_to_move_ptr = beginning_of_file - 1;
-        while drive2[file_to_move_ptr] == u32::MAX {
-            file_to_move_ptr -= 1;
-        }
+        file_id_to_move -= 1;
     }
 
     let part2 = checksum(drive2);
@@ -232,7 +225,9 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 fn checksum(drive: Vec<u32>) -> usize {
     let mut checksum = 0;
     for i in 0..drive.len() {
-        if drive[i] == u32::MAX { continue; }
+        if drive[i] == u32::MAX {
+            continue;
+        }
         checksum += i * (drive[i] as usize);
     }
     checksum
