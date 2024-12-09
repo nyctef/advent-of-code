@@ -105,20 +105,12 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 
     */
 
-    let mut total_free_space = 0;
-    let mut total_file_size = 0;
-    for i in 0..map.len() {
-        if i % 2 == 0 {
-            total_file_size += map[i];
-        } else {
-            total_free_space += map[i];
-        }
-    }
+    assert!(
+        map.len() % 2 == 1,
+        "the map len should be odd, since we assume the last entry in the map is a file"
+    );
 
     let mut drive = make_drive(&map);
-
-    let drive_len_before = drive.len();
-    // eprintln!("before: {:?}", &drive);
 
     for i in 0..drive.len() {
         if i >= drive.len() {
@@ -129,89 +121,24 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
             drive[i] = drive.pop().unwrap();
         }
     }
-
-    let drive_len_after = drive.len();
-    // eprintln!("after: {:?}", &drive);
-    //
-    assert!(drive.iter().all(|&x| x != u32::MAX));
-    // dbg!(
-    //     map.len(),
-    //     total_free_space,
-    //     total_file_size,
-    //     drive_len_before,
-    //     drive_len_after
-    // );
-
+    assert!(
+        drive.iter().all(|&x| x != u32::MAX),
+        "we should have filled all the space"
+    );
     let part1 = checksum(drive);
 
     let mut drive2 = make_drive(&map);
-
+    // we try to move the last file first
     let mut file_id_to_move = drive2[drive2.len() - 1];
     while file_id_to_move > 0 {
-        // eprintln!("{:?}", drive2);
-        // find the end of the file
-        let mut file_to_move_ptr = drive2.len() - 1;
-        while file_to_move_ptr > 0 && drive2[file_to_move_ptr] != file_id_to_move {
-            file_to_move_ptr -= 1;
-        }
-        // find the beginning of this file
-        let mut beginning_of_file = file_to_move_ptr;
-        loop {
-            if beginning_of_file == 0 {
-                break;
-            }
-            if let Some(&p) = drive2.get(beginning_of_file - 1) {
-                if p == file_id_to_move {
-                    beginning_of_file -= 1;
-                    continue;
-                }
-            }
-            break;
-        }
-        let file_length = file_to_move_ptr + 1 - beginning_of_file;
-        // eprintln!(
-        //     "file id {} at [{}, {}] length {}",
-        //     file_id_to_move, beginning_of_file, file_to_move_ptr, file_length
-        // );
-
-        let mut beginning_of_space_ptr = 0;
-        loop {
-            while beginning_of_space_ptr < drive2.len()
-                && drive2[beginning_of_space_ptr] != u32::MAX
-            {
-                beginning_of_space_ptr += 1;
-            }
-            if beginning_of_space_ptr >= drive2.len() {
-                break;
-            }
-            let mut end_of_space_ptr = beginning_of_space_ptr;
-            while end_of_space_ptr + 1 < drive2.len() && drive2[end_of_space_ptr + 1] == u32::MAX {
-                end_of_space_ptr += 1;
-            }
-            let space_length = end_of_space_ptr + 1 - beginning_of_space_ptr;
-            // eprintln!(
-            //     "space at [{}, {}] length {}",
-            //     beginning_of_space_ptr, end_of_space_ptr, space_length
-            // );
-
-            if space_length >= file_length {
-                break;
-            }
-
-            beginning_of_space_ptr = end_of_space_ptr + 1
-        }
+        let (file, file_length) = find_file_by_id(&drive2, file_id_to_move);
+        let maybe_space = find_space_with_size(&drive2, file_length);
 
         // have we found space to the left?
-        if beginning_of_space_ptr < drive2.len() && beginning_of_space_ptr < beginning_of_file {
-            // move file
-            for i in 0..file_length {
-                drive2[beginning_of_space_ptr + i] = drive2[beginning_of_file + i];
-                drive2[beginning_of_file + i] = u32::MAX;
+        if let Some(space) = maybe_space {
+            if space < file {
+                move_blocks(&mut drive2, file, file_length, space);
             }
-        }
-
-        if file_id_to_move == 0 {
-            break;
         }
 
         // look for the next file
@@ -220,6 +147,72 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 
     let part2 = checksum(drive2);
     Ok((part1, part2))
+}
+
+fn move_blocks(
+    drive2: &mut Vec<u32>,
+    beginning_of_file: usize,
+    file_length: usize,
+    beginning_of_space: usize,
+) {
+    for i in 0..file_length {
+        drive2[beginning_of_space + i] = drive2[beginning_of_file + i];
+        drive2[beginning_of_file + i] = u32::MAX;
+    }
+}
+
+fn find_space_with_size(drive2: &Vec<u32>, file_length: usize) -> Option<usize> {
+    let mut beginning_of_space_ptr = 0;
+    loop {
+        while beginning_of_space_ptr < drive2.len() && drive2[beginning_of_space_ptr] != u32::MAX {
+            beginning_of_space_ptr += 1;
+        }
+        if beginning_of_space_ptr >= drive2.len() {
+            break;
+        }
+        let mut end_of_space_ptr = beginning_of_space_ptr;
+        while end_of_space_ptr + 1 < drive2.len() && drive2[end_of_space_ptr + 1] == u32::MAX {
+            end_of_space_ptr += 1;
+        }
+        let space_length = end_of_space_ptr + 1 - beginning_of_space_ptr;
+
+        if space_length >= file_length {
+            break;
+        }
+
+        beginning_of_space_ptr = end_of_space_ptr + 1
+    }
+
+    // have we gone off the end of the drive?
+    if beginning_of_space_ptr < drive2.len() {
+        Some(beginning_of_space_ptr)
+    } else {
+        None
+    }
+}
+
+fn find_file_by_id(drive2: &Vec<u32>, file_id_to_move: u32) -> (usize, usize) {
+    // TODO: search from the previous file location rather than the end of the disk every time
+    let mut file_to_move_ptr = drive2.len() - 1;
+    while file_to_move_ptr > 0 && drive2[file_to_move_ptr] != file_id_to_move {
+        file_to_move_ptr -= 1;
+    }
+    // find the beginning of this file
+    let mut beginning_of_file = file_to_move_ptr;
+    loop {
+        if beginning_of_file == 0 {
+            break;
+        }
+        if let Some(&p) = drive2.get(beginning_of_file - 1) {
+            if p == file_id_to_move {
+                beginning_of_file -= 1;
+                continue;
+            }
+        }
+        break;
+    }
+    let file_length = file_to_move_ptr + 1 - beginning_of_file;
+    (beginning_of_file, file_length)
 }
 
 fn checksum(drive: Vec<u32>) -> usize {
