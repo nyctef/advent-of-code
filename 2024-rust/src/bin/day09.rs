@@ -1,3 +1,5 @@
+use std::iter;
+
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
@@ -16,6 +18,8 @@ pub fn main() -> Result<()> {
 fn solve_for(input: &str) -> Result<(usize, u64)> {
     let map = all_digits(input.trim());
     // eprintln!("{:?}", &map);
+    //
+    /*
 
     // scanning ptr reads from left to right over the files
     // moving ptr reads from right to left whenever the scanning ptr hits free space
@@ -38,17 +42,18 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
             moving_ptr / 2
         };
 
+        eprintln!();
         eprintln!(
-            "scanning: {}/{} moving: {}/{} current block: {} file_id: {}",
+            "scanning: {}/{} moving: {}/{} current block: {} file_id: {} sfs: {}",
             scanning_ptr,
             scanning_ptr_offset,
             moving_ptr,
             moving_ptr_offset,
             current_block,
-            file_id
+            file_id,
+            is_scanning_free_space
         );
 
-        checksum += current_block * file_id;
 
         // we only move the file moving ptr when we're scanning free space to move it into
         if is_scanning_free_space {
@@ -70,6 +75,8 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
             }
         }
 
+        checksum += current_block * file_id;
+
         // move scanning ptr forward one block
         let &scanning_file_size = &map[scanning_ptr];
         dbg!(&scanning_file_size);
@@ -82,16 +89,55 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
 
         // TODO: more exact edge cases
         eprintln!(
-            "break? {}/{} vs {}/{}",
+            "break? s{}/{} vs m{}/{} (file_id: {file_id} checksum: {checksum})",
             scanning_ptr, scanning_ptr_offset, moving_ptr, moving_ptr_offset
         );
+        // if scanning_ptr is looking at a file past moving_ptr: break
+        // if scanning_ptr and moving_ptr are looking at the same file, and we've
+        // consumed all the blocks in that file: break
         if scanning_ptr >= moving_ptr
-            && scanning_ptr_offset + moving_ptr_offset >= scanning_file_size
+            && scanning_ptr_offset + moving_ptr_offset + 2 >= scanning_file_size
         {
             break;
         }
     }
     let part1 = checksum;
+
+    */
+
+    let mut drive = vec![];
+    for (i, &segment) in map.iter().enumerate() {
+        let is_file = i % 2 == 0;
+        let file_id = i as u8 / 2;
+
+        if is_file {
+            drive.extend(iter::repeat(file_id).take(segment as usize));
+        } else {
+            drive.extend(iter::repeat(u8::MAX).take(segment as usize));
+        }
+    }
+
+    // eprintln!("before: {:?}", &drive);
+
+    for i in 0..drive.len() {
+        if i >= drive.len() {
+            break;
+        }
+
+        while drive[i] == u8::MAX {
+            drive[i] = drive.pop().unwrap();
+        }
+    }
+
+    // eprintln!("after: {:?}", &drive);
+
+    let mut checksum = 0;
+    for i in 0..drive.len() {
+        checksum += i * (drive[i] as usize);
+    }
+
+    let part1 = checksum;
+
     let part2 = 0;
     Ok((part1, part2))
 }
@@ -110,7 +156,7 @@ fn test_example1() -> Result<()> {
 
 #[test]
 fn test_2() -> Result<()> {
-    let input = "101";
+    let input = "111";
     let (part1, _) = solve_for(input)?;
     // file id 1 moves to position 1
     assert_eq!(part1, 1);
@@ -119,11 +165,11 @@ fn test_2() -> Result<()> {
 #[test]
 fn test_3() -> Result<()> {
     let input = "113";
-    // 10222
-    // 12220
-    // =
+    // 0x111
+    // 0111x
+    // = 1*0 + 1*1 + 1*2 + 1*3
     let (part1, _) = solve_for(input)?;
 
-    assert_eq!(part1, 12);
+    assert_eq!(part1, 6);
     Ok(())
 }
