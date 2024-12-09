@@ -8,6 +8,10 @@ lazy_static! {
 
 // TODO: try making this generic? (or use a macro?)
 
+pub fn all_digits(input: &str) -> Vec<u32> {
+    input.chars().map(|c| c.to_digit(10).unwrap()).collect()
+}
+
 pub fn all_numbers(input: &str) -> Vec<u32> {
     DIGITS
         .find_iter(input)
