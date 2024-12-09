@@ -2,7 +2,6 @@ use std::iter;
 
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -150,7 +149,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 }
 
 fn move_blocks(
-    drive2: &mut Vec<u32>,
+    drive2: &mut [u32],
     beginning_of_file: usize,
     file_length: usize,
     beginning_of_space: usize,
@@ -161,7 +160,7 @@ fn move_blocks(
     }
 }
 
-fn find_space_with_size(drive2: &Vec<u32>, file_length: usize) -> Option<usize> {
+fn find_space_with_size(drive2: &[u32], file_length: usize) -> Option<usize> {
     let mut beginning_of_space_ptr = 0;
     loop {
         while beginning_of_space_ptr < drive2.len() && drive2[beginning_of_space_ptr] != u32::MAX {
@@ -191,7 +190,7 @@ fn find_space_with_size(drive2: &Vec<u32>, file_length: usize) -> Option<usize> 
     }
 }
 
-fn find_file_by_id(drive2: &Vec<u32>, file_id_to_move: u32) -> (usize, usize) {
+fn find_file_by_id(drive2: &[u32], file_id_to_move: u32) -> (usize, usize) {
     // TODO: search from the previous file location rather than the end of the disk every time
     let mut file_to_move_ptr = drive2.len() - 1;
     while file_to_move_ptr > 0 && drive2[file_to_move_ptr] != file_id_to_move {
@@ -217,16 +216,16 @@ fn find_file_by_id(drive2: &Vec<u32>, file_id_to_move: u32) -> (usize, usize) {
 
 fn checksum(drive: Vec<u32>) -> usize {
     let mut checksum = 0;
-    for i in 0..drive.len() {
-        if drive[i] == u32::MAX {
+    for (i, &file_id) in drive.iter().enumerate() {
+        if file_id == u32::MAX {
             continue;
         }
-        checksum += i * (drive[i] as usize);
+        checksum += i * (file_id as usize);
     }
     checksum
 }
 
-fn make_drive(map: &Vec<u32>) -> Vec<u32> {
+fn make_drive(map: &[u32]) -> Vec<u32> {
     let mut drive = vec![];
     for (i, &segment) in map.iter().enumerate() {
         let is_file = i % 2 == 0;

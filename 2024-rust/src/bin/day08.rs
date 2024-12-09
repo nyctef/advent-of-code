@@ -63,7 +63,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
         }
     }
     let part2 = nodes.len();
-    
+
     Ok((part1, part2))
 }
 
