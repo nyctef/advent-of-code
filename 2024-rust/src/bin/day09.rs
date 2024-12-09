@@ -15,7 +15,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(usize, u64)> {
+fn solve_for(input: &str) -> Result<(usize, usize)> {
     let map = all_digits(input.trim());
     // eprintln!("{:?}", &map);
     //
@@ -115,20 +115,10 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
         }
     }
 
-    let mut drive = vec![];
-    for (i, &segment) in map.iter().enumerate() {
-        let is_file = i % 2 == 0;
-        let file_id = i as u32 / 2;
-
-        if is_file {
-            drive.extend(iter::repeat(file_id).take(segment as usize));
-        } else {
-            drive.extend(iter::repeat(u32::MAX).take(segment as usize));
-        }
-    }
+    let mut drive = make_drive(&map);
 
     let drive_len_before = drive.len();
-    eprintln!("before: {:?}", &drive);
+    // eprintln!("before: {:?}", &drive);
 
     for i in 0..drive.len() {
         if i >= drive.len() {
@@ -141,20 +131,126 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
     }
 
     let drive_len_after = drive.len();
-    eprintln!("after: {:?}", &drive);
+    // eprintln!("after: {:?}", &drive);
     //
     assert!(drive.iter().all(|&x| x != u32::MAX));
-    dbg!(map.len(), total_free_space, total_file_size, drive_len_before, drive_len_after);
+    dbg!(
+        map.len(),
+        total_free_space,
+        total_file_size,
+        drive_len_before,
+        drive_len_after
+    );
 
-    let mut checksum = 0;
-    for i in 0..drive.len() {
-        checksum += i * (drive[i] as usize);
+    let part1 = checksum(drive);
+
+    let mut drive2 = make_drive(&map);
+
+    let mut file_to_move_ptr = drive2.len() - 1;
+    let mut highest_file_id_moved = u32::MAX;
+    while file_to_move_ptr > 0 {
+        eprintln!("{:?}", drive2);
+        let file_id_to_move = drive2[file_to_move_ptr];
+        if file_id_to_move >= highest_file_id_moved {
+            eprintln!("trying to move file {}, but already moved file {}", file_id_to_move, highest_file_id_moved);
+            break;
+        }
+        highest_file_id_moved = file_id_to_move;
+        // find the beginning of this file
+        let mut beginning_of_file = file_to_move_ptr;
+        loop {
+            if beginning_of_file == 0 {
+                break;
+            }
+            if let Some(&p) = drive2.get(beginning_of_file - 1) {
+                if p == file_id_to_move {
+                    beginning_of_file -= 1;
+                    continue;
+                }
+            }
+            break;
+        }
+        let file_length = file_to_move_ptr + 1 - beginning_of_file;
+        eprintln!(
+            "file id {} at [{}, {}] length {}",
+            file_id_to_move, beginning_of_file, file_to_move_ptr, file_length
+        );
+
+        let mut beginning_of_space_ptr = 0;
+        let mut hack_count = 0;
+        loop {
+            while beginning_of_space_ptr < drive2.len()
+                && drive2[beginning_of_space_ptr] != u32::MAX
+            {
+                beginning_of_space_ptr += 1;
+            }
+            if beginning_of_space_ptr >= drive2.len() {
+                break;
+            }
+            let mut end_of_space_ptr = beginning_of_space_ptr;
+            while end_of_space_ptr + 1 < drive2.len() && drive2[end_of_space_ptr + 1] == u32::MAX {
+                end_of_space_ptr += 1;
+            }
+            let space_length = end_of_space_ptr + 1 - beginning_of_space_ptr;
+            eprintln!(
+                "space at [{}, {}] length {}",
+                beginning_of_space_ptr, end_of_space_ptr, space_length
+            );
+
+            if space_length >= file_length {
+                break;
+            }
+
+            beginning_of_space_ptr = end_of_space_ptr + 1
+        }
+
+        // have we found space?
+        if beginning_of_space_ptr < drive2.len() {
+        // move file
+        for i in 0..file_length {
+            drive2[beginning_of_space_ptr + i] = drive2[beginning_of_file + i];
+            drive2[beginning_of_file + i] = u32::MAX;
+
+        }
+        }
+
+        if beginning_of_file == 0 {
+            break;
+        }
+
+        // look for the next file
+        file_to_move_ptr = beginning_of_file - 1;
+        while drive2[file_to_move_ptr] == u32::MAX {
+            file_to_move_ptr -= 1;
+        }
     }
 
-    let part1 = checksum;
-
-    let part2 = 0;
+    let part2 = checksum(drive2);
     Ok((part1, part2))
+}
+
+fn checksum(drive: Vec<u32>) -> usize {
+    let mut checksum = 0;
+    for i in 0..drive.len() {
+        if drive[i] == u32::MAX { continue; }
+        checksum += i * (drive[i] as usize);
+    }
+    checksum
+}
+
+fn make_drive(map: &Vec<u32>) -> Vec<u32> {
+    let mut drive = vec![];
+    for (i, &segment) in map.iter().enumerate() {
+        let is_file = i % 2 == 0;
+        let file_id = i as u32 / 2;
+
+        if is_file {
+            drive.extend(iter::repeat(file_id).take(segment as usize));
+        } else {
+            drive.extend(iter::repeat(u32::MAX).take(segment as usize));
+        }
+    }
+    drive
 }
 
 #[test]
@@ -165,7 +261,7 @@ fn test_example1() -> Result<()> {
     let (part1, part2) = solve_for(input)?;
 
     assert_eq!(part1, 1928);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 2858);
     Ok(())
 }
 
