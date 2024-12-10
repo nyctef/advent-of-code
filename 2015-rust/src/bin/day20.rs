@@ -20,8 +20,8 @@ fn solve_for(input: &str) -> Result<String> {
     loop {
         let mut total = 0;
         for elf in 1..=i {
-            if i % elf == 0 {
-                total += elf * 10;
+            if i % elf == 0 && i <= elf * 50 {
+                total += elf * 11;
             }
         }
 
