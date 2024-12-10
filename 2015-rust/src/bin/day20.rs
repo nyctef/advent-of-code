@@ -20,15 +20,12 @@ fn solve_for(input: &str) -> Result<String> {
     loop {
         let mut total = 0;
         for elf in 1..=i {
-            if i < 10 {
-                eprintln!("checking elf {elf} at house {i}");
-            }
             if i % elf == 0 {
                 total += elf * 10;
             }
         }
 
-        if i < 10 {
+        if i < 10 || i % 10_000 == 0 {
             eprintln!("House {i} got {total} presents");
         }
 
