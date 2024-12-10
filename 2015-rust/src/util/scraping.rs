@@ -42,8 +42,16 @@ pub fn all_numbers_i64(input: &str) -> Vec<i64> {
         .map(|x| x.as_str().parse().unwrap())
         .collect()
 }
+
 pub fn all_numbers_f64(input: &str) -> Vec<f64> {
     NEGATIVE_DIGITS
+        .find_iter(input)
+        .map(|x| x.as_str().parse().unwrap())
+        .collect()
+}
+
+pub fn all_numbers_u16(input: &str) -> Vec<u16> {
+    DIGITS
         .find_iter(input)
         .map(|x| x.as_str().parse().unwrap())
         .collect()
