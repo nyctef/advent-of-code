@@ -119,25 +119,33 @@ fn solve_for(input: &str) -> Result<String> {
         .collect_vec();
     let boss_stats = Stats::new(boss_numbers[0], boss_numbers[1], boss_numbers[2]);
 
-    let mut lowest_cost = u16::MAX;
+    let mut lowest_cost_win = u16::MAX;
+    let mut highest_cost_loss = 0;
     for weapon in &weapons() {
         for armor in &armor() {
             for ring1 in &rings() {
                 for ring2 in &rings() {
                     if ring1 == ring2 {
+                        // can't buy the same ring twice
                         continue;
                     }
 
                     let player_stats = weapon + armor + ring1 + ring2;
 
-                    if player_stats.cost >= lowest_cost {
-                        continue;
+                    if player_stats.cost < lowest_cost_win {
+                        let player = Stats::new(100, player_stats.damage, player_stats.armor);
+                        let boss = boss_stats.clone();
+                        if simulate(player, boss) {
+                            lowest_cost_win = player_stats.cost;
+                        }
                     }
 
-                    let player = Stats::new(100, player_stats.armor, player_stats.damage);
-                    let boss = boss_stats.clone();
-                    if simulate(player, boss) {
-                        lowest_cost = player_stats.cost;
+                    if player_stats.cost > highest_cost_loss {
+                        let player = Stats::new(100, player_stats.damage, player_stats.armor);
+                        let boss = boss_stats.clone();
+                        if !simulate(player, boss) {
+                            highest_cost_loss = player_stats.cost;
+                        }
                     }
                 }
             }
@@ -147,8 +155,8 @@ fn solve_for(input: &str) -> Result<String> {
     // let mut example_player = Stats::new(8, 5, 5);
     // let mut example_boss = Stats::new(12, 7, 2);
     // dbg!(simulate(example_player, example_boss));
-    let part1 = lowest_cost;
-    let part2 = "";
+    let part1 = lowest_cost_win;
+    let part2 = highest_cost_loss;
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }
 
