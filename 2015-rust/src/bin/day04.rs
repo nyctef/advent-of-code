@@ -23,7 +23,7 @@ fn solve_for(input: &str) -> Result<String> {
             println!("testing {}", &buffer);
         }
 
-        let digest = md5::compute(&buffer.as_bytes());
+        let digest = md5::compute(buffer.as_bytes());
         if digest.starts_with(&[0, 0]) && digest[2] < 16 && part1 == 0 {
             part1 = i;
         }

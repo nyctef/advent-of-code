@@ -44,7 +44,7 @@ fn solve_for(input: &str) -> Result<String> {
     }
 
     let part1 = grid.enumerate_chars_rc().filter(|(_, c)| c == &'O').count();
-    let mut part2_grid = vec![[0 as usize; 1000]; 1000];
+    let mut part2_grid = vec![[0_usize; 1000]; 1000];
 
     for line in input.trim().lines() {
         let nums = all_numbers_usize(line);

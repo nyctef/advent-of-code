@@ -25,11 +25,11 @@ fn solve_for<'i>(input: &'i str) -> Result<String> {
 
         distances
             .entry(source)
-            .or_insert(vec![])
+            .or_default()
             .push((dest, distance));
         distances
             .entry(dest)
-            .or_insert(vec![])
+            .or_default()
             .push((source, distance));
     }
 

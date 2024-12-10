@@ -35,7 +35,7 @@ impl CharGrid {
             "all lines must have same length (expected {})",
             width
         );
-        assert!(lines.iter().all(|l| l.chars().all(|c| c.is_ascii())));
+        assert!(lines.iter().all(|l| l.is_ascii()));
 
         let lines = lines.iter().map(|l| l.chars().collect_vec()).collect_vec();
 

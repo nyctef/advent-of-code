@@ -17,7 +17,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for<'input>(input: &'input str) -> Result<String> {
+fn solve_for(input: &str) -> Result<String> {
     let components = input
         .trim()
         .lines()
@@ -62,11 +62,11 @@ fn solve_for<'input>(input: &'input str) -> Result<String> {
         .into_group_map();
 
     let mut resolved = HashMap::default();
-    let part1 = resolve(&mut resolved, &components, &"a");
+    let part1 = resolve(&mut resolved, &components, "a");
 
     let mut resolved2 = HashMap::default();
     resolved2.insert("b", part1);
-    let part2 = resolve(&mut resolved2, &components, &"a");
+    let part2 = resolve(&mut resolved2, &components, "a");
 
     Ok(format!("Part 1: {part1} | Part 2: {part2}"))
 }

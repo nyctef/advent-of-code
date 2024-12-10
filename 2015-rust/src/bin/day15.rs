@@ -27,7 +27,7 @@ fn solve_for(input: &str) -> Result<String> {
     // dbg!(&ingredients);
 
     let mut part1 = 0;
-    let choices = (0..=100 as usize).permutations(ingredients.len());
+    let choices = (0..=100_usize).permutations(ingredients.len());
 
     for choice in choices {
         if choice.iter().sum::<usize>() != 100 {
@@ -36,7 +36,7 @@ fn solve_for(input: &str) -> Result<String> {
         let res = choice.iter().enumerate().map(|(i, c)| {
             let ingredient = ingredients[i];
             mul_ingredient(ingredient, *c as isize)
-        }).fold((0,0,0,0,0), |a, n| add_ingredient(a, n));
+        }).fold((0,0,0,0,0), add_ingredient);
 
         let total = res.0.max(0) * res.1.max(0) * res.2.max(0) * res.3.max(0);
         if total > part1 {

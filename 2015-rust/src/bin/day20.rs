@@ -1,6 +1,5 @@
 use aoc_2015_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;

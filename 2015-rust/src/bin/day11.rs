@@ -36,12 +36,12 @@ fn incr(value: &mut [u8]) {
     let mut pos = value.len() - 1;
     loop {
         let old_char = value[pos];
-        if old_char >= 'z' as u8 {
-            value[pos] = 'a' as u8;
+        if old_char >= b'z' {
+            value[pos] = b'a';
             pos -= 1;
             continue;
         } else {
-            value[pos] = old_char + 1 as u8;
+            value[pos] = old_char + 1_u8;
             break;
         }
     }
@@ -50,10 +50,7 @@ fn incr(value: &mut [u8]) {
 fn is_valid(value: &[u8]) -> bool {
     let has_straight = value
         .iter()
-        .tuple_windows()
-        .filter(|&(&a, &b, &c)| a + 1 == b && b + 1 == c)
-        .next()
-        .is_some();
+        .tuple_windows().any(|(&a, &b, &c)| a + 1 == b && b + 1 == c);
     let has_confusing_characters = value.iter().any(|c| matches!(c, b'i' | b'o' | b'l'));
     let has_repeated_pair = value
         .iter()

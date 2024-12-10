@@ -24,7 +24,7 @@ impl Display for Term<'_> {
 
 impl std::fmt::Debug for Term<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self.to_string()))
+        f.write_fmt(format_args!("{}", self))
     }
 }
 
@@ -121,13 +121,13 @@ impl<'r, 'i> State<'r, 'i> {
     }
 }
 
-impl<'r, 'i> Eq for State<'r, 'i> {}
-impl<'r, 'i> PartialEq for State<'r, 'i> {
+impl Eq for State<'_, '_> {}
+impl PartialEq for State<'_, '_> {
     fn eq(&self, other: &Self) -> bool {
         self.as_tuple().eq(&other.as_tuple())
     }
 }
-impl<'r, 'i> std::hash::Hash for State<'r, 'i> {
+impl std::hash::Hash for State<'_, '_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.as_tuple().hash(state)
     }
@@ -166,17 +166,17 @@ pub struct Chart<'r, 'i> {
     columns: Vec<Column<'r, 'i>>,
 }
 
-impl<'r, 'i> Chart<'r, 'i> {
+impl<'i> Chart<'_, 'i> {
     fn from_tokens(input_tokens: &[&'i str]) -> Self {
         Self {
             // initial column 0 is for the start state without
             // any characters processed.
             // total length of the chart is input_tokens.len() + 1
             columns: iter::once(None)
-                .chain(input_tokens.iter().map(|t| Some(t)))
+                .chain(input_tokens.iter().map(Some))
                 .enumerate()
                 // TODO: nicer way to convert from Option<&&_> to Option<&_>?
-                .map(|(i, t)| Column::new(i, t.map(|x| *x)))
+                .map(|(i, t)| Column::new(i, t.copied()))
                 .collect_vec(),
         }
     }
@@ -200,7 +200,7 @@ impl<'i> Grammar<'i> {
     fn rules_for(&self, term: &Term<'i>) -> impl Iterator<Item = &Rule<'i>> {
         assert!(matches!(term, Term::Nonterminal(_)));
         // TODO: can we remove this clone?
-        let term = term.clone();
+        let term = *term;
         self.rules.iter().filter(move |r| r.matches == term)
     }
 
@@ -249,7 +249,7 @@ impl Parser {
             let (prev_cols, these_cols) = chart.columns.split_at_mut(c);
             let (col, next_cols) = these_cols.split_at_mut(1);
             let col = &mut col[0];
-            let mut next_col = next_cols.iter_mut().nth(0);
+            let mut next_col = next_cols.get_mut(0);
 
             // slightly weird way to loop over states in the column, since `predict`
             // can keep adding more states in front of us
@@ -281,8 +281,8 @@ impl Parser {
                             // one of our states has arrived at a nonterminal `to_predict`, so add its expansions
                             // to the current column.
                             // println!("adding expansions for {sym:?} to col");
-                            for alt in (&grammar).rules_for(sym) {
-                                col.add(State::new(&alt, col.col_index))
+                            for alt in grammar.rules_for(sym) {
+                                col.add(State::new(alt, col.col_index))
                             }
                             /*
                             if sym in epsilon: _state.advance()
@@ -349,14 +349,14 @@ impl Parser {
         // eprintln!("parse_paths({:?}, {}, {})", named_expr, from, until);
         let paths = |state, start: usize, remaining_prefix: &'r [Term<'i>]| {
             // dbg!(&state, &remaining_prefix, start);
-            if remaining_prefix.len() == 0 {
+            if remaining_prefix.is_empty() {
                 // base case: we've run out of elements from `named_expr` to match
-                return if start == from {
+                if start == from {
                     vec![vec![state]]
                 } else {
                     // we failed to match the rule properly, so this path isn't valid
                     vec![]
-                };
+                }
             } else {
                 // recursive case: return the element we just matched, plus all the possible
                 // paths for the remaining elements
@@ -368,7 +368,7 @@ impl Parser {
                     path.extend(possible_remaining_path);
                     result.push(path);
                 }
-                return result;
+                result
             }
         };
 
@@ -401,12 +401,12 @@ impl Parser {
         };
         // dbg!(&starts);
 
-        let paths = starts
+        
+        // dbg!(&paths);
+        starts
             .into_iter()
             .flat_map(|(s, start)| paths(s, start, remaining))
-            .collect_vec();
-        // dbg!(&paths);
-        paths
+            .collect_vec()
     }
 
     // TODO: docs
@@ -415,7 +415,7 @@ impl Parser {
         s: StateOrTerminal<'c, 'r, 'i>,
     ) -> ForestNode<'c, 'r, 'i> {
         match s {
-            StateOrTerminal::State(state) => (s, Self::parse_forest(chart, &vec![state]).1),
+            StateOrTerminal::State(state) => (s, Self::parse_forest(chart, &[state]).1),
             StateOrTerminal::Terminal(_) => (s, vec![]),
         }
     }
@@ -428,13 +428,13 @@ impl Parser {
         let named_expr = &state.rule.expansion;
         let pathexprs =
             Self::parse_paths(named_expr, chart, state.start_col, state.end_col.unwrap());
-        return (
+        (
             &state.rule.matches,
             pathexprs
                 .into_iter()
                 .map(|p| p.into_iter().rev().collect_vec())
                 .collect_vec(),
-        );
+        )
     }
 
     // https://rahul.gopinath.org/post/2021/02/06/earley-parsing/#parse_forest
@@ -444,7 +444,7 @@ impl Parser {
         chart: &'c Chart<'r, 'i>,
         states: &[&'c State<'r, 'i>],
     ) -> ForestNode<'c, 'r, 'i> {
-        assert!(states.len() > 0);
+        assert!(!states.is_empty());
         assert!(states.iter().all(|s| s.finished()));
         assert!(states
             .iter()
@@ -477,11 +477,11 @@ impl Parser {
         chart: &'c Chart<'r, 'i>,
         forest: ForestNode<'c, 'r, 'i>,
     ) -> Vec<TreeNode<'c, 'r, 'i>> {
-        return vec![Self::extract_a_tree(chart, forest)];
+        vec![Self::extract_a_tree(chart, forest)]
     }
 }
 
-fn count_expansions_in_tree<'c, 'r, 'i>(tree: &TreeNode<'c, 'r, 'i>) -> usize {
+fn count_expansions_in_tree(tree: &TreeNode<'_, '_, '_>) -> usize {
     let TreeNode(node, branches) = tree;
     let mut sum = branches.iter().map(count_expansions_in_tree).sum();
     if let StateOrTerminal::State(s) = node {
@@ -548,7 +548,7 @@ mod test {
             vec![Terminal("a"), Terminal("b"), Terminal("c")],
         )];
         let grammar = Grammar::from_rules(rules, Nonterminal("S"));
-        let result = Parser::run(&grammar, &vec!["a", "b", "c"]);
+        let result = Parser::run(&grammar, &["a", "b", "c"]);
 
         println!("{:?}", result);
         todo!()
@@ -565,7 +565,7 @@ mod test {
             Rule::new(Nonterminal("B"), vec![Terminal("b")]),
         ];
         let grammar = Grammar::from_rules(rules, Nonterminal("S"));
-        let result = Parser::run(&grammar, &vec!["a", "b", "a", "b"]);
+        let result = Parser::run(&grammar, &["a", "b", "a", "b"]);
 
         println!("{:?}", result);
         todo!()

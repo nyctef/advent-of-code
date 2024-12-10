@@ -49,7 +49,7 @@ fn solve_for(input: &str) -> Result<String> {
             .flat_map(|r| &r.expansion)
             .filter(|e| matches!(e, Term::Nonterminal(_)))
             .unique()
-            .map(|nt| Rule::new(nt.clone(), vec![Term::Terminal(nt.get_value())]))
+            .map(|nt| Rule::new(*nt, vec![Term::Terminal(nt.get_value())]))
             .collect_vec(),
     );
 
