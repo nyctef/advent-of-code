@@ -1,9 +1,6 @@
 use aoc_2024_rust::{day11::blink_memoized_seq, util::*};
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 use rustc_hash::FxHashMap;
-use std::collections::HashMap;
-// use rustc_hash::FxHashMap as HashMap;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;

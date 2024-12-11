@@ -35,7 +35,7 @@ pub fn blink_memoized_stone<T: std::hash::BuildHasher>(
 
 pub fn blink(stone: u64) -> Vec<u64> {
     if stone == 0 {
-        return vec![1];
+        vec![1]
     } else if stone.ilog10() % 2 == 1 {
         // even number of digits
         let str = stone.to_string();
