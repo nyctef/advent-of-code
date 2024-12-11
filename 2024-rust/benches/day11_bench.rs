@@ -7,13 +7,17 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("blink");
     for i in [25, 75, 1000].iter() {
         group.bench_with_input(BenchmarkId::new("HashMap", i), i, |b, i| {
-            let mut cache = HashMap::new();
-            b.iter(|| black_box(blink_memoized_seq(&mut cache, &[2024], *i)))
+            b.iter(|| {
+                let mut cache = HashMap::new();
+                black_box(blink_memoized_seq(&mut cache, &[2024], *i))
+            });
         });
 
         group.bench_with_input(BenchmarkId::new("FxHashMap", i), i, |b, i| {
-            let mut cache = FxHashMap::default();
-            b.iter(|| black_box(blink_memoized_seq(&mut cache, &[2024], *i)))
+            b.iter(|| {
+                let mut cache = FxHashMap::default();
+                black_box(blink_memoized_seq(&mut cache, &[2024], *i))
+            })
         });
     }
     group.finish();
