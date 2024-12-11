@@ -1,3 +1,5 @@
+use std::collections::{hash_map, HashMap};
+
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
@@ -13,16 +15,48 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(usize, u64)> {
+fn solve_for(input: &str) -> Result<(usize, usize)> {
     let mut sequence = all_numbers_u64(input.trim());
 
-    for i in 0..25 {
-        blink(&mut sequence);
-    }
+    let mut cache = HashMap::new();
+    let part1 = blink_memoized_seq(&mut cache, &sequence, 25);
+    let part2 = blink_memoized_seq(&mut cache, &sequence, 75);
 
-    let part1 = sequence.len();
-    let part2 = 0;
     Ok((part1, part2))
+}
+
+fn blink_memoized_seq(
+    cache: &mut HashMap<(usize, u64), usize>,
+    sequence: &[u64],
+    target_num_steps: usize,
+) -> usize {
+    let mut result = 0;
+    for &stone in sequence {
+        result += blink_memoized_stone(cache, stone, target_num_steps);
+    }
+    result
+}
+
+fn blink_memoized_stone(
+    cache: &mut HashMap<(usize, u64), usize>,
+    stone: u64,
+    target_num_steps: usize,
+) -> usize {
+    if target_num_steps == 0 {
+        return 1;
+    }
+    if let Some(&entry) = cache.get(&(target_num_steps, stone)) {
+        return entry;
+    } else {
+        let mut sequence = vec![stone];
+        blink(&mut sequence);
+        let resulting_length = sequence
+            .into_iter()
+            .map(|s| blink_memoized_stone(cache, s, target_num_steps - 1))
+            .sum();
+        cache.insert((target_num_steps, stone), resulting_length);
+        return resulting_length;
+    }
 }
 
 fn blink(sequence: &mut Vec<u64>) {
