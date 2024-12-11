@@ -22,3 +22,10 @@ serde_json = "1.0.108"
 
 [profile.release]
 debug = true
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "day11_bench"
+harness = false
