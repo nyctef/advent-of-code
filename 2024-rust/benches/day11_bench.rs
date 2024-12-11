@@ -16,6 +16,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             b.iter(|| black_box(blink_memoized_seq(&mut cache, &[2024], *i)))
         });
     }
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
