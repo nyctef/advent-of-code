@@ -47,8 +47,7 @@ fn blink_memoized_stone(
     if let Some(&entry) = cache.get(&(target_num_steps, stone)) {
         entry
     } else {
-        let mut sequence = vec![stone];
-        blink(&mut sequence);
+        let sequence = blink(stone);
         let resulting_length = sequence
             .into_iter()
             .map(|s| blink_memoized_stone(cache, s, target_num_steps - 1))
@@ -58,33 +57,29 @@ fn blink_memoized_stone(
     }
 }
 
-fn blink(sequence: &mut Vec<u64>) {
-    let mut i = 0;
-    while i < sequence.len() {
-        let stone = sequence[i];
-        if stone == 0 {
-            sequence[i] = 1;
-            i += 1;
-        } else if stone.ilog10() % 2 == 1 {
-            // even number of digits
-            let str = stone.to_string();
-            let left = &str[0..str.len() / 2];
-            let right = &str[str.len() / 2..str.len()];
-            let to_insert = [left.parse().unwrap(), right.parse().unwrap()];
-            sequence.splice(i..i + 1, to_insert);
-            i += 2;
-        } else {
-            sequence[i] *= 2024;
-            i += 1;
-        }
+fn blink(stone: u64) -> Vec<u64> {
+    if stone == 0 {
+        return vec![1];
+    } else if stone.ilog10() % 2 == 1 {
+        // even number of digits
+        let str = stone.to_string();
+        let left = &str[0..str.len() / 2];
+        let right = &str[str.len() / 2..str.len()];
+        return vec![left.parse().unwrap(), right.parse().unwrap()];
+    } else {
+        return vec![stone * 2024];
     }
 }
 
 #[test]
 fn test_example1() -> Result<()> {
-    let mut sequence = vec![0, 1, 10, 99, 999];
-    blink(&mut sequence);
+    let sequence = vec![0, 1, 10, 99, 999];
 
-    assert_eq!(sequence, vec![1, 2024, 1, 0, 9, 9, 2021976]);
+    let result = sequence.into_iter().map(blink).collect_vec();
+
+    assert_eq!(
+        result,
+        vec![vec![1], vec![2024], vec![1, 0], vec![9, 9], vec![2021976]]
+    );
     Ok(())
 }
