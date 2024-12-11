@@ -1,8 +1,7 @@
-use std::collections::{hash_map, HashMap};
+use std::collections::HashMap;
 
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -16,7 +15,7 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<(usize, usize)> {
-    let mut sequence = all_numbers_u64(input.trim());
+    let sequence = all_numbers_u64(input.trim());
 
     let mut cache = HashMap::new();
     let part1 = blink_memoized_seq(&mut cache, &sequence, 25);
@@ -46,7 +45,7 @@ fn blink_memoized_stone(
         return 1;
     }
     if let Some(&entry) = cache.get(&(target_num_steps, stone)) {
-        return entry;
+        entry
     } else {
         let mut sequence = vec![stone];
         blink(&mut sequence);
@@ -55,7 +54,7 @@ fn blink_memoized_stone(
             .map(|s| blink_memoized_stone(cache, s, target_num_steps - 1))
             .sum();
         cache.insert((target_num_steps, stone), resulting_length);
-        return resulting_length;
+        resulting_length
     }
 }
 
