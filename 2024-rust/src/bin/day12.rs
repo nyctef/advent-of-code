@@ -1,6 +1,5 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 use rustc_hash::FxHashSet;
 use std::collections::VecDeque;
 
