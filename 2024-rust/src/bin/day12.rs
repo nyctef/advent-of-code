@@ -27,11 +27,9 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 
         let mut flood_fill_queue = VecDeque::new();
         flood_fill_queue.push_back(pos);
-        let mut perimeter = 0;
         let mut area = 0;
         let mut fence_parts = vec![];
         while let Some(next) = flood_fill_queue.pop_front() {
-            // eprintln!("{}: checking {}", plant, next);
             let already_seen = !seen.insert(next);
             if already_seen {
                 continue;
@@ -39,17 +37,14 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
             area += 1;
             for d in RCDirection::four() {
                 let neighbor = next + d;
-                // eprintln!("  : considering {}", neighbor);
                 if grid.index_opt(neighbor) == Some(plant) {
                     flood_fill_queue.push_back(neighbor);
                 } else {
-                    perimeter += 1;
                     fence_parts.push((next, d));
                 }
             }
         }
-        // dbg!(pos, plant, area, perimeter, &seen);
-        part1 += area * perimeter;
+        part1 += area * fence_parts.len();
 
         let mut unique_fences = fence_parts.len();
         for (candidate_fence_pos, direction) in &fence_parts {
