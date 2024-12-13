@@ -19,7 +19,7 @@ fn solve_for(input: &str, part2: bool) -> Result<isize> {
         .trim()
         .split("\n\n")
         .map(|m| {
-            let lines = m.lines().map(|l| all_numbers_isize(l)).collect_vec();
+            let lines = m.lines().map(all_numbers_isize).collect_vec();
             // TODO: should probably have more generic position/direction structs
             // rather than stealing these from CharGrid
             let a = RCDirection::new(lines[0][0], lines[0][1]);

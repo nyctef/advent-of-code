@@ -3,7 +3,7 @@ use itertools::Itertools;
 use std::{
     fmt::{Debug, Display},
     iter,
-    ops::{Add, Index, Sub, Mul},
+    ops::{Add, Index, Mul, Sub},
 };
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -521,7 +521,7 @@ impl Mul<isize> for RCDirection {
     type Output = RCDirection;
 
     fn mul(self, rhs: isize) -> Self::Output {
-        RCDirection::new ( self.rowdiff * rhs, self.coldiff * rhs )
+        RCDirection::new(self.rowdiff * rhs, self.coldiff * rhs)
     }
 }
 
