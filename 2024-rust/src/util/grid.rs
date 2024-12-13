@@ -3,7 +3,7 @@ use itertools::Itertools;
 use std::{
     fmt::{Debug, Display},
     iter,
-    ops::{Add, Index, Sub},
+    ops::{Add, Index, Sub, Mul},
 };
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -514,6 +514,14 @@ impl RCDirection {
 
     pub fn manhattan_abs(&self) -> usize {
         self.rowdiff.unsigned_abs() + self.coldiff.unsigned_abs()
+    }
+}
+
+impl Mul<isize> for RCDirection {
+    type Output = RCDirection;
+
+    fn mul(self, rhs: isize) -> Self::Output {
+        RCDirection::new ( self.rowdiff * rhs, self.coldiff * rhs )
     }
 }
 
