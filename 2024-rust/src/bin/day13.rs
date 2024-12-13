@@ -26,10 +26,12 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             // rather than stealing these from CharGrid
             let a = RCDirection::new(lines[0][0], lines[0][1]);
             let b = RCDirection::new(lines[1][0], lines[1][1]);
-            let target = CharGridIndexRC::new(
+            let mut target = CharGridIndexRC::new(
                 lines[2][0].try_into().unwrap(),
                 lines[2][1].try_into().unwrap(),
             );
+
+            target = target + RCDirection::new(10000000000000, 10000000000000);
 
             (a, b, target)
         })
@@ -37,55 +39,25 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
     let mut part1 = 0;
 
+    let mut m = 0;
+
     for (a_move, b_move, target) in machines {
-        let mut cheapest_win_found = u64::MAX;
-        let mut search = VecDeque::new();
-        let mut seen = FxHashSet::default();
+        let b = ((target.col as isize * a_move.rowdiff) - (a_move.coldiff * target.row as isize))
+            / ((b_move.coldiff * a_move.rowdiff) - (b_move.rowdiff * a_move.coldiff));
+        let a = (target.col as isize - (b * b_move.coldiff)) / (a_move.coldiff);
 
-        dbg!(a_move, b_move, target);
+        m += 1;
 
-        let mut progress = 0;
-        search.push_back((0, 0));
-        while let Some((a, b)) = search.pop_front() {
-            if !seen.insert((a, b)) {
-                continue;
-            }
-            if progress % 10_000 == 0 {
-                eprintln!(
-                    "len {} cheapest {} | a {} b {}",
-                    search.len(),
-                    cheapest_win_found,
-                    a,
-                    b
-                );
-            }
-            progress += 1;
-            let cost = 3 * a + 1 * b;
-            if cost >= cheapest_win_found {
-                continue;
-            }
-            let position = CharGridIndexRC::zero() + (a_move * a as isize) + (b_move * b as isize);
-            if position.row > target.row || position.col > target.col {
-                continue;
-            }
-
-            if position.row == target.row && position.col == target.col {
-                cheapest_win_found = cost;
-                continue;
-            }
-
-            search.push_back((a + 1, b));
-            search.push_back((a, b + 1));
+        let hits = CharGridIndexRC::zero() + (a_move * a) + (b_move * b) == target;
+        
+        if (hits) {
+        part1 += (3*a) + b;
         }
-
-        eprintln!("{}", cheapest_win_found);
-        if cheapest_win_found != u64::MAX {
-            part1 += cheapest_win_found;
-        }
+        dbg!(m, a, b, (3*a) + b, hits);
     }
 
     let part2 = 0;
-    Ok((part1, part2))
+    Ok((part1 as u64, part2))
 }
 
 #[test]
