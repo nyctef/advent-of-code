@@ -66,16 +66,36 @@ fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, u64)> {
         }
     }
 
+    // for y in 0..height {
+    //     for x in 0..width {
+    //         let mut count = 0;
+    //         for robot in &robots {
+    //             if robot.0.x == x && robot.0.y == y {
+    //                 count += 1;
+    //             }
+    //         }
+    //         print!(
+    //             "{}",
+    //             if count == 0 {
+    //                 '.'
+    //             } else {
+    //                 char::from_digit(count, 10).unwrap()
+    //             }
+    //         );
+    //     }
+    //     println!();
+    // }
+
     let mut quads = vec![0; 4];
 
     for robot in &robots {
-        if robot.0.x < width/2 {
+        if robot.0.x < width / 2 {
             if robot.0.y < height / 2 {
                 quads[0] += 1;
             } else if robot.0.y > height / 2 {
-                quads [1] += 1;
+                quads[1] += 1;
             }
-        } else if robot.0.x > height / 2 {
+        } else if robot.0.x > width / 2 {
             if robot.0.y < height / 2 {
                 quads[2] += 1;
             } else if robot.0.y > height / 2 {
@@ -83,9 +103,9 @@ fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, u64)> {
             }
         }
     }
-    eprintln!("{:?}", robots.iter().map(|r| r.0).collect_vec());
-    dbg!(&quads);
-    
+    // eprintln!("{:?}", robots.iter().map(|r| r.0).collect_vec());
+    // dbg!(&quads);
+
     let part1 = quads.into_iter().product();
 
     let part2 = 0;
@@ -110,7 +130,7 @@ p=9,5 v=-3,-3
 "###;
     let (part1, part2) = solve_for(input, 11, 7)?;
 
-    assert_eq!(part1, 0);
+    assert_eq!(part1, 12);
     assert_eq!(part2, 0);
     Ok(())
 }
