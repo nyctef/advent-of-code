@@ -4,6 +4,7 @@ use derive_more::Constructor;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 use std::ops::Add;
+use std::cmp::Ordering::{Less, Greater};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -53,7 +54,7 @@ fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, i32)> {
         .collect_vec();
 
     let mut part1 = 0;
-    let part2;
+    let mut part2 = 0;
     let mut seconds = 0;
     loop {
         move_robots(&mut robots, width, height);
@@ -77,6 +78,9 @@ fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, i32)> {
             // let's assume that every robot is on a unique tile when it happens
             print_state_at_time(seconds, height, width, &robots);
             part2 = seconds;
+        }
+
+        if part1 != 0 && part2 != 0 {
             break;
         }
     }
@@ -88,25 +92,22 @@ fn safety_factor(robots: &[Robot], width: isize, height: isize) -> u64 {
     let mut quads = vec![0; 4];
 
     for robot in robots {
-        if robot.pos.x < width / 2 {
-            if robot.pos.y < height / 2 {
-                quads[0] += 1;
-            } else if robot.pos.y > height / 2 {
-                quads[1] += 1;
-            }
-        } else if robot.pos.x > width / 2 {
-            if robot.pos.y < height / 2 {
-                quads[2] += 1;
-            } else if robot.pos.y > height / 2 {
-                quads[3] += 1;
-            }
+        let (x, y) = (robot.pos.x, robot.pos.y);
+
+        match (x.cmp(&(width/2)), y.cmp(&(height/2))) {
+            (Less, Less) => quads[0] += 1,
+            (Less, Greater) => quads[1] += 1,
+            (Greater, Greater) => quads[2] += 1,
+            (Greater, Less) => quads[3] += 1,
+            // ignore robots on the centerlines
+            _ => {},
         }
     }
-    let part1 = quads.into_iter().product();
-    part1
+
+    quads.into_iter().product()
 }
 
-fn move_robots(robots: &mut Vec<Robot>, width: isize, height: isize) {
+fn move_robots(robots: &mut [Robot], width: isize, height: isize) {
     for robot in robots.iter_mut() {
         robot.pos = robot.pos + robot.vel;
 
@@ -167,9 +168,8 @@ p=7,3 v=-1,2
 p=2,4 v=2,-3
 p=9,5 v=-3,-3
 "###;
-    let (part1, part2) = solve_for(input, 11, 7)?;
+    let (part1, _) = solve_for(input, 11, 7)?;
 
     assert_eq!(part1, 12);
-    assert_eq!(part2, 0);
     Ok(())
 }
