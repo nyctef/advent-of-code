@@ -3,8 +3,8 @@ use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
+use std::cmp::Ordering::{Greater, Less};
 use std::ops::Add;
-use std::cmp::Ordering::{Less, Greater};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -94,13 +94,13 @@ fn safety_factor(robots: &[Robot], width: isize, height: isize) -> u64 {
     for robot in robots {
         let (x, y) = (robot.pos.x, robot.pos.y);
 
-        match (x.cmp(&(width/2)), y.cmp(&(height/2))) {
+        match (x.cmp(&(width / 2)), y.cmp(&(height / 2))) {
             (Less, Less) => quads[0] += 1,
             (Less, Greater) => quads[1] += 1,
             (Greater, Greater) => quads[2] += 1,
             (Greater, Less) => quads[3] += 1,
             // ignore robots on the centerlines
-            _ => {},
+            _ => {}
         }
     }
 
