@@ -3,7 +3,7 @@ use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
-use std::{collections::HashMap, ops::Add};
+use std::ops::Add;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -27,6 +27,12 @@ struct Vel {
     dy: isize,
 }
 
+#[derive(Constructor, Debug, Copy, Clone)]
+struct Robot {
+    pos: Pos,
+    vel: Vel,
+}
+
 impl Add<Vel> for Pos {
     type Output = Pos;
 
@@ -38,101 +44,111 @@ impl Add<Vel> for Pos {
     }
 }
 
-fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, u64)> {
+fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, i32)> {
     let mut robots = input
         .trim()
         .lines()
         .map(all_numbers_isize)
-        .map(|n| (Pos::new(n[0], n[1]), Vel::new(n[2], n[3])))
+        .map(|n| Robot::new(Pos::new(n[0], n[1]), Vel::new(n[2], n[3])))
         .collect_vec();
 
-    // dbg!(&robots);
-
+    let mut part1 = 0;
+    let part2;
     let mut seconds = 0;
-
     loop {
-        for robot in robots.iter_mut() {
-            robot.0 = robot.0 + robot.1;
-
-            if robot.0.x < 0 {
-                robot.0.x += width;
-            }
-            if robot.0.x >= width {
-                robot.0.x -= width;
-            }
-            if robot.0.y < 0 {
-                robot.0.y += height;
-            }
-            if robot.0.y >= height {
-                robot.0.y -= height;
-            }
-        }
+        move_robots(&mut robots, width, height);
 
         seconds += 1;
         let mut per_pos = FxHashSet::default();
         let mut seen_dupe = false;
         for r in &robots {
-            if !per_pos.insert(r.0) {
+            if !per_pos.insert(r.pos) {
                 seen_dupe = true;
                 break;
             }
         }
 
-        if seen_dupe {
-            // lucky guess about the conditions for the easter egg:
-            // let's assume that every robot is on a unique tile when it happens
-            continue;
+        if seconds == 100 {
+            part1 = safety_factor(&robots, width, height)
         }
 
-        println!("=======================================");
-        println!("    {}     ", seconds);
-        println!("=======================================");
-
-        for y in 0..height {
-            for x in 0..width {
-                let mut count = 0;
-                for robot in &robots {
-                    if robot.0.x == x && robot.0.y == y {
-                        count += 1;
-                    }
-                }
-                print!(
-                    "{}",
-                    if count == 0 {
-                        ' '
-                    } else {
-                        char::from_digit(count, 10).unwrap()
-                    }
-                );
-            }
-            println!();
+        if !seen_dupe {
+            // lucky guess about the conditions for the easter egg:
+            // let's assume that every robot is on a unique tile when it happens
+            print_state_at_time(seconds, height, width, &robots);
+            part2 = seconds;
+            break;
         }
     }
 
+    Ok((part1, part2))
+}
+
+fn safety_factor(robots: &[Robot], width: isize, height: isize) -> u64 {
     let mut quads = vec![0; 4];
 
-    for robot in &robots {
-        if robot.0.x < width / 2 {
-            if robot.0.y < height / 2 {
+    for robot in robots {
+        if robot.pos.x < width / 2 {
+            if robot.pos.y < height / 2 {
                 quads[0] += 1;
-            } else if robot.0.y > height / 2 {
+            } else if robot.pos.y > height / 2 {
                 quads[1] += 1;
             }
-        } else if robot.0.x > width / 2 {
-            if robot.0.y < height / 2 {
+        } else if robot.pos.x > width / 2 {
+            if robot.pos.y < height / 2 {
                 quads[2] += 1;
-            } else if robot.0.y > height / 2 {
+            } else if robot.pos.y > height / 2 {
                 quads[3] += 1;
             }
         }
     }
-    // eprintln!("{:?}", robots.iter().map(|r| r.0).collect_vec());
-    // dbg!(&quads);
-
     let part1 = quads.into_iter().product();
+    part1
+}
 
-    let part2 = 0;
-    Ok((part1, part2))
+fn move_robots(robots: &mut Vec<Robot>, width: isize, height: isize) {
+    for robot in robots.iter_mut() {
+        robot.pos = robot.pos + robot.vel;
+
+        if robot.pos.x < 0 {
+            robot.pos.x += width;
+        }
+        if robot.pos.x >= width {
+            robot.pos.x -= width;
+        }
+        if robot.pos.y < 0 {
+            robot.pos.y += height;
+        }
+        if robot.pos.y >= height {
+            robot.pos.y -= height;
+        }
+    }
+}
+
+fn print_state_at_time(seconds: i32, height: isize, width: isize, robots: &[Robot]) {
+    println!("=======================================");
+    println!("    {}     ", seconds);
+    println!("=======================================");
+
+    for y in 0..height {
+        for x in 0..width {
+            let mut count = 0;
+            for robot in robots {
+                if robot.pos.x == x && robot.pos.y == y {
+                    count += 1;
+                }
+            }
+            print!(
+                "{}",
+                if count == 0 {
+                    ' '
+                } else {
+                    char::from_digit(count, 10).unwrap()
+                }
+            );
+        }
+        println!();
+    }
 }
 
 #[test]
