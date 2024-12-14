@@ -2,7 +2,8 @@ use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
-use std::ops::Add;
+use rustc_hash::FxHashSet;
+use std::{collections::HashMap, ops::Add};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -15,7 +16,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-#[derive(Constructor, Debug, Copy, Clone)]
+#[derive(Constructor, Debug, Copy, Clone, Eq, PartialEq, Hash)]
 struct Pos {
     x: isize,
     y: isize,
@@ -47,7 +48,9 @@ fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, u64)> {
 
     // dbg!(&robots);
 
-    for i in 0..100 {
+    let mut seconds = 0;
+
+    loop {
         for robot in robots.iter_mut() {
             robot.0 = robot.0 + robot.1;
 
@@ -64,27 +67,47 @@ fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, u64)> {
                 robot.0.y -= height;
             }
         }
-    }
 
-    // for y in 0..height {
-    //     for x in 0..width {
-    //         let mut count = 0;
-    //         for robot in &robots {
-    //             if robot.0.x == x && robot.0.y == y {
-    //                 count += 1;
-    //             }
-    //         }
-    //         print!(
-    //             "{}",
-    //             if count == 0 {
-    //                 '.'
-    //             } else {
-    //                 char::from_digit(count, 10).unwrap()
-    //             }
-    //         );
-    //     }
-    //     println!();
-    // }
+        seconds += 1;
+        let mut per_pos = FxHashSet::default();
+        let mut seen_dupe = false;
+        for r in &robots {
+            if !per_pos.insert(r.0) {
+                seen_dupe = true;
+                break;
+            }
+        }
+
+        if seen_dupe {
+            // lucky guess about the conditions for the easter egg:
+            // let's assume that every robot is on a unique tile when it happens
+            continue;
+        }
+
+        println!("=======================================");
+        println!("    {}     ", seconds);
+        println!("=======================================");
+
+        for y in 0..height {
+            for x in 0..width {
+                let mut count = 0;
+                for robot in &robots {
+                    if robot.0.x == x && robot.0.y == y {
+                        count += 1;
+                    }
+                }
+                print!(
+                    "{}",
+                    if count == 0 {
+                        ' '
+                    } else {
+                        char::from_digit(count, 10).unwrap()
+                    }
+                );
+            }
+            println!();
+        }
+    }
 
     let mut quads = vec![0; 4];
 
