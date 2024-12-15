@@ -51,6 +51,18 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     viz!("{:?}", &grid);
     let gps = calc_gps(&grid);
 
+    let map = expand_map(map);
+
+    let mut grid = CharGrid::from_string(&map.join("\n"));
+    let robot_pos = find_robot(&grid);
+    simulate_robot(&movements, &mut grid, robot_pos);
+    viz!("{:?}", &grid);
+    let gps2 = calc_gps(&grid);
+
+    Ok((gps, gps2))
+}
+
+fn expand_map(map: &str) -> Vec<String> {
     let mut map = map
         .lines()
         .map(|l| {
@@ -74,14 +86,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
             l.truncate(proper_length);
         }
     }
-
-    let mut grid = CharGrid::from_string(&map.join("\n"));
-    let robot_pos = find_robot(&grid);
-    simulate_robot(&movements, &mut grid, robot_pos);
-    viz!("{:?}", &grid);
-    let gps2 = calc_gps(&grid);
-
-    Ok((gps, gps2))
+    map
 }
 
 fn simulate_robot(movements: &[RCDirection], grid: &mut CharGrid, mut robot_pos: CharGridIndexRC) {
