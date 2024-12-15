@@ -13,7 +13,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(usize, u64)> {
+fn solve_for(input: &str) -> Result<(usize, usize)> {
     let (map, movements) = input.trim().split_once("\n\n").unwrap();
     let mut grid = CharGrid::from_string(map);
     let movements = movements
@@ -34,7 +34,7 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
         .exactly_one()
         .unwrap();
 
-    for movement in movements {
+    for &movement in &movements {
         if try_move(&mut grid, robot_pos, movement) {
             robot_pos = robot_pos + movement;
         }
@@ -46,8 +46,89 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
         .map(|p| 100 * p.row + p.col)
         .sum();
 
-    let part2 = 0;
-    Ok((gps, part2))
+    let mut map2 = map
+        .lines()
+        .map(|l| {
+            l.chars()
+                .map(|c| match c {
+                    '#' => "##",
+                    'O' => "[]",
+                    '.' => "..",
+                    '@' => "@.",
+                    '\n' => "\n",
+                    _ => unreachable!(),
+                })
+                .join("")
+        })
+        .collect_vec();
+
+    // the top and bottom border will be twice as wide as they should be
+    let proper_length = map2[1].len();
+    for l in &mut map2 {
+        if l.len() > proper_length {
+            l.truncate(proper_length);
+        }
+    }
+
+    let grid2 = CharGrid::from_string(&map2.join("\n"));
+
+    let mut robot_pos = grid
+        .enumerate_chars_rc()
+        .filter_map(|(p, c)| if c == '@' { Some(p) } else { None })
+        .exactly_one()
+        .unwrap();
+
+    for movement in movements {
+        if could_move(&grid, robot_pos, movement) {
+            assert!(try_move(&mut grid, robot_pos, movement));
+            robot_pos = robot_pos + movement;
+        }
+    }
+    let gps2 = grid
+        .enumerate_chars_rc()
+        .filter_map(|(p, c)| if c == 'O' { Some(p) } else { None })
+        .map(|p| 100 * p.row + p.col)
+        .sum();
+
+    Ok((gps, gps2))
+}
+
+fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
+    let target_pos = pos + dir;
+    if !grid.is_in_bounds(target_pos) {
+        // should be prevented by `#` borders
+        panic!("tried to move off the edge");
+    }
+
+    let could_move_one = |p, d| {
+    let tp = p + d;
+        if grid[p] == '#' {
+            false
+        } else if grid[p] == '.' || could_move(grid, tp, d) {
+            true
+        } else {
+            false
+        }
+    };
+
+    if grid[pos] == '[' || grid[pos] == ']' {
+        if dir == RCDirection::left() || dir == RCDirection::right() {
+            // these behave the same as otherwise
+            could_move(grid, target_pos, dir)
+        } else {
+            // up or down: we need to treat the [ and ] as coupled
+            // find the other pair:
+            let other_pos = if grid[pos] == '[' {
+                pos + RCDirection::right()
+            } else {
+                pos + RCDirection::left()
+            };
+
+            return could_move_one(pos, dir) && could_move_one(other_pos, dir);
+        }
+    } else {
+        return could_move_one(pos, dir);
+    }
 }
 
 fn try_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
