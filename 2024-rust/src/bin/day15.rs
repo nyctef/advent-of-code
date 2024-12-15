@@ -10,7 +10,7 @@ macro_rules! diag {
 
 macro_rules! viz {
     ($($arg:tt)*) => ({
-        eprintln!($($arg)*);
+        // eprintln!($($arg)*);
     })
 }
 
@@ -138,8 +138,14 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
         }
     };
 
+
     let target_pos = pos + dir;
     diag!("pos {} dir {} target {}", pos, dir, target_pos);
+    if grid[pos] == '.' {
+        // TODO: this feels like a hack - we've probably got some other logic wrong elsewhere
+        // but we can move empty space
+        return true;
+    }
     if !grid.is_in_bounds(target_pos) {
         // should be prevented by `#` borders
         panic!("tried to move off the edge at {} {}", pos, dir);
@@ -179,6 +185,11 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
         "[tm] p {} d {} tp {} g[p] {} g[tp] {}",
         p, d, tp, g[p], g[tp]
     );
+    if g[p] == '.' {
+        // TODO: this feels like a hack - we've probably got some other logic wrong elsewhere
+        // but we can move empty space
+        return true;
+    }
     if g[tp] == '#' {
         panic!("tried to move into '#' when it shouldn't be possible");
     } else if g[tp] == '[' || g[tp] == ']' {
@@ -196,6 +207,11 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
 }
 
 fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
+    if grid[pos] == '.' {
+        // TODO: this feels like a hack - we've probably got some other logic wrong elsewhere
+        // but we can move empty space
+        return true;
+    }
     let target_pos = pos + dir;
     diag!(
         "[tm] pos {} dir {} target {} to_move {}",
@@ -304,7 +320,7 @@ fn test_custom3() -> Result<()> {
 #.....#
 #######
 
->>>>
+>>>>>
 "###;
     let (part1, part2) = solve_for(input)?;
 
