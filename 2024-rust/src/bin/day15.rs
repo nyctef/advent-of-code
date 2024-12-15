@@ -148,6 +148,22 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection, commit: boo
         return false;
     }
     if can_move && commit {
+        // since part 2 can create situations like:
+        //
+        //         #
+        //      [][]
+        //       []
+        //        @
+        //
+        // in this case if we try to move the robot up and
+        // naively recurse through all the boxes that need to move,
+        // we'd end up moving the top left box even though the top
+        // right box is blocking the whole thing.
+        //
+        // As a result we do a pass with commit=false to check
+        // whether the entire movement is possible, then actually
+        // mutate the grid with commit=true
+
         diag!("[tm] y");
         diag!("[tm] moving {} at {} to {}", g[p], p, tp);
         g.set_index_rc(tp, g[p]);
@@ -206,12 +222,6 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection, commit: 
         diag!("[tm] moving normally {} {}", pos, grid[pos]);
         return do_move_one(grid, pos, dir, commit);
     }
-
-    // diag!("[tm] moving {} at {} to {}", grid[pos], pos, target_pos);
-    // grid.set_index_rc(target_pos, grid[pos]);
-    // grid.set_index_rc(pos, '.');
-
-    // true
 }
 
 #[test]
