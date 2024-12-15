@@ -2,8 +2,8 @@ use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
 
-const DIAG_ENABLED:bool = false;
-const VIZ_ENABLED:bool = true;
+const DIAG_ENABLED: bool = false;
+const VIZ_ENABLED: bool = true;
 
 macro_rules! diag {
     ($($arg:tt)*) => {{
@@ -47,22 +47,10 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
         .filter_map(|d| d)
         .collect_vec();
 
-    let mut robot_pos = find_robot(&grid);
-
-    for &movement in &movements {
-        if could_move(&grid, robot_pos, movement) {
-            do_move(&mut grid, robot_pos, movement);
-            robot_pos = robot_pos + movement;
-        }
-    }
-
+    let robot_pos = find_robot(&grid);
+    simulate_robot(&movements, &mut grid, robot_pos);
     viz!("{:?}", &grid);
-
-    let gps = grid
-        .enumerate_chars_rc()
-        .filter_map(|(p, c)| if c == 'O' { Some(p) } else { None })
-        .map(|p| 100 * p.row + p.col)
-        .sum();
+    let gps = calc_gps(&grid);
 
     let mut map = map
         .lines()
@@ -89,28 +77,32 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     }
 
     let mut grid = CharGrid::from_string(&map.join("\n"));
+    let robot_pos = find_robot(&grid);
+    simulate_robot(&movements, &mut grid, robot_pos);
+    viz!("{:?}", &grid);
+    let gps2 = calc_gps(&grid);
 
-    let mut robot_pos = find_robot(&grid);
+    Ok((gps, gps2))
+}
 
-    for movement in movements {
+fn simulate_robot(movements: &[RCDirection], grid: &mut CharGrid, mut robot_pos: CharGridIndexRC) {
+    for &movement in movements {
         diag!("{:?}", &grid);
         diag!("move: {}", dir_str(movement));
-        if could_move(&grid, robot_pos, movement) {
-            assert!(do_move(&mut grid, robot_pos, movement));
+        if could_move(grid, robot_pos, movement) {
+            assert!(do_move(grid, robot_pos, movement));
             diag!("moving");
             robot_pos = robot_pos + movement;
         }
         debug_assert_eq!(find_robot(&grid), robot_pos);
     }
-    let gps2 = grid
-        .enumerate_chars_rc()
-        .filter_map(|(p, c)| if c == '[' { Some(p) } else { None })
+}
+
+fn calc_gps(grid: &CharGrid) -> usize {
+    grid.enumerate_chars_rc()
+        .filter_map(|(p, c)| if c == 'O' || c == '[' { Some(p) } else { None })
         .map(|p| 100 * p.row + p.col)
-        .sum();
-
-    viz!("{:?}", &grid);
-
-    Ok((gps, gps2))
+        .sum()
 }
 
 fn dir_str(dir: RCDirection) -> &'static str {
@@ -186,7 +178,7 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
             return could_move_one(pos, dir) && could_move_one(other_pos, dir);
         }
     } else if grid[target_pos] == 'O' {
-        return could_move(grid, target_pos, dir)
+        return could_move(grid, target_pos, dir);
     } else {
         return could_move_one(pos, dir);
     }
