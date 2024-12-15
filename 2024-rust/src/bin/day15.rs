@@ -214,8 +214,7 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection, commit: 
                 other_pos
             );
 
-            do_move_one(grid, pos, dir, commit)
-                && do_move_one(grid, other_pos, dir, commit)
+            do_move_one(grid, pos, dir, commit) && do_move_one(grid, other_pos, dir, commit)
         }
     } else {
         diag!("[tm] moving normally {} {}", pos, grid[pos]);
