@@ -90,7 +90,7 @@ fn simulate_robot(movements: &[RCDirection], grid: &mut CharGrid, mut robot_pos:
         diag!("{:?}", &grid);
         diag!("move: {}", dir_str(movement));
         if could_move(grid, robot_pos, movement) {
-            assert!(do_move(grid, robot_pos, movement));
+            assert!(do_move(grid, robot_pos, movement, true));
             diag!("moving");
             robot_pos = robot_pos + movement;
         }
@@ -180,7 +180,7 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
     }
 }
 
-fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
+fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection, commit: bool) -> bool {
     let tp = p + d;
     diag!(
         "[tm] p {} d {} tp {} g[p] {} g[tp] {}",
@@ -192,26 +192,29 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
     );
     if g[p] == '.' {
         // TODO: this feels like a hack - we've probably got some other logic wrong elsewhere
-        // but we can move empty space
+        // but we can always move empty space
         return true;
     }
+    let can_move;
     if g[tp] == '#' {
-        panic!("tried to move into '#' when it shouldn't be possible");
+        return false;
     } else if g[tp] == '[' || g[tp] == ']' || g[tp] == 'O' {
-        do_move(g, tp, d);
+        can_move = do_move(g, tp, d, commit);
     } else if g[tp] == '.' {
-        // continue
+        can_move = true;
     } else {
-        panic!("didn't have empty space to move into");
-    };
-    diag!("[tm] y");
-    diag!("[tm] moving {} at {} to {}", g[p], p, tp);
-    g.set_index_rc(tp, g[p]);
-    g.set_index_rc(p, '.');
-    true
+        return false;
+    }
+    if can_move && commit {
+        diag!("[tm] y");
+        diag!("[tm] moving {} at {} to {}", g[p], p, tp);
+        g.set_index_rc(tp, g[p]);
+        g.set_index_rc(p, '.');
+    }
+    can_move
 }
 
-fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
+fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection, commit: bool) -> bool {
     if grid[pos] == '.' {
         // TODO: this feels like a hack - we've probably got some other logic wrong elsewhere
         // but we can move empty space
@@ -231,14 +234,13 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool 
     }
 
     if grid[target_pos] == '#' {
-        panic!("tried to move into '#' when it shouldn't be possible");
+        return false;
     }
 
     if grid[pos] == '[' || grid[pos] == ']' {
         if dir == RCDirection::left() || dir == RCDirection::right() {
             // these behave the same as otherwise
-            do_move(grid, target_pos, dir);
-            assert!(do_move_one(grid, pos, dir));
+            return do_move(grid, target_pos, dir, commit) && do_move_one(grid, pos, dir, commit);
         } else {
             // up or down: we need to treat the [ and ] as coupled
             // find the other pair:
@@ -255,19 +257,19 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool 
                 other_pos
             );
 
-            assert!(do_move_one(grid, pos, dir));
-            assert!(do_move_one(grid, other_pos, dir));
+            return do_move_one(grid, pos, dir, commit)
+                && do_move_one(grid, other_pos, dir, commit);
         }
     } else {
         diag!("[tm] moving normally {} {}", pos, grid[pos]);
-        assert!(do_move_one(grid, pos, dir));
+        return do_move_one(grid, pos, dir, commit);
     }
 
     // diag!("[tm] moving {} at {} to {}", grid[pos], pos, target_pos);
     // grid.set_index_rc(target_pos, grid[pos]);
     // grid.set_index_rc(pos, '.');
 
-    true
+    // true
 }
 
 #[test]
