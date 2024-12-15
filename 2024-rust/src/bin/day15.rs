@@ -2,16 +2,23 @@ use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
 
+const DIAG_ENABLED:bool = false;
+const VIZ_ENABLED:bool = true;
+
 macro_rules! diag {
     ($($arg:tt)*) => {{
-        // eprintln!($($arg)*);
+        if DIAG_ENABLED {
+            eprintln!($($arg)*);
+        }
     }};
 }
 
 macro_rules! viz {
-    ($($arg:tt)*) => ({
-        // eprintln!($($arg)*);
-    })
+    ($($arg:tt)*) => {{
+        if VIZ_ENABLED {
+            eprintln!($($arg)*);
+        }
+    }};
 }
 
 pub fn main() -> Result<()> {
@@ -42,11 +49,14 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 
     let mut robot_pos = find_robot(&grid);
 
-    // for &movement in &movements {
-    //     if do_move(&mut grid, robot_pos, movement) {
-    //         robot_pos = robot_pos + movement;
-    //     }
-    // }
+    for &movement in &movements {
+        if could_move(&grid, robot_pos, movement) {
+            do_move(&mut grid, robot_pos, movement);
+            robot_pos = robot_pos + movement;
+        }
+    }
+
+    viz!("{:?}", &grid);
 
     let gps = grid
         .enumerate_chars_rc()
@@ -83,8 +93,8 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     let mut robot_pos = find_robot(&grid);
 
     for movement in movements {
-        viz!("{:?}", &grid);
-        viz!("move: {}", dir_str(movement));
+        diag!("{:?}", &grid);
+        diag!("move: {}", dir_str(movement));
         if could_move(&grid, robot_pos, movement) {
             assert!(do_move(&mut grid, robot_pos, movement));
             diag!("moving");
@@ -98,7 +108,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
         .map(|p| 100 * p.row + p.col)
         .sum();
 
-    dbg!(&grid);
+    viz!("{:?}", &grid);
 
     Ok((gps, gps2))
 }
@@ -138,7 +148,6 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
         }
     };
 
-
     let target_pos = pos + dir;
     diag!("pos {} dir {} target {}", pos, dir, target_pos);
     if grid[pos] == '.' {
@@ -169,7 +178,9 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
 
             diag!(
                 "box {} : checking both pos {} and other_pos {}",
-                grid[pos], pos, other_pos
+                grid[pos],
+                pos,
+                other_pos
             );
 
             return could_move_one(pos, dir) && could_move_one(other_pos, dir);
@@ -183,7 +194,11 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
     let tp = p + d;
     diag!(
         "[tm] p {} d {} tp {} g[p] {} g[tp] {}",
-        p, d, tp, g[p], g[tp]
+        p,
+        d,
+        tp,
+        g[p],
+        g[tp]
     );
     if g[p] == '.' {
         // TODO: this feels like a hack - we've probably got some other logic wrong elsewhere
@@ -215,7 +230,10 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool 
     let target_pos = pos + dir;
     diag!(
         "[tm] pos {} dir {} target {} to_move {}",
-        pos, dir, target_pos, grid[pos]
+        pos,
+        dir,
+        target_pos,
+        grid[pos]
     );
     if !grid.is_in_bounds(target_pos) {
         // should be prevented by `#` borders
@@ -242,7 +260,9 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool 
 
             diag!(
                 "[tm] box {} : checking both pos {} and other_pos {}",
-                grid[pos], pos, other_pos
+                grid[pos],
+                pos,
+                other_pos
             );
 
             assert!(do_move_one(grid, pos, dir));
@@ -287,7 +307,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
 "###;
     let (part1, part2) = solve_for(input)?;
 
-    // assert_eq!(part1, 10092);
+    assert_eq!(part1, 10092);
     assert_eq!(part2, 9021);
     Ok(())
 }
@@ -307,8 +327,8 @@ fn test_example2() -> Result<()> {
 "###;
     let (part1, part2) = solve_for(input)?;
 
-    assert_eq!(part1, 10092);
-    assert_eq!(part2, 9021);
+    assert_eq!(part1, 1010);
+    assert_eq!(part2, 618);
     Ok(())
 }
 
@@ -324,7 +344,7 @@ fn test_custom3() -> Result<()> {
 "###;
     let (part1, part2) = solve_for(input)?;
 
-    assert_eq!(part1, 10092);
-    assert_eq!(part2, 9021);
+    assert_eq!(part1, 206);
+    assert_eq!(part2, 218);
     Ok(())
 }
