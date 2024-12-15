@@ -4,6 +4,7 @@ use derive_more::Constructor;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering::{Greater, Less};
+use std::collections::BinaryHeap;
 use std::ops::Add;
 
 pub fn main() -> Result<()> {
@@ -54,35 +55,30 @@ fn solve_for(input: &str, width: isize, height: isize) -> Result<(u64, i32)> {
         .collect_vec();
 
     let mut part1 = 0;
-    let mut part2 = 0;
+    let mut part2_scores = BinaryHeap::new();
     let mut seconds = 0;
+    let max_seconds = width * height; // the robots will probably have looped after this point
     loop {
         move_robots(&mut robots, width, height);
 
         seconds += 1;
-        let mut per_pos = FxHashSet::default();
-        let mut seen_dupe = false;
-        for r in &robots {
-            if !per_pos.insert(r.pos) {
-                seen_dupe = true;
-                break;
-            }
-        }
 
         if seconds == 100 {
             part1 = safety_factor(&robots, width, height)
         }
 
-        if !seen_dupe {
-            // lucky guess about the conditions for the easter egg:
-            // let's assume that every robot is on a unique tile when it happens
-            print_state_at_time(seconds, height, width, &robots);
-            part2 = seconds;
-        }
+        part2_scores.push((cohesion_factor(&robots, width, height), seconds));
 
-        if part1 != 0 && part2 != 0 {
+        if seconds > 100 && seconds > max_seconds as i32 {
             break;
         }
+    }
+
+    let (highest_score, part2) = part2_scores.pop().unwrap();
+
+    eprintln!("winner: {}", highest_score);
+    for _ in 0..20 {
+        eprintln!("runner up: {:?}", part2_scores.pop().unwrap());
     }
 
     Ok((part1, part2))
@@ -107,6 +103,49 @@ fn safety_factor(robots: &[Robot], width: isize, height: isize) -> u64 {
     quads.into_iter().product()
 }
 
+// any image is likely to have groups of robots nearby, whether it's
+// a line like
+//
+// 1...
+// .1..
+// ..1.
+// ...1
+//
+// or a block like
+//
+// .112
+// ..11
+// ...1
+//
+// we'd expect clusters of robots to happen more often than robots being
+// spread out randomly
+fn cohesion_factor(robots: &[Robot], _width: isize, _height: isize) -> i32 {
+    let mut positions = FxHashSet::default();
+    for robot in robots {
+        positions.insert(robot.pos);
+    }
+
+    let mut total = 0;
+
+    for robot in robots {
+        let mut local_score = 0;
+        for xoff in -1..=1 {
+            for yoff in -1..=1 {
+                if (xoff, yoff) == (0, 0) {
+                    continue;
+                }
+                if positions.contains(&Pos::new(robot.pos.x + xoff, robot.pos.y + yoff)) {
+                    local_score += 1;
+                }
+            }
+        }
+
+        total += local_score;
+    }
+
+    total
+}
+
 fn move_robots(robots: &mut [Robot], width: isize, height: isize) {
     for robot in robots.iter_mut() {
         robot.pos = robot.pos + robot.vel;
@@ -126,6 +165,7 @@ fn move_robots(robots: &mut [Robot], width: isize, height: isize) {
     }
 }
 
+#[allow(dead_code)]
 fn print_state_at_time(seconds: i32, height: isize, width: isize, robots: &[Robot]) {
     println!("=======================================");
     println!("    {}     ", seconds);
