@@ -89,8 +89,8 @@ fn simulate_robot(movements: &[RCDirection], grid: &mut CharGrid, mut robot_pos:
     for &movement in movements {
         diag!("{:?}", &grid);
         diag!("move: {}", dir_str(movement));
-        if could_move(grid, robot_pos, movement) {
-            assert!(do_move(grid, robot_pos, movement, true));
+        if do_move(grid, robot_pos, movement, false) {
+            do_move(grid, robot_pos, movement, true);
             diag!("moving");
             robot_pos = robot_pos + movement;
         }
@@ -120,64 +120,6 @@ fn dir_str(dir: RCDirection) -> &'static str {
 
 fn find_robot(grid: &CharGrid) -> CharGridIndexRC {
     grid.find_single_char('@')
-}
-
-fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
-    let could_move_one = |p, d| {
-        let tp = p + d;
-        if grid[tp] == '#' {
-            false
-        } else if grid[tp] == '[' || grid[tp] == ']' || grid[tp] == 'O' {
-            could_move(grid, tp, d)
-        } else if grid[tp] == '.' {
-            true
-        } else {
-            false
-        }
-    };
-
-    let target_pos = pos + dir;
-    diag!("pos {} dir {} target {}", pos, dir, target_pos);
-    if grid[pos] == '.' {
-        // TODO: this feels like a hack - we've probably got some other logic wrong elsewhere
-        // but we can move empty space
-        return true;
-    }
-    if !grid.is_in_bounds(target_pos) {
-        // should be prevented by `#` borders
-        panic!("tried to move off the edge at {} {}", pos, dir);
-    }
-
-    if grid[target_pos] == '#' {
-        return false;
-    }
-    if grid[pos] == '[' || grid[pos] == ']' {
-        if dir == RCDirection::left() || dir == RCDirection::right() {
-            // these behave the same as otherwise
-            could_move(grid, target_pos, dir)
-        } else {
-            // up or down: we need to treat the [ and ] as coupled
-            // find the other pair:
-            let other_pos = if grid[pos] == '[' {
-                pos + RCDirection::right()
-            } else {
-                pos + RCDirection::left()
-            };
-
-            diag!(
-                "box {} : checking both pos {} and other_pos {}",
-                grid[pos],
-                pos,
-                other_pos
-            );
-
-            return could_move_one(pos, dir) && could_move_one(other_pos, dir);
-        }
-    } else if grid[target_pos] == 'O' {
-        return could_move(grid, target_pos, dir);
-    } else {
-        return could_move_one(pos, dir);
-    }
 }
 
 fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection, commit: bool) -> bool {
