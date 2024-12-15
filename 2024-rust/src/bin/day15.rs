@@ -37,14 +37,13 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     let mut grid = CharGrid::from_string(map);
     let movements = movements
         .chars()
-        .map(|c| match c {
+        .filter_map(|c| match c {
             '<' => Some(RCDirection::left()),
             '>' => Some(RCDirection::right()),
             '^' => Some(RCDirection::up()),
             'v' => Some(RCDirection::down()),
             _ => None,
         })
-        .filter_map(|d| d)
         .collect_vec();
 
     let robot_pos = find_robot(&grid);
@@ -94,7 +93,7 @@ fn simulate_robot(movements: &[RCDirection], grid: &mut CharGrid, mut robot_pos:
             diag!("moving");
             robot_pos = robot_pos + movement;
         }
-        debug_assert_eq!(find_robot(&grid), robot_pos);
+        debug_assert_eq!(find_robot(grid), robot_pos);
     }
 }
 
@@ -198,7 +197,7 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection, commit: 
     if grid[pos] == '[' || grid[pos] == ']' {
         if dir == RCDirection::left() || dir == RCDirection::right() {
             // these behave the same as otherwise
-            return do_move(grid, target_pos, dir, commit) && do_move_one(grid, pos, dir, commit);
+            do_move(grid, target_pos, dir, commit) && do_move_one(grid, pos, dir, commit)
         } else {
             // up or down: we need to treat the [ and ] as coupled
             // find the other pair:
@@ -215,12 +214,12 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection, commit: 
                 other_pos
             );
 
-            return do_move_one(grid, pos, dir, commit)
-                && do_move_one(grid, other_pos, dir, commit);
+            do_move_one(grid, pos, dir, commit)
+                && do_move_one(grid, other_pos, dir, commit)
         }
     } else {
         diag!("[tm] moving normally {} {}", pos, grid[pos]);
-        return do_move_one(grid, pos, dir, commit);
+        do_move_one(grid, pos, dir, commit)
     }
 }
 
