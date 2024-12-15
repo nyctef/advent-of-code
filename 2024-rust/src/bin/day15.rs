@@ -99,8 +99,7 @@ fn simulate_robot(movements: &[RCDirection], grid: &mut CharGrid, mut robot_pos:
 }
 
 fn calc_gps(grid: &CharGrid) -> usize {
-    grid.enumerate_chars_rc()
-        .filter_map(|(p, c)| if c == 'O' || c == '[' { Some(p) } else { None })
+    grid.filter_chars_rc(|c| c == 'O' || c == '[')
         .map(|p| 100 * p.row + p.col)
         .sum()
 }
@@ -120,10 +119,7 @@ fn dir_str(dir: RCDirection) -> &'static str {
 }
 
 fn find_robot(grid: &CharGrid) -> CharGridIndexRC {
-    grid.enumerate_chars_rc()
-        .filter_map(|(p, c)| if c == '@' { Some(p) } else { None })
-        .exactly_one()
-        .unwrap()
+    grid.find_single_char('@')
 }
 
 fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {

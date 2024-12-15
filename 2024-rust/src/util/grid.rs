@@ -120,6 +120,25 @@ impl CharGrid {
         })
     }
 
+    pub fn filter_chars_rc<'s, F>(
+        &'s self,
+        f: F,
+    ) -> impl Iterator<Item = CharGridIndexRC> + Debug + use<'s, F>
+    where
+        F: Fn(char) -> bool + 's,
+    {
+        self.enumerate_chars_rc()
+            .filter_map(move |(p, c)| if f(c) { Some(p) } else { None })
+    }
+
+    pub fn find_chars(&self, target: char) -> impl Iterator<Item = CharGridIndexRC> + Debug + '_ {
+        self.filter_chars_rc(move |c| c == target)
+    }
+
+    pub fn find_single_char(&self, target: char) -> CharGridIndexRC {
+        self.find_chars(target).exactly_one().unwrap()
+    }
+
     pub fn enumerate_4_neighbors(
         &self,
         index: CharGridIndexRC,
