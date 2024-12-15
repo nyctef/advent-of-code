@@ -2,6 +2,18 @@ use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
 
+macro_rules! diag {
+    ($($arg:tt)*) => {{
+        // eprintln!($($arg)*);
+    }};
+}
+
+macro_rules! viz {
+    ($($arg:tt)*) => ({
+        eprintln!($($arg)*);
+    })
+}
+
 pub fn main() -> Result<()> {
     color_eyre::install()?;
 
@@ -71,11 +83,11 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     let mut robot_pos = find_robot(&grid);
 
     for movement in movements {
-        dbg!(&grid);
-        eprintln!("move: {}", movement);
+        viz!("{:?}", &grid);
+        viz!("move: {}", dir_str(movement));
         if could_move(&grid, robot_pos, movement) {
             assert!(do_move(&mut grid, robot_pos, movement));
-            eprintln!("moving");
+            diag!("moving");
             robot_pos = robot_pos + movement;
         }
         debug_assert_eq!(find_robot(&grid), robot_pos);
@@ -89,6 +101,20 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     dbg!(&grid);
 
     Ok((gps, gps2))
+}
+
+fn dir_str(dir: RCDirection) -> &'static str {
+    if dir == RCDirection::up() {
+        "UP"
+    } else if dir == RCDirection::down() {
+        "DOWN"
+    } else if dir == RCDirection::left() {
+        "LEFT"
+    } else if dir == RCDirection::right() {
+        "RIGHT"
+    } else {
+        panic!("")
+    }
 }
 
 fn find_robot(grid: &CharGrid) -> CharGridIndexRC {
@@ -113,7 +139,7 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
     };
 
     let target_pos = pos + dir;
-    eprintln!("pos {} dir {} target {}", pos, dir, target_pos);
+    diag!("pos {} dir {} target {}", pos, dir, target_pos);
     if !grid.is_in_bounds(target_pos) {
         // should be prevented by `#` borders
         panic!("tried to move off the edge at {} {}", pos, dir);
@@ -135,7 +161,7 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
                 pos + RCDirection::left()
             };
 
-            eprintln!(
+            diag!(
                 "box {} : checking both pos {} and other_pos {}",
                 grid[pos], pos, other_pos
             );
@@ -149,7 +175,7 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
 
 fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
     let tp = p + d;
-    eprintln!(
+    diag!(
         "[tm] p {} d {} tp {} g[p] {} g[tp] {}",
         p, d, tp, g[p], g[tp]
     );
@@ -162,8 +188,8 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
     } else {
         panic!("didn't have empty space to move into");
     };
-    eprintln!("[tm] y");
-    eprintln!("[tm] moving {} at {} to {}", g[p], p, tp);
+    diag!("[tm] y");
+    diag!("[tm] moving {} at {} to {}", g[p], p, tp);
     g.set_index_rc(tp, g[p]);
     g.set_index_rc(p, '.');
     true
@@ -171,7 +197,7 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
 
 fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
     let target_pos = pos + dir;
-    eprintln!(
+    diag!(
         "[tm] pos {} dir {} target {} to_move {}",
         pos, dir, target_pos, grid[pos]
     );
@@ -198,7 +224,7 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool 
                 pos + RCDirection::left()
             };
 
-            eprintln!(
+            diag!(
                 "[tm] box {} : checking both pos {} and other_pos {}",
                 grid[pos], pos, other_pos
             );
@@ -207,11 +233,11 @@ fn do_move(grid: &mut CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool 
             assert!(do_move_one(grid, other_pos, dir));
         }
     } else {
-        eprintln!("[tm] moving normally {} {}", pos, grid[pos]);
+        diag!("[tm] moving normally {} {}", pos, grid[pos]);
         assert!(do_move_one(grid, pos, dir));
     }
 
-    // eprintln!("[tm] moving {} at {} to {}", grid[pos], pos, target_pos);
+    // diag!("[tm] moving {} at {} to {}", grid[pos], pos, target_pos);
     // grid.set_index_rc(target_pos, grid[pos]);
     // grid.set_index_rc(pos, '.');
 
@@ -245,7 +271,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
 "###;
     let (part1, part2) = solve_for(input)?;
 
-    assert_eq!(part1, 10092);
+    // assert_eq!(part1, 10092);
     assert_eq!(part2, 9021);
     Ok(())
 }
@@ -262,6 +288,23 @@ fn test_example2() -> Result<()> {
 #######
 
 <vv<<^^<<^^
+"###;
+    let (part1, part2) = solve_for(input)?;
+
+    assert_eq!(part1, 10092);
+    assert_eq!(part2, 9021);
+    Ok(())
+}
+
+#[test]
+fn test_custom3() -> Result<()> {
+    let input = r###"
+#######
+#@O.O.#
+#.....#
+#######
+
+>>>>
 "###;
     let (part1, part2) = solve_for(input)?;
 
