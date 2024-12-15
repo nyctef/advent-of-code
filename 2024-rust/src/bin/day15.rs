@@ -139,7 +139,7 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
         let tp = p + d;
         if grid[tp] == '#' {
             false
-        } else if grid[tp] == '[' || grid[tp] == ']' {
+        } else if grid[tp] == '[' || grid[tp] == ']' || grid[tp] == 'O' {
             could_move(grid, tp, d)
         } else if grid[tp] == '.' {
             true
@@ -185,6 +185,8 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
 
             return could_move_one(pos, dir) && could_move_one(other_pos, dir);
         }
+    } else if grid[target_pos] == 'O' {
+        return could_move(grid, target_pos, dir)
     } else {
         return could_move_one(pos, dir);
     }
@@ -207,7 +209,7 @@ fn do_move_one(g: &mut CharGrid, p: CharGridIndexRC, d: RCDirection) -> bool {
     }
     if g[tp] == '#' {
         panic!("tried to move into '#' when it shouldn't be possible");
-    } else if g[tp] == '[' || g[tp] == ']' {
+    } else if g[tp] == '[' || g[tp] == ']' || g[tp] == 'O' {
         do_move(g, tp, d);
     } else if g[tp] == '.' {
         // continue
@@ -327,7 +329,7 @@ fn test_example2() -> Result<()> {
 "###;
     let (part1, part2) = solve_for(input)?;
 
-    assert_eq!(part1, 1010);
+    assert_eq!(part1, 908);
     assert_eq!(part2, 618);
     Ok(())
 }
@@ -344,7 +346,7 @@ fn test_custom3() -> Result<()> {
 "###;
     let (part1, part2) = solve_for(input)?;
 
-    assert_eq!(part1, 206);
+    assert_eq!(part1, 209);
     assert_eq!(part2, 218);
     Ok(())
 }
