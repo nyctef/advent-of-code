@@ -28,11 +28,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
         .filter_map(|d| d)
         .collect_vec();
 
-    let mut robot_pos = grid
-        .enumerate_chars_rc()
-        .filter_map(|(p, c)| if c == '@' { Some(p) } else { None })
-        .exactly_one()
-        .unwrap();
+    let mut robot_pos = find_robot(&grid);
 
     for &movement in &movements {
         if try_move(&mut grid, robot_pos, movement) {
@@ -46,7 +42,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
         .map(|p| 100 * p.row + p.col)
         .sum();
 
-    let mut map2 = map
+    let mut map = map
         .lines()
         .map(|l| {
             l.chars()
@@ -63,54 +59,68 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
         .collect_vec();
 
     // the top and bottom border will be twice as wide as they should be
-    let proper_length = map2[1].len();
-    for l in &mut map2 {
+    let proper_length = map[1].len();
+    for l in &mut map {
         if l.len() > proper_length {
             l.truncate(proper_length);
         }
     }
 
-    let grid2 = CharGrid::from_string(&map2.join("\n"));
+    let mut grid = CharGrid::from_string(&map.join("\n"));
 
-    let mut robot_pos = grid
-        .enumerate_chars_rc()
-        .filter_map(|(p, c)| if c == '@' { Some(p) } else { None })
-        .exactly_one()
-        .unwrap();
+    let mut robot_pos = find_robot(&grid);
 
     for movement in movements {
+        dbg!(&grid);
+        eprintln!("move: {}", movement);
         if could_move(&grid, robot_pos, movement) {
             assert!(try_move(&mut grid, robot_pos, movement));
             robot_pos = robot_pos + movement;
         }
+        debug_assert_eq!(find_robot(&grid), robot_pos);
     }
     let gps2 = grid
         .enumerate_chars_rc()
-        .filter_map(|(p, c)| if c == 'O' { Some(p) } else { None })
+        .filter_map(|(p, c)| if c == '[' { Some(p) } else { None })
         .map(|p| 100 * p.row + p.col)
         .sum();
+
+    dbg!(&grid);
 
     Ok((gps, gps2))
 }
 
-fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
-    let target_pos = pos + dir;
-    if !grid.is_in_bounds(target_pos) {
-        // should be prevented by `#` borders
-        panic!("tried to move off the edge");
-    }
+fn find_robot(grid: &CharGrid) -> CharGridIndexRC {
+    grid.enumerate_chars_rc()
+        .filter_map(|(p, c)| if c == '@' { Some(p) } else { None })
+        .exactly_one()
+        .unwrap()
+}
 
+fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
     let could_move_one = |p, d| {
-    let tp = p + d;
+        let tp = p + d;
         if grid[p] == '#' {
             false
-        } else if grid[p] == '.' || could_move(grid, tp, d) {
+        } else if grid[tp] == '[' || grid[tp] == ']' {
+            could_move(grid, tp, d)
+        } else if grid[tp] == '.' {
             true
         } else {
             false
         }
     };
 
+    let target_pos = pos + dir;
+    eprintln!("pos {} dir {} target {}", pos, dir, target_pos);
+    if !grid.is_in_bounds(target_pos) {
+        // should be prevented by `#` borders
+        panic!("tried to move off the edge at {} {}", pos, dir);
+    }
+
+    if grid[target_pos] == '#' {
+        return false;
+    }
     if grid[pos] == '[' || grid[pos] == ']' {
         if dir == RCDirection::left() || dir == RCDirection::right() {
             // these behave the same as otherwise
@@ -123,6 +133,11 @@ fn could_move(grid: &CharGrid, pos: CharGridIndexRC, dir: RCDirection) -> bool {
             } else {
                 pos + RCDirection::left()
             };
+
+            eprintln!(
+                "box {} : checking both pos {} and other_pos {}",
+                grid[pos], pos, other_pos
+            );
 
             return could_move_one(pos, dir) && could_move_one(other_pos, dir);
         }
@@ -176,6 +191,26 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
     let (part1, part2) = solve_for(input)?;
 
     assert_eq!(part1, 10092);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 9021);
+    Ok(())
+}
+
+#[test]
+fn test_example2() -> Result<()> {
+    let input = r###"
+#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
+
+<vv<<^^<<^^
+"###;
+    let (part1, part2) = solve_for(input)?;
+
+    assert_eq!(part1, 10092);
+    assert_eq!(part2, 9021);
     Ok(())
 }
