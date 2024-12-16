@@ -69,11 +69,9 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             continue;
         }
 
-        let char_in_front = grid[pos + dir];
-        if char_in_front == '.' {
+        if grid[pos + dir] == '.' {
             queue.push_front((score + 1, pos + dir, dir));
         }
-
         let dir_left = dir.counterclockwise();
         if grid[pos + dir_left] == '.' {
             queue.push_front((score + 1000, pos, dir_left));
