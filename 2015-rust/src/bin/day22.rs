@@ -185,7 +185,8 @@ fn solve_for(input: &str) -> Result<String> {
         for n in nexts.iter_mut() {
             apply_turn_start_effects(n);
             // boss attacks
-            n.player.hp -= n.boss.dmg - n.player.armor as u16;
+            let dmg = n.boss.dmg - n.player.armor as u16;
+            n.player.hp -= dmg.max(1);
         }
 
         // dbg!(&nexts);
