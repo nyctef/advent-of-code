@@ -1,8 +1,7 @@
-use std::collections::VecDeque;
-
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::VecDeque;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -19,29 +18,25 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     let grid = CharGrid::from_string(input);
     let mut best_score_found = u64::MAX;
 
-    let mut seen = FxHashMap::default();
+    let mut best_score_at_point = FxHashMap::default();
     let mut queue = VecDeque::new();
     let start = grid.find_single_char('S');
     let end = grid.find_single_char('E');
     queue.push_back((0, start, RCDirection::right()));
 
     while let Some((score, pos, dir)) = queue.pop_front() {
-        if pos.col == 13 {
-            // eprintln!("s {} p {} d {}", score, pos, dir);
-        }
         if score > best_score_found {
             continue;
         }
         if score + RCDirection::from_to(pos, end).manhattan_abs() as u64 > best_score_found {
             continue;
         }
-        let score_at_point = seen.entry((pos, dir)).or_insert(score);
+        let score_at_point = best_score_at_point.entry((pos, dir)).or_insert(score);
         if *score_at_point < score {
             continue;
         }
         *score_at_point = score;
         if pos == end {
-            // eprintln!("found a path to end with score {}", score);
             best_score_found = score;
             continue;
         }
@@ -69,7 +64,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
     while let Some((score, pos, dir)) = best_paths_queue.pop_front() {
         let opposite_dir = dir.clockwise().clockwise();
-        match seen.get(&(pos, opposite_dir)) {
+        match best_score_at_point.get(&(pos, opposite_dir)) {
             Some(&s) if s == score => {}
             _ => continue,
         }
