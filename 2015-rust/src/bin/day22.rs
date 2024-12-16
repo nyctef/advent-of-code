@@ -139,6 +139,8 @@ fn solve_for(input: &str) -> Result<String> {
             return nexts;
         }
 
+        s.player.hp -= 1;
+
         // player turn
         apply_turn_start_effects(&mut s);
 
