@@ -15,13 +15,15 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<(u64, u64)> {
-    let grid = CharGrid::from_string(input);
+    let mut grid = CharGrid::from_string(input);
     let mut best_score_found = u64::MAX;
 
     let mut best_score_at_point = FxHashMap::default();
     let mut queue = VecDeque::new();
     let start = grid.find_single_char('S');
     let end = grid.find_single_char('E');
+    grid.set_index_rc(start, '.');
+    grid.set_index_rc(end, '.');
     queue.push_back((0, start, RCDirection::right()));
 
     while let Some((score, pos, dir)) = queue.pop_front() {
@@ -42,7 +44,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         }
 
         let char_in_front = grid[pos + dir];
-        if char_in_front == '.' || char_in_front == 'E' {
+        if char_in_front == '.' {
             queue.push_front((score + 1, pos + dir, dir));
         }
 
@@ -76,7 +78,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         }
 
         let char_in_front = grid[pos + dir];
-        if char_in_front == '.' || char_in_front == 'S' {
+        if char_in_front == '.' {
             best_paths_queue.push_front((score - 1, pos + dir, dir));
         }
 
