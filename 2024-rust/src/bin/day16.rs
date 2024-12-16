@@ -69,6 +69,9 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             continue;
         }
 
+        // this seems to be the best ordering: the turns being the latter call to `push_front`
+        // means they're the ones that end up at the front of the queue, and the massive score
+        // penalty for turning means those branches can be discarded more quickly
         if grid[pos + dir] == '.' {
             queue.push_front((score + 1, pos + dir, dir));
         }
