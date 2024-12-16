@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 pub fn main() -> Result<()> {
@@ -28,7 +27,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
     while let Some((score, pos, dir)) = queue.pop_front() {
         if pos.col == 13 {
-        // eprintln!("s {} p {} d {}", score, pos, dir);
+            // eprintln!("s {} p {} d {}", score, pos, dir);
         }
         if score > best_score_found {
             continue;
@@ -71,7 +70,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     while let Some((score, pos, dir)) = best_paths_queue.pop_front() {
         let opposite_dir = dir.clockwise().clockwise();
         match seen.get(&(pos, opposite_dir)) {
-            Some(&s) if s == score => {},
+            Some(&s) if s == score => {}
             _ => continue,
         }
 
@@ -80,7 +79,6 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         if !best_path_seen.insert((pos, dir)) {
             continue;
         }
-
 
         let char_in_front = grid[pos + dir];
         if char_in_front == '.' || char_in_front == 'S' {
@@ -95,9 +93,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         if grid[pos + dir_right] == '.' {
             best_paths_queue.push_front((score - 1000, pos, dir_right));
         }
-
     }
-
 
     let part1 = best_score_found;
     let part2 = best_path_squares.len() as u64;
