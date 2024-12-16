@@ -43,7 +43,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             cannot_catch_up += 1;
             continue;
         }
-        if (pos.row != end.row || pos.col != end.col)
+        if (pos.row != end.row && pos.col != end.col)
             && (score + 1000 + best_case_distance) > best_score_found
         {
             cannot_catch_up_with_one_turn += 1;
