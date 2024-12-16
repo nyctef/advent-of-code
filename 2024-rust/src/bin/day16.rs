@@ -26,19 +26,45 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     grid.set_index_rc(end, '.');
     queue.push_back((0, start, RCDirection::right()));
 
+    let mut overshot = 0;
+    let mut cannot_catch_up = 0;
+    let mut cannot_catch_up_with_one_turn = 0;
+    let mut cannot_catch_up_with_two_turns = 0;
+    let mut better_score_at_point = 0;
+    let mut at_end = 0;
+
     while let Some((score, pos, dir)) = queue.pop_front() {
         if score > best_score_found {
+            overshot += 1;
             continue;
         }
-        if score + RCDirection::from_to(pos, end).manhattan_abs() as u64 > best_score_found {
+        let best_case_distance = RCDirection::from_to(pos, end).manhattan_abs() as u64;
+        if score + best_case_distance > best_score_found {
+            cannot_catch_up += 1;
             continue;
         }
+        if (pos.row != end.row || pos.col != end.col)
+            && (score + 1000 + best_case_distance) > best_score_found
+        {
+            cannot_catch_up_with_one_turn += 1;
+            continue;
+        }
+
+        if (dir == RCDirection::down() || dir == RCDirection::left())
+            && score + best_case_distance + 2000 > best_score_found
+        {
+            cannot_catch_up_with_two_turns += 1;
+            continue;
+        }
+
         let score_at_point = best_score_at_point.entry((pos, dir)).or_insert(score);
         if *score_at_point < score {
+            better_score_at_point += 1;
             continue;
         }
         *score_at_point = score;
         if pos == end {
+            at_end += 1;
             best_score_found = score;
             continue;
         }
@@ -57,6 +83,15 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
             queue.push_front((score + 1000, pos, dir_right));
         }
     }
+
+    dbg!(
+        overshot,
+        cannot_catch_up,
+        cannot_catch_up_with_one_turn,
+        cannot_catch_up_with_two_turns,
+        better_score_at_point,
+        at_end
+    );
 
     let mut best_paths_queue = VecDeque::new();
     let mut best_path_squares = FxHashSet::default();
