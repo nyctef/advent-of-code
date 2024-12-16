@@ -167,6 +167,11 @@ fn solve_for(input: &str) -> Result<String> {
             nexts.push(n);
         }
 
+        if boss.hp.0 == 0 {
+            // boss doesn't get a turn now
+            return nexts;
+        }
+
         // boss turn
         // update effects
         for n in nexts.iter_mut() {
