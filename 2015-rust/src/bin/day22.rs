@@ -95,7 +95,7 @@ fn solve_for(input: &str) -> Result<String> {
     let mut search = Dijkstra::new(|s: &State| (s.boss.hp, s.player, s.effects));
     search.push(state);
 
-    let is_target_state = |s: &State| s.boss.hp.0 == 0;
+    let is_target_state = |s: &State| s.boss.hp.0 == 0 && s.player.hp.0 != 0;
 
     let apply_turn_start_effects = |s: &mut State| {
         s.player.armor = if s.effects.shield.0 > 0 { 7 } else { 0 };
