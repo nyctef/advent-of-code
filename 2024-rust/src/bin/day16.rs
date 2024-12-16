@@ -30,10 +30,10 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         if pos.col == 13 {
         // eprintln!("s {} p {} d {}", score, pos, dir);
         }
-        if score >= best_score_found {
+        if score > best_score_found {
             continue;
         }
-        if score + RCDirection::from_to(pos, end).manhattan_abs() as u64 >= best_score_found {
+        if score + RCDirection::from_to(pos, end).manhattan_abs() as u64 > best_score_found {
             continue;
         }
         let score_at_point = seen.entry((pos, dir)).or_insert(score);
@@ -60,11 +60,47 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         if grid[pos + dir_right] == '.' {
             queue.push_front((score + 1000, pos, dir_right));
         }
+    }
+
+    let mut best_paths_queue = VecDeque::new();
+    let mut best_path_squares = FxHashSet::default();
+    let mut best_path_seen = FxHashSet::default();
+    best_paths_queue.push_front((best_score_found, end, RCDirection::down()));
+    best_paths_queue.push_front((best_score_found, end, RCDirection::left()));
+
+    while let Some((score, pos, dir)) = best_paths_queue.pop_front() {
+        let opposite_dir = dir.clockwise().clockwise();
+        match seen.get(&(pos, opposite_dir)) {
+            Some(&s) if s == score => {},
+            _ => continue,
+        }
+
+        best_path_squares.insert(pos);
+
+        if !best_path_seen.insert((pos, dir)) {
+            continue;
+        }
+
+
+        let char_in_front = grid[pos + dir];
+        if char_in_front == '.' || char_in_front == 'S' {
+            best_paths_queue.push_front((score - 1, pos + dir, dir));
+        }
+
+        let dir_left = dir.counterclockwise();
+        if grid[pos + dir_left] == '.' {
+            best_paths_queue.push_front((score - 1000, pos, dir_left));
+        }
+        let dir_right = dir.clockwise();
+        if grid[pos + dir_right] == '.' {
+            best_paths_queue.push_front((score - 1000, pos, dir_right));
+        }
 
     }
 
+
     let part1 = best_score_found;
-    let part2 = 0;
+    let part2 = best_path_squares.len() as u64;
     Ok((part1, part2))
 }
 
@@ -90,6 +126,6 @@ fn test_example1() -> Result<()> {
     let (part1, part2) = solve_for(input)?;
 
     assert_eq!(part1, 7036);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 45);
     Ok(())
 }
