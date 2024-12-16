@@ -105,6 +105,9 @@ fn solve_for(input: &str) -> Result<String> {
         Saturating(boss_stats[0].try_into().unwrap()),
         boss_stats[1].try_into().unwrap(),
     );
+    // let boss = Boss::new(Saturating(13), 8);
+
+    // let player = Player::new(Saturating(10), Saturating(250), 0);
     let player = Player::new(Saturating(50), Saturating(500), 0);
 
     let state = State::new(player, boss, Effects::default(), 0);
@@ -130,13 +133,16 @@ fn solve_for(input: &str) -> Result<String> {
 
     let get_next_candidates = |mut s: State| {
         let mut nexts = vec![];
+        // eprintln!("s: {:?}", s);
 
-        if player.hp.0 == 0 {
+        if s.player.hp.0 == 0 {
             return nexts;
         }
 
         // player turn
         apply_turn_start_effects(&mut s);
+
+        // eprintln!("after ts: {:?}", s);
 
         // magic missle
         if let Some(mut n) = s.try_spend_mana(53) {
@@ -175,21 +181,28 @@ fn solve_for(input: &str) -> Result<String> {
             }
         }
 
-        if boss.hp.0 == 0 {
-            // boss doesn't get a turn now
-            return nexts;
-        }
-
         // boss turn
         // update effects
         for n in nexts.iter_mut() {
+            // eprintln!("  after player move: {:?}", n);
             apply_turn_start_effects(n);
+            // eprintln!("  after boss turn start: {:?}", n);
+
+            if n.boss.hp.0 == 0 {
+                // boss doesn't get a turn now
+                // eprintln!("  boss dies");
+                continue;
+            }
+
+            // eprintln!("  boss attacks");
             // boss attacks
             let dmg = n.boss.dmg - n.player.armor as u16;
             n.player.hp -= dmg.max(1);
         }
 
-        // dbg!(&nexts);
+        for n in &nexts {
+            // eprintln!("  n: {:?}", n);
+        }
 
         nexts
     };
