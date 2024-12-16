@@ -50,6 +50,23 @@ struct State {
     mana_spent: u16,
 }
 
+impl State {
+    fn try_spend_mana(&self, cost: u16) -> Option<State> {
+        if self.player.mana.0 >= cost {
+            let mut player = self.player.clone();
+            player.mana -= cost;
+            Some(State::new(
+                player,
+                self.boss,
+                self.effects,
+                self.mana_spent + cost,
+            ))
+        } else {
+            None
+        }
+    }
+}
+
 impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
@@ -122,49 +139,40 @@ fn solve_for(input: &str) -> Result<String> {
         apply_turn_start_effects(&mut s);
 
         // magic missle
-        if s.player.mana.0 >= 53 {
-            let mut n = s.clone();
-            n.player.mana -= 53;
-            n.mana_spent += 53;
+        if let Some(mut n) = s.try_spend_mana(53) {
             n.boss.hp -= 4;
             nexts.push(n);
         }
 
         // drain
-        if s.player.mana.0 >= 73 {
-            let mut n = s.clone();
-            n.player.mana -= 73;
-            n.mana_spent += 73;
+        if let Some(mut n) = s.try_spend_mana(73) {
             n.boss.hp -= 2;
             n.player.hp += 2;
             nexts.push(n);
         }
 
         // shield
-        if s.player.mana.0 >= 113 && s.effects.shield.0 == 0 {
-            let mut n = s.clone();
-            n.player.mana -= 113;
-            n.mana_spent += 113;
-            n.effects.shield = Saturating(6);
-            nexts.push(n);
+        if let Some(mut n) = s.try_spend_mana(113) {
+            if n.effects.shield.0 == 0 {
+                n.effects.shield = Saturating(6);
+                nexts.push(n);
+            }
         }
 
         // poison
-        if s.player.mana.0 >= 173 && s.effects.poison.0 == 0 {
-            let mut n = s.clone();
-            n.player.mana -= 173;
-            n.mana_spent += 173;
-            n.effects.poison = Saturating(6);
-            nexts.push(n);
+        if let Some(mut n) = s.try_spend_mana(173) {
+            if n.effects.poison.0 == 0 {
+                n.effects.poison = Saturating(6);
+                nexts.push(n);
+            }
         }
 
         // recharge
-        if s.player.mana.0 >= 229 && s.effects.recharge.0 == 0 {
-            let mut n = s.clone();
-            n.player.mana -= 229;
-            n.mana_spent += 229;
-            n.effects.recharge = Saturating(5);
-            nexts.push(n);
+        if let Some(mut n) = s.try_spend_mana(229) {
+            if n.effects.recharge.0 == 0 {
+                n.effects.recharge = Saturating(5);
+                nexts.push(n);
+            }
         }
 
         if boss.hp.0 == 0 {
