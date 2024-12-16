@@ -103,7 +103,7 @@ fn solve_for(input: &str) -> Result<String> {
             s.boss.hp -= 3;
         }
         if s.effects.recharge.0 > 0 {
-            s.player.mana += 229
+            s.player.mana += 101;
         }
 
         s.effects.shield -= 1;
