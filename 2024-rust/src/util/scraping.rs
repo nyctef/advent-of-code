@@ -39,6 +39,12 @@ pub fn all_numbers_u64(input: &str) -> Vec<u64> {
         .map(|x| x.as_str().parse().unwrap())
         .collect()
 }
+pub fn all_numbers_u8(input: &str) -> Vec<u8> {
+    DIGITS
+        .find_iter(input)
+        .map(|x| x.as_str().parse().unwrap())
+        .collect()
+}
 
 pub fn all_numbers_i64(input: &str) -> Vec<i64> {
     NEGATIVE_DIGITS
