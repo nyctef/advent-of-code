@@ -1,8 +1,7 @@
-use std::{collections::VecDeque, u64};
-
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use std::collections::VecDeque;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -25,7 +24,7 @@ struct Octcode<'p> {
     output: Vec<u8>,
 }
 
-impl<'p> Octcode<'p> {
+impl Octcode<'_> {
     fn is_stopped(&self) -> bool {
         self.pc + 1 >= self.program.len()
     }
@@ -53,11 +52,11 @@ impl<'p> Octcode<'p> {
 
         match opcode {
             0 => {
-                self.a = self.a >> self.combo_operand(operand);
+                self.a >>= self.combo_operand(operand);
                 self.pc += 2;
             }
             1 => {
-                self.b = self.b ^ operand as usize;
+                self.b ^= operand as usize;
                 self.pc += 2;
             }
             2 => {
@@ -72,7 +71,7 @@ impl<'p> Octcode<'p> {
                 }
             }
             4 => {
-                self.b = self.b ^ self.c;
+                self.b ^= self.c;
                 self.pc += 2;
             }
             5 => {
@@ -98,10 +97,6 @@ impl<'p> Octcode<'p> {
 
     fn get_output(&self) -> &[u8] {
         &self.output
-    }
-
-    fn output_is_program(&self) -> bool {
-        (&self.output[..]).eq(self.program)
     }
 
     fn reset(&mut self, a: usize, b: usize, c: usize) {
