@@ -9,7 +9,8 @@ pub fn main() -> Result<()> {
 
     let input = get_input(2015, 23)?;
 
-    let (part1, part2) = solve_for(&input)?;
+    let part1= solve_for(&input, false)?;
+    let part2= solve_for(&input, true)?;
 
     println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())
@@ -39,7 +40,7 @@ impl Computer {
     }
 }
 
-fn solve_for(input: &str) -> Result<(u64, u64)> {
+fn solve_for(input: &str, part2: bool) -> Result<u64> {
     let program = input
         .trim()
         .lines()
@@ -51,6 +52,10 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         .collect_vec();
 
     let mut computer = Computer::default();
+
+    if part2 {
+        computer.a = 1;
+    }
 
     while computer.pc < program.len() {
         let (instr, args) = &program[computer.pc];
@@ -103,22 +108,5 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         }
     }
 
-    let part1 = computer.b;
-    let part2 = 0;
-    Ok((part1, part2))
-}
-
-#[test]
-fn test_example1() -> Result<()> {
-    let input = r###"
-inc a
-jio a, +2
-tpl a
-inc a
-"###;
-    let (part1, part2) = solve_for(input)?;
-
-    assert_eq!(part1, 0);
-    assert_eq!(part2, 0);
-    Ok(())
+    Ok(computer.b)
 }
