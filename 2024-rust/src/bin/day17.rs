@@ -14,16 +14,16 @@ pub fn main() -> Result<()> {
 }
 
 #[derive(Debug, Clone)]
-struct Octcode {
-    program: Vec<u8>,
+struct Octcode<'p> {
+    program: &'p [u8],
     pc: usize,
     a: usize,
     b: usize,
     c: usize,
-    output: Vec<u8>
+    output: Vec<u8>,
 }
 
-impl Octcode {
+impl<'p> Octcode<'p> {
     fn is_stopped(&self) -> bool {
         self.pc + 1 >= self.program.len()
     }
@@ -37,7 +37,6 @@ impl Octcode {
             7 => panic!("reserved!"),
             _ => panic!("unknown combo operand {}", operand),
         }
-
     }
 
     fn step(&mut self) {
@@ -68,8 +67,7 @@ impl Octcode {
                 if self.a != 0 {
                     self.pc = operand as usize;
                 } else {
-                    self.pc +=2;
-
+                    self.pc += 2;
                 }
             }
             4 => {
@@ -96,25 +94,60 @@ impl Octcode {
 
     fn print_output(&self) -> String {
         self.output.iter().join(",")
+    }
 
+    fn output_is_program(&self) -> bool {
+        (&self.output[..]).eq(self.program)
     }
 }
 
-
-fn solve_for(input: &str) -> Result<(String, u64)> {
+fn solve_for(input: &str) -> Result<(String, usize)> {
     let (registers, program) = input.trim().split_once("\n\n").unwrap();
 
-    let registers = registers.lines().map(|l| all_numbers_usize(l)[0]).collect_vec();
+    let registers = registers
+        .lines()
+        .map(|l| all_numbers_usize(l)[0])
+        .collect_vec();
     let program = all_numbers_u8(program);
 
-    let mut octcode = Octcode { program, pc: 0, a: registers[0], b: registers[1], c: registers[2], output: vec![] };
+    let mut octcode = Octcode {
+        program: &program,
+        pc: 0,
+        a: registers[0],
+        b: registers[1],
+        c: registers[2],
+        output: vec![],
+    };
 
     while !octcode.is_stopped() {
         octcode.step();
     }
 
+    let mut part2 = 0;
+    for i in 1_000_000_000..10_000_000_000 {
+        if i % 1_000_000 == 0 {
+            eprint!(".");
+        }
+        let mut octcode = Octcode {
+            program: &program,
+            pc: 0,
+            a: i,
+            b: registers[1],
+            c: registers[2],
+            output: vec![],
+        };
+
+        while !octcode.is_stopped() {
+            octcode.step();
+        }
+
+        if octcode.output_is_program() {
+            part2 = i;
+            break;
+        }
+    }
+
     let part1 = octcode.print_output();
-    let part2 = 0;
     Ok((part1, part2))
 }
 
@@ -127,9 +160,25 @@ Register C: 0
 
 Program: 0,1,5,4,3,0
 "###;
-    let (part1, part2) = solve_for(input)?;
+    let (part1, _) = solve_for(input)?;
 
     assert_eq!(part1, "4,6,3,5,6,3,5,2,1,0");
-    assert_eq!(part2, 0);
     Ok(())
 }
+
+#[test]
+fn test_example2() -> Result<()> {
+    let input = r###"
+Register A: 2024
+Register B: 0
+Register C: 0
+
+Program: 0,3,5,4,3,0
+"###;
+    let (_, part2) = solve_for(input)?;
+
+    assert_eq!(part2, 117440);
+    Ok(())
+
+}
+
