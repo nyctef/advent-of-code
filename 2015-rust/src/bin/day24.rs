@@ -50,13 +50,26 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     let mut group_search = VecDeque::new();
     group_search.push_front(Group::default());
 
+    let mut smallest_group = usize::MAX;
+
+    let mut counter = 0;
+
     while let Some(next) = group_search.pop_front() {
+        counter += 1;
+        if counter % 1_000_000 == 0 {
+            eprintln!("c {} len {} wpg {} smallest {} | {:?}", counter, group_search.len(), weight_per_group, smallest_group, &next);
+
+        }
         let weight = next.0.iter().sum::<u64>();
         if weight == weight_per_group {
+            smallest_group = smallest_group.min(next.0.len());
             groups.insert(next);
             continue;
         }
         if weight > weight_per_group {
+            continue;
+        }
+        if next.0.len() >= smallest_group {
             continue;
         }
 
