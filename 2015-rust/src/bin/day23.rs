@@ -1,5 +1,3 @@
-use std::{collections::HashMap, isize};
-
 use aoc_2015_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
@@ -9,8 +7,8 @@ pub fn main() -> Result<()> {
 
     let input = get_input(2015, 23)?;
 
-    let part1= solve_for(&input, false)?;
-    let part2= solve_for(&input, true)?;
+    let part1 = solve_for(&input, false)?;
+    let part2 = solve_for(&input, true)?;
 
     println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())

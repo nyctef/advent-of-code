@@ -53,7 +53,7 @@ struct State {
 impl State {
     fn try_spend_mana(&self, cost: u16) -> Option<State> {
         if self.player.mana.0 >= cost {
-            let mut player = self.player.clone();
+            let mut player = self.player;
             player.mana -= cost;
             Some(State::new(
                 player,

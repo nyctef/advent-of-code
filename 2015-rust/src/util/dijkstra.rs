@@ -3,7 +3,6 @@ use std::collections::hash_map::Entry;
 use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
 
-use itertools::Itertools;
 
 /// T: the state type
 /// K: a unique key for the state for looking up scores
