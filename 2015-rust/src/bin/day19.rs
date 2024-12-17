@@ -1,4 +1,4 @@
-use aoc_2015_rust::util::{*, earley::*};
+use aoc_2015_rust::util::{earley::*, *};
 use color_eyre::eyre::Result;
 use itertools::Itertools;
 

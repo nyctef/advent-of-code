@@ -50,7 +50,8 @@ fn incr(value: &mut [u8]) {
 fn is_valid(value: &[u8]) -> bool {
     let has_straight = value
         .iter()
-        .tuple_windows().any(|(&a, &b, &c)| a + 1 == b && b + 1 == c);
+        .tuple_windows()
+        .any(|(&a, &b, &c)| a + 1 == b && b + 1 == c);
     let has_confusing_characters = value.iter().any(|c| matches!(c, b'i' | b'o' | b'l'));
     let has_repeated_pair = value
         .iter()

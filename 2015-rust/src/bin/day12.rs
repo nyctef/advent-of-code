@@ -55,7 +55,6 @@ fn is_red(v: &Value) -> bool {
     } else {
         false
     }
-
 }
 
 #[test]

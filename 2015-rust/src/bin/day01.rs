@@ -11,7 +11,6 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> Result<String> {
-
     let mut floor_count = 0;
     let mut first_basement_position = 0;
     for (p, c) in input.trim().chars().enumerate() {
@@ -21,7 +20,9 @@ fn solve_for(input: &str) -> Result<String> {
         }
     }
 
-    Ok(format!("Part 1: {floor_count} | Part 2: {first_basement_position}"))
+    Ok(format!(
+        "Part 1: {floor_count} | Part 2: {first_basement_position}"
+    ))
 }
 
 #[test]

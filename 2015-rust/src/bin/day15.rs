@@ -33,14 +33,21 @@ fn solve_for(input: &str) -> Result<String> {
         if choice.iter().sum::<usize>() != 100 {
             continue;
         }
-        let res = choice.iter().enumerate().map(|(i, c)| {
-            let ingredient = ingredients[i];
-            mul_ingredient(ingredient, *c as isize)
-        }).fold((0,0,0,0,0), add_ingredient);
+        let res = choice
+            .iter()
+            .enumerate()
+            .map(|(i, c)| {
+                let ingredient = ingredients[i];
+                mul_ingredient(ingredient, *c as isize)
+            })
+            .fold((0, 0, 0, 0, 0), add_ingredient);
 
         let total = res.0.max(0) * res.1.max(0) * res.2.max(0) * res.3.max(0);
         if total > part1 {
-            println!("choice {:?} produced score {} from parts {:?}", &choice, total, res);
+            println!(
+                "choice {:?} produced score {} from parts {:?}",
+                &choice, total, res
+            );
             part1 = total;
         }
     }
@@ -50,7 +57,7 @@ fn solve_for(input: &str) -> Result<String> {
 }
 fn add_ingredient(
     ingr1: (isize, isize, isize, isize, isize),
-    ingr2: (isize, isize, isize, isize, isize)
+    ingr2: (isize, isize, isize, isize, isize),
 ) -> (isize, isize, isize, isize, isize) {
     (
         ingr1.0 + ingr2.0,

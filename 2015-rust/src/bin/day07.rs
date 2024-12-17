@@ -1,10 +1,7 @@
 use aoc_2015_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use std::{
-    collections::HashMap,
-    ops::Not,
-};
+use std::{collections::HashMap, ops::Not};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;

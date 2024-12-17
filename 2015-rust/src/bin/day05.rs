@@ -47,7 +47,8 @@ fn solve_for(input: &str) -> Result<String> {
         .filter(|l| {
             let has_xyx = l
                 .chars()
-                .tuple_windows::<(_, _, _)>().find(|t| matches!(t, (a, _b, c) if a == c))
+                .tuple_windows::<(_, _, _)>()
+                .find(|t| matches!(t, (a, _b, c) if a == c))
                 .is_some();
 
             let has_repeated_pair = l
@@ -58,7 +59,8 @@ fn solve_for(input: &str) -> Result<String> {
                 .enumerate()
                 // group by the char value of the pair
                 .into_group_map_by(|t| t.1)
-                .into_iter().find(|e| e.1.iter().tuple_windows().any(|(a, b)| b.0 - a.0 > 1))
+                .into_iter()
+                .find(|e| e.1.iter().tuple_windows().any(|(a, b)| b.0 - a.0 > 1))
                 .is_some();
             has_xyx && has_repeated_pair
         })
