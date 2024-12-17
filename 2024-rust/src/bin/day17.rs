@@ -1,3 +1,5 @@
+use std::{collections::VecDeque, u64};
+
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
@@ -137,8 +139,20 @@ fn solve_for(input: &str, do_part2: bool) -> Result<(String, usize)> {
         return Ok((part1, 0));
     }
 
-    let mut a: u64 = 0;
-    for target_len in 1..program.len() {
+    let mut queue = VecDeque::new();
+    // target_len, a
+    queue.push_front((1, 0_usize));
+    let mut best_solution = usize::MAX;
+
+    while let Some((target_len, mut a)) = queue.pop_front() {
+        if target_len > program.len() {
+            eprintln!("found a full solution {}", a);
+            if a < best_solution {
+                best_solution = a;
+            }
+            continue;
+        }
+
         a <<= 3;
         let target = &program[program.len() - target_len..program.len()];
         eprintln!("a: {} | trying to match {:?}", a, target);
@@ -147,34 +161,24 @@ fn solve_for(input: &str, do_part2: bool) -> Result<(String, usize)> {
                 // we can't start with a zero, because otherwise we'd have quit on the previous iteration
                 continue;
             }
-            octcode.reset((a + next_a_part) as usize, registers[1], registers[2]);
+            octcode.reset(a + next_a_part, registers[1], registers[2]);
             while !octcode.is_stopped() {
                 octcode.step();
             }
 
             if (octcode.get_output()).eq(target) {
-                eprintln!("found match: {}", next_a_part);
-                a += next_a_part;
-                break;
+                eprintln!(
+                    "found match: {}  {{ {:?} == {:?} }}",
+                    next_a_part,
+                    octcode.get_output(),
+                    target
+                );
+                queue.push_front((target_len + 1, a + next_a_part));
             }
         }
     }
 
-    let mut part2 = 0;
-    // for i in 1..=7 {
-    //     if i % 1_000_000 == 0 {
-    //         eprint!(".");
-    //     }
-    //     octcode.reset(i, registers[1], registers[2]);
-
-    //     while !octcode.is_stopped() {
-    //         octcode.step();
-    //     }
-
-    //     dbg!(i, &octcode);
-    // }
-
-    Ok((part1, part2))
+    Ok((part1, best_solution))
 }
 
 #[test]
