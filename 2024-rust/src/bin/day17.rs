@@ -51,8 +51,7 @@ impl<'p> Octcode<'p> {
 
         match opcode {
             0 => {
-                let denom = 2_usize.pow(self.combo_operand(operand) as u32);
-                self.a = self.a / denom;
+                self.a = self.a >> self.combo_operand(operand);
                 self.pc += 2;
             }
             1 => {
@@ -75,20 +74,19 @@ impl<'p> Octcode<'p> {
                 self.pc += 2;
             }
             5 => {
-                self.output.push((self.combo_operand(operand) & 0b111) as u8);
+                self.output
+                    .push((self.combo_operand(operand) & 0b111) as u8);
                 self.pc += 2;
             }
             6 => {
-                let denom = 2_usize.pow(self.combo_operand(operand) as u32);
-                self.b = self.a / denom;
+                self.b = self.a >> self.combo_operand(operand);
                 self.pc += 2;
             }
             7 => {
-                let denom = 2_usize.pow(self.combo_operand(operand) as u32);
-                self.c = self.a / denom;
+                self.c = self.a >> self.combo_operand(operand);
                 self.pc += 2;
             }
-            _ => panic!("unknown opcode {}", opcode)
+            _ => panic!("unknown opcode {}", opcode),
         }
     }
 
