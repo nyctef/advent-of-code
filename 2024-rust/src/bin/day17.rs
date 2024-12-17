@@ -7,7 +7,7 @@ pub fn main() -> Result<()> {
 
     let input = get_input(2024, 17)?;
 
-    let (part1, part2) = solve_for(&input)?;
+    let (part1, part2) = solve_for(&input, true)?;
 
     println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())
@@ -97,9 +97,17 @@ impl<'p> Octcode<'p> {
     fn output_is_program(&self) -> bool {
         (&self.output[..]).eq(self.program)
     }
+
+    fn reset(&mut self, a: usize, b: usize, c: usize) {
+        self.output.clear();
+        self.pc = 0;
+        self.a = a;
+        self.b = b;
+        self.c = c;
+    }
 }
 
-fn solve_for(input: &str) -> Result<(String, usize)> {
+fn solve_for(input: &str, do_part2: bool) -> Result<(String, usize)> {
     let (registers, program) = input.trim().split_once("\n\n").unwrap();
 
     let registers = registers
@@ -120,20 +128,17 @@ fn solve_for(input: &str) -> Result<(String, usize)> {
     while !octcode.is_stopped() {
         octcode.step();
     }
+    let part1 = octcode.print_output();
+    if !do_part2 {
+        return Ok((part1, 0));
+    }
 
     let mut part2 = 0;
-    for i in 1_000_000_000..10_000_000_000 {
+    for i in 0..1000000 {
         if i % 1_000_000 == 0 {
             eprint!(".");
         }
-        let mut octcode = Octcode {
-            program: &program,
-            pc: 0,
-            a: i,
-            b: registers[1],
-            c: registers[2],
-            output: vec![],
-        };
+        octcode.reset(i, registers[1], registers[2]);
 
         while !octcode.is_stopped() {
             octcode.step();
@@ -145,7 +150,6 @@ fn solve_for(input: &str) -> Result<(String, usize)> {
         }
     }
 
-    let part1 = octcode.print_output();
     Ok((part1, part2))
 }
 
@@ -158,7 +162,7 @@ Register C: 0
 
 Program: 0,1,5,4,3,0
 "###;
-    let (part1, _) = solve_for(input)?;
+    let (part1, _) = solve_for(input, false)?;
 
     assert_eq!(part1, "4,6,3,5,6,3,5,2,1,0");
     Ok(())
@@ -173,10 +177,9 @@ Register C: 0
 
 Program: 0,3,5,4,3,0
 "###;
-    let (_, part2) = solve_for(input)?;
+    let (_, part2) = solve_for(input, true)?;
 
     assert_eq!(part2, 117440);
     Ok(())
-
 }
 
