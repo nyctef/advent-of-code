@@ -13,7 +13,8 @@ pub fn main() -> Result<()> {
 
     let input = get_input(2015, 24)?;
 
-    let (part1, part2) = solve_for(&input)?;
+    let part1 = solve_for(&input, 3)?;
+    let part2 = solve_for(&input, 4)?;
 
     println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())
@@ -35,7 +36,7 @@ impl Hash for Group {
     }
 }
 
-fn solve_for(input: &str) -> Result<(u64, u64)> {
+fn solve_for(input: &str, group_count: u64) -> Result<u64> {
     let package_weights = input
         .trim()
         .lines()
@@ -43,8 +44,8 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         .collect_vec();
 
     let total_weight = package_weights.iter().sum::<u64>();
-    let weight_per_group = total_weight / 3;
-    assert!(weight_per_group * 3 == total_weight);
+    let weight_per_group = total_weight / group_count;
+    assert!(weight_per_group * group_count == total_weight);
 
     let mut groups = FxHashSet::default();
     let mut group_search = VecDeque::new();
@@ -84,7 +85,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         }
     }
 
-    dbg!(&groups);
+    // dbg!(&groups);
 
     let min_group_len = groups.iter().map(|g| g.0.len()).min().unwrap();
     let min_num_packages = groups
@@ -92,7 +93,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         .filter(|g| g.0.len() == min_group_len)
         .collect_vec();
 
-    dbg!(&min_num_packages);
+    // dbg!(&min_num_packages);
 
     // for group1 in min_num_packages {
     //     let remaining_groups = groups
@@ -103,9 +104,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
     //
     let lowest_quantum = min_num_packages.iter().map(|g| g.0.iter().product()).min().unwrap();
 
-    let part1 = lowest_quantum;
-    let part2 = 0;
-    Ok((part1, part2))
+    Ok(lowest_quantum)
 }
 
 #[test]
@@ -122,9 +121,7 @@ fn test_example1() -> Result<()> {
 10
 11
 "###;
-    let (part1, part2) = solve_for(input)?;
-
-    assert_eq!(part1, 99);
-    assert_eq!(part2, 0);
+    assert_eq!(solve_for(input, 3)?, 99);
+    assert_eq!(solve_for(input, 4)?, 44);
     Ok(())
 }
