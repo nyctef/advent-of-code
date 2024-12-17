@@ -94,6 +94,10 @@ impl<'p> Octcode<'p> {
         self.output.iter().join(",")
     }
 
+    fn get_output(&self) -> &[u8] {
+        &self.output
+    }
+
     fn output_is_program(&self) -> bool {
         (&self.output[..]).eq(self.program)
     }
@@ -133,22 +137,42 @@ fn solve_for(input: &str, do_part2: bool) -> Result<(String, usize)> {
         return Ok((part1, 0));
     }
 
-    let mut part2 = 0;
-    for i in 0..1000000 {
-        if i % 1_000_000 == 0 {
-            eprint!(".");
-        }
-        octcode.reset(i, registers[1], registers[2]);
+    let mut a: u64 = 0;
+    for target_len in 1..program.len() {
+        a <<= 3;
+        let target = &program[program.len() - target_len..program.len()];
+        eprintln!("a: {} | trying to match {:?}", a, target);
+        for next_a_part in 0..=7 {
+            if a == 0 && next_a_part == 0 {
+                // we can't start with a zero, because otherwise we'd have quit on the previous iteration
+                continue;
+            }
+            octcode.reset((a + next_a_part) as usize, registers[1], registers[2]);
+            while !octcode.is_stopped() {
+                octcode.step();
+            }
 
-        while !octcode.is_stopped() {
-            octcode.step();
-        }
-
-        if octcode.output_is_program() {
-            part2 = i;
-            break;
+            if (octcode.get_output()).eq(target) {
+                eprintln!("found match: {}", next_a_part);
+                a += next_a_part;
+                break;
+            }
         }
     }
+
+    let mut part2 = 0;
+    // for i in 1..=7 {
+    //     if i % 1_000_000 == 0 {
+    //         eprint!(".");
+    //     }
+    //     octcode.reset(i, registers[1], registers[2]);
+
+    //     while !octcode.is_stopped() {
+    //         octcode.step();
+    //     }
+
+    //     dbg!(i, &octcode);
+    // }
 
     Ok((part1, part2))
 }
@@ -182,4 +206,3 @@ Program: 0,3,5,4,3,0
     assert_eq!(part2, 117440);
     Ok(())
 }
-
