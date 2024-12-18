@@ -39,8 +39,7 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
 
         // we may have queued up several candidates for the final state
         // before processing one and quitting the loop, so now we find the smallest here:
-        self
-            .bests
+        self.bests
             .values()
             .filter(|b| is_target_state(b))
             .min()
