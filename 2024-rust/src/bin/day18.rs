@@ -102,11 +102,11 @@ fn part2(input: &str, width: isize, height: isize, initial_count: usize) -> Resu
         .map(all_numbers_isize)
         .map(|ns| Pos::new(ns[0], ns[1]))
         .collect_vec();
+    let mut bytes = FxHashSet::from_iter(input_bytes.iter().take(initial_count).copied());
 
-    for num_bytes in initial_count..input_bytes.len() {
-        let bytes = FxHashSet::from_iter(input_bytes.iter().copied().take(num_bytes));
-
+    for num_bytes in initial_count + 1..input_bytes.len() {
         let newest_byte = input_bytes[num_bytes - 1];
+        assert!(bytes.insert(newest_byte));
         // eprintln!("newest {:?}", newest_byte);
 
         // flood fill from newest byte to see if we create an unbroken chain spanning the field
