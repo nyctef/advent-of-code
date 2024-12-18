@@ -41,7 +41,7 @@ impl State {
 
 impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -124,10 +124,10 @@ fn part2(input: &str, width: isize, height: isize, initial_count: usize) -> Resu
                 let is_touching_bottom_edge = seen.iter().any(|p| p.y == height);
                 let is_touching_right_edge = seen.iter().any(|p| p.x == width);
 
-                if (is_touching_top_edge && is_touching_left_edge)
-                    || (is_touching_top_edge && is_touching_bottom_edge)
-                    || (is_touching_right_edge && is_touching_bottom_edge)
-                    || (is_touching_right_edge && is_touching_left_edge)
+                // we need something that's approximately going from the bottom left corner to the
+                // top right corner
+                if (is_touching_bottom_edge || is_touching_left_edge)
+                    && (is_touching_top_edge || is_touching_right_edge)
                 {
                     return Ok(format!("{},{}", newest_byte.x, newest_byte.y));
                 }
@@ -135,13 +135,13 @@ fn part2(input: &str, width: isize, height: isize, initial_count: usize) -> Resu
 
             let nexts = vec![
                 Pos::new(x + 1, y + 1),
-                Pos::new(x + 0, y + 1),
+                Pos::new(x, y + 1),
                 Pos::new(x - 1, y + 1),
-                Pos::new(x - 1, y + 0),
+                Pos::new(x - 1, y),
                 Pos::new(x - 1, y - 1),
-                Pos::new(x - 0, y - 1),
+                Pos::new(x, y - 1),
                 Pos::new(x + 1, y - 1),
-                Pos::new(x + 1, y - 0),
+                Pos::new(x + 1, y),
             ];
 
             for n in nexts {
