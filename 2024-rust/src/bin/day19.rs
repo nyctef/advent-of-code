@@ -34,31 +34,31 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 }
 
 fn count_possibilities<'i>(
-    p: &'i str,
+    to_match: &'i str,
     cache: &mut FxHashMap<&'i str, usize>,
     towels: &[&'i str],
 ) -> usize {
-    if let Some(&res) = cache.get(p) {
+    if let Some(&res) = cache.get(to_match) {
         return res;
     }
 
-    if p.len() == 0 {
+    if to_match.is_empty() {
         return 1;
     }
 
     let res = towels
         .iter()
         .map(|t| {
-            if p.starts_with(t) {
-                count_possibilities(&p[t.len()..], cache, towels)
+            if let Some(remaining) = to_match.strip_prefix(t) {
+                count_possibilities(remaining, cache, towels)
             } else {
                 0
             }
         })
         .sum();
 
-    cache.insert(p, res);
-    return res;
+    cache.insert(to_match, res);
+    res
 }
 
 #[test]
