@@ -14,29 +14,51 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(usize, u64)> {
+fn solve_for(input: &str) -> Result<(usize, usize)> {
     let (towels, patterns) = input.trim().split_once("\n\n").unwrap();
     let towels = towels.split(", ").collect_vec();
     let patterns = patterns.lines().collect_vec();
 
     let mut cache = FxHashMap::default();
-    let part1 = patterns.iter().filter(|p| is_possible(p, &mut cache, &towels)).count();
+    let mut part1 = 0;
+    let mut part2 = 0;
+    for pattern in patterns {
+        let possibilities = count_possibilities(pattern, &mut cache, &towels);
+        if possibilities > 0 {
+            part1 += 1;
+        }
+        part2 += possibilities
+    }
 
-    let part2 = 0;
     Ok((part1, part2))
 }
 
-fn is_possible(p: &str, cache: &mut FxHashMap<&str, bool>, towels: &[&str]) -> bool {
+fn count_possibilities<'i>(
+    p: &'i str,
+    cache: &mut FxHashMap<&'i str, usize>,
+    towels: &[&'i str],
+) -> usize {
     if let Some(&res) = cache.get(p) {
         return res;
     }
 
     if p.len() == 0 {
-        return true;
+        return 1;
     }
 
-    return towels.iter().any(|t| p.starts_with(t) && is_possible(&p[t.len()..], cache, towels));
+    let res = towels
+        .iter()
+        .map(|t| {
+            if p.starts_with(t) {
+                count_possibilities(&p[t.len()..], cache, towels)
+            } else {
+                0
+            }
+        })
+        .sum();
 
+    cache.insert(p, res);
+    return res;
 }
 
 #[test]
@@ -56,6 +78,6 @@ bbrgwb
     let (part1, part2) = solve_for(input)?;
 
     assert_eq!(part1, 6);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 16);
     Ok(())
 }
