@@ -20,15 +20,12 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     let patterns = patterns.lines().collect_vec();
 
     let mut cache = FxHashMap::default();
-    let mut part1 = 0;
-    let mut part2 = 0;
-    for pattern in patterns {
-        let possibilities = count_possibilities(pattern, &mut cache, &towels);
-        if possibilities > 0 {
-            part1 += 1;
-        }
-        part2 += possibilities
-    }
+    let possibilities_per_pattern = patterns
+        .into_iter()
+        .map(|p| count_possibilities(p, &mut cache, &towels))
+        .collect_vec();
+    let part1 = possibilities_per_pattern.iter().filter(|&&c| c > 0).count();
+    let part2 = possibilities_per_pattern.iter().sum();
 
     Ok((part1, part2))
 }
