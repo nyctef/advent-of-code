@@ -116,9 +116,9 @@ fn count_cheats(
     path_lookup: &GridLookup<usize>,
     allowed_cheat_time: usize,
 ) -> usize {
-    let mut cheats_by_start_end = FxHashMap::default();
     let mut seen = GridLookup::<bool>::new(width, height);
     let mut search = VecDeque::new();
+    let mut result = 0;
     for path_point in path {
         let time = path_lookup.get(path_point);
         seen.clear();
@@ -142,11 +142,7 @@ fn count_cheats(
 
                     let time_saved = time_after_cheat - current_time;
                     if time_saved >= 100 {
-                        let by_start_end = cheats_by_start_end.entry((path_point, next_pos));
-
-                        if let Entry::Vacant(e) = by_start_end {
-                            e.insert(time_saved);
-                        }
+                        result += 1;
                     }
                 }
             }
@@ -157,7 +153,7 @@ fn count_cheats(
         }
     }
 
-    cheats_by_start_end.len()
+    result
 }
 
 #[derive(Debug)]
