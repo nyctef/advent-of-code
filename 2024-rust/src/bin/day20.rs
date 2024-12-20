@@ -111,8 +111,8 @@ fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: us
                 continue;
             }
 
-            if let Some(time_after_cheat) = path.get(&next_pos) {
-                if next_pos != *path_point {
+            if next_pos != *path_point {
+                if let Some(time_after_cheat) = path.get(&next_pos) {
                     let time_after_cheat = *time_after_cheat as isize;
                     let current_time = (time + cheat_time) as isize;
 
