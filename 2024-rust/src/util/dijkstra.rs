@@ -130,7 +130,6 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
                 let bests = self.bests.get(&(self.get_key)(&nc));
 
                 if let Some(b) = bests {
-
                     if b.cmp(&nc) == Ordering::Equal {
                         // this looks like the right path
                         // we just take this one greedily since we don't want to
@@ -138,7 +137,6 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
                         next = b.clone();
                         continue 'outer;
                     }
-
                 }
             }
         }
