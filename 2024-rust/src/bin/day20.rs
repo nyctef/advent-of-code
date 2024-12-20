@@ -1,3 +1,5 @@
+use std::collections::{hash_map::Entry, VecDeque};
+
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
@@ -112,10 +114,55 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         }
     }
 
-    dbg!(&cheats);
+    let mut cheats2_by_time = FxHashMap::default();
+    let mut cheats2_by_start_end = FxHashMap::default();
+    for (path_point, time) in &path {
+        let mut seen = FxHashSet::default();
+        let mut search = VecDeque::new();
+        search.push_front((0, *path_point));
+        while let Some((cheat_time, next_pos)) = search.pop_front() {
+            if !seen.insert(next_pos) {
+                continue;
+            }
 
-    let part2 = 0;
-    Ok((part1, part2))
+            if cheat_time > 20 {
+                continue;
+            }
+
+            if let Some(time_after_cheat) = path.get(&next_pos) {
+                if next_pos != *path_point {
+                    let time_after_cheat = *time_after_cheat as isize;
+                    let current_time = (time + cheat_time) as isize;
+
+                    let time_saved = time_after_cheat - current_time;
+                    if time_saved > 0 {
+                        let by_start_end = cheats2_by_start_end.entry((path_point, next_pos));
+
+                        if let Entry::Vacant(e) = by_start_end {
+                            *cheats2_by_time.entry(time_saved).or_insert(0) += 1;
+
+                            if time_saved >= 100 {
+                                e.insert(time_saved);
+                            }
+                        }
+                    }
+                    continue;
+                }
+            }
+            for dir in RCDirection::four() {
+                let next_next_pos = next_pos + dir;
+                search.push_back((cheat_time + 1, next_next_pos));
+            }
+        }
+    }
+
+    dbg!(&cheats2_by_time
+        .iter()
+        .filter(|(time, count)| time >= &&50)
+        .sorted()
+        .collect_vec());
+
+    Ok((part1, cheats2_by_start_end.len() as u64))
 }
 
 #[test]
