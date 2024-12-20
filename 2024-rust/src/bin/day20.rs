@@ -1,9 +1,7 @@
-use std::collections::{hash_map::Entry, VecDeque};
-
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::{hash_map::Entry, VecDeque};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -33,7 +31,7 @@ impl Ord for State {
     }
 }
 
-fn solve_for(input: &str) -> Result<(u64, u64)> {
+fn solve_for(input: &str) -> Result<(usize, usize)> {
     let mut grid = CharGrid::from_string(input);
 
     let start = grid.find_single_char('S');
@@ -87,36 +85,16 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
     let path: FxHashMap<_, _> = path.into_iter().map(|s| (s.pos, s.ps)).collect();
 
-    let mut cheats = FxHashMap::default();
-    let mut part1 = 0;
-    for (path_point, time) in &path {
-        for cheat_dir in RCDirection::four() {
-            let cheat_target = *path_point + cheat_dir * 2;
-            if let Some(&time_after_cheat) = path.get(&cheat_target) {
-                let time_after_cheat = time_after_cheat as isize;
-                let time = *time as isize;
-                let time_saved = time_after_cheat - time - 2;
-                if time_saved > 0 {
-                    // eprintln!(
-                    //     "skipping from {} to {} gains {}ps",
-                    //     path_point,
-                    //     cheat_target,
-                    //     time_saved
-                    // );
+    let part1 = count_cheats(&path, 2);
+    let part2 = count_cheats(&path, 20);
 
-                    *cheats.entry(time_saved).or_insert(0) += 1;
+    Ok((part1, part2))
+}
 
-                    if time_saved >= 100 {
-                        part1 += 1;
-                    }
-                }
-            }
-        }
-    }
-
+fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: usize) -> usize {
     let mut cheats2_by_time = FxHashMap::default();
     let mut cheats2_by_start_end = FxHashMap::default();
-    for (path_point, time) in &path {
+    for (path_point, time) in path {
         let mut seen = FxHashSet::default();
         let mut search = VecDeque::new();
         search.push_front((0, *path_point));
@@ -125,7 +103,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
                 continue;
             }
 
-            if cheat_time > 20 {
+            if cheat_time > allowed_cheat_time {
                 continue;
             }
 
@@ -155,13 +133,12 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         }
     }
 
-    dbg!(&cheats2_by_time
-        .iter()
-        .filter(|(time, _)| time >= &&50)
-        .sorted()
-        .collect_vec());
-
-    Ok((part1, cheats2_by_start_end.len() as u64))
+    // dbg!(&cheats2_by_time
+    //     .iter()
+    //     .filter(|(time, _)| time >= &&50)
+    //     .sorted()
+    //     .collect_vec());
+    cheats2_by_start_end.len()
 }
 
 #[test]
