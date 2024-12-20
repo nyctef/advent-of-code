@@ -144,8 +144,8 @@ impl CharGrid {
         index: CharGridIndexRC,
     ) -> impl Iterator<Item = (CharGridIndexRC, char)> + Debug + '_ {
         RCDirection::four()
-            .into_iter()
-            .map(move |d| index + d)
+            .iter()
+            .map(move |d| index + *d)
             .filter(move |&p| p != index && self.is_in_bounds(p))
             .map(|p| (p, self.index(p)))
     }
@@ -364,6 +364,18 @@ impl Add<RCDirection> for CharGridIndexRC {
     }
 }
 
+impl Add<&RCDirection> for CharGridIndexRC {
+    type Output = CharGridIndexRC;
+
+    fn add(self, rhs: &RCDirection) -> Self::Output {
+        Self {
+            // todo: is it confusing that we don't actually go negative here?
+            col: (self.col as isize).saturating_add(rhs.coldiff) as usize,
+            row: (self.row as isize).saturating_add(rhs.rowdiff) as usize,
+        }
+    }
+}
+
 impl Sub<RCDirection> for CharGridIndexRC {
     type Output = CharGridIndexRC;
 
@@ -421,35 +433,42 @@ pub struct RCDirection {
     pub coldiff: isize,
 }
 
+static FOUR: [RCDirection; 4] = [
+    RCDirection::right(),
+    RCDirection::up(),
+    RCDirection::left(),
+    RCDirection::down(),
+];
+
 #[allow(dead_code)]
 impl RCDirection {
-    pub fn up() -> RCDirection {
+    pub const fn up() -> RCDirection {
         RCDirection {
             rowdiff: -1,
             coldiff: 0,
         }
     }
-    pub fn down() -> RCDirection {
+    pub const fn down() -> RCDirection {
         RCDirection {
             rowdiff: 1,
             coldiff: 0,
         }
     }
-    pub fn left() -> RCDirection {
+    pub const fn left() -> RCDirection {
         RCDirection {
             rowdiff: 0,
             coldiff: -1,
         }
     }
-    pub fn right() -> RCDirection {
+    pub const fn right() -> RCDirection {
         RCDirection {
             rowdiff: 0,
             coldiff: 1,
         }
     }
 
-    pub fn four() -> Vec<RCDirection> {
-        vec![Self::right(), Self::up(), Self::left(), Self::down()]
+    pub fn four() -> &'static [RCDirection] {
+        &FOUR
     }
 
     pub fn eight() -> Vec<RCDirection> {

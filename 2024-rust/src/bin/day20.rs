@@ -100,7 +100,6 @@ fn count_cheats(
     let mut cheats_by_start_end = FxHashMap::default();
     let mut seen = GridLookup::<bool>::new(width, height);
     let mut search = VecDeque::new();
-    let four = RCDirection::four();
     for (path_point, time) in path {
         seen.clear();
         search.clear();
@@ -131,8 +130,8 @@ fn count_cheats(
                     }
                 }
             }
-            for dir in &four {
-                let next_next_pos = next_pos + *dir;
+            for dir in RCDirection::four() {
+                let next_next_pos = next_pos + dir;
                 search.push_back((cheat_time + 1, next_next_pos));
             }
         }
