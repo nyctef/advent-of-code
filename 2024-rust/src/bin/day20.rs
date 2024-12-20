@@ -92,7 +92,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 }
 
 fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: usize) -> usize {
-    let mut cheats2_by_time = FxHashMap::default();
+    // let mut cheats2_by_time = FxHashMap::default();
     let mut cheats2_by_start_end = FxHashMap::default();
     for (path_point, time) in path {
         let mut seen = FxHashSet::default();
@@ -117,7 +117,7 @@ fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: us
                         let by_start_end = cheats2_by_start_end.entry((path_point, next_pos));
 
                         if let Entry::Vacant(e) = by_start_end {
-                            *cheats2_by_time.entry(time_saved).or_insert(0) += 1;
+                            // *cheats2_by_time.entry(time_saved).or_insert(0) += 1;
 
                             if time_saved >= 100 {
                                 e.insert(time_saved);
