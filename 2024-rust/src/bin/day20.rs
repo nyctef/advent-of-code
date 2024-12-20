@@ -85,15 +85,20 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 
     let path: FxHashMap<_, _> = path.into_iter().map(|s| (s.pos, s.ps)).collect();
 
-    let part1 = count_cheats(&path, 2);
-    let part2 = count_cheats(&path, 20);
+    let part1 = count_cheats(grid.width(), grid.height(), &path, 2);
+    let part2 = count_cheats(grid.width(), grid.height(), &path, 20);
 
     Ok((part1, part2))
 }
 
-fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: usize) -> usize {
+fn count_cheats(
+    width: usize,
+    height: usize,
+    path: &FxHashMap<CharGridIndexRC, usize>,
+    allowed_cheat_time: usize,
+) -> usize {
     let mut cheats_by_start_end = FxHashMap::default();
-    let mut seen = FxHashSet::default();
+    let mut seen = GridLookup::<bool>::new(width, height);
     let mut search = VecDeque::new();
     let four = RCDirection::four();
     for (path_point, time) in path {
@@ -102,9 +107,10 @@ fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: us
 
         search.push_front((0, *path_point));
         while let Some((cheat_time, next_pos)) = search.pop_front() {
-            if !seen.insert(next_pos) {
+            if seen.get_opt(&next_pos) != Some(&false) {
                 continue;
             }
+            seen.set(&next_pos, true);
 
             if cheat_time > allowed_cheat_time {
                 continue;
@@ -133,6 +139,48 @@ fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: us
     }
 
     cheats_by_start_end.len()
+}
+
+#[derive(Debug)]
+struct GridLookup<T> {
+    width: usize,
+    height: usize,
+    cells: Vec<T>,
+}
+
+impl<T: Default + Clone> GridLookup<T> {
+    fn new(width: usize, height: usize) -> Self {
+        GridLookup {
+            width,
+            height,
+            cells: vec![T::default(); width * height],
+        }
+    }
+
+    fn get_opt(&self, index: &CharGridIndexRC) -> Option<&T> {
+        if index.row >= self.height || index.col >= self.width {
+            None
+        } else {
+            Some(&self.cells[index.row * self.width + index.col])
+        }
+    }
+
+    fn get(&self, index: &CharGridIndexRC) -> &T {
+        &self.cells[index.row * self.width + index.col]
+    }
+
+    fn set(&mut self, index: &CharGridIndexRC, value: T) {
+        if index.row >= self.height || index.col >= self.width {
+            return;
+        }
+        self.cells[index.row * self.width + index.col] = value;
+    }
+
+    fn clear(&mut self) {
+        // TODO: is there a faster way to zero out a vec like this?
+        self.cells.clear();
+        self.cells.resize(self.width * self.height, T::default());
+    }
 }
 
 #[test]
