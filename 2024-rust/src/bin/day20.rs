@@ -1,6 +1,7 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -77,17 +78,42 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
         prevs
     };
-    let is_starting_state = |s: &State| {
-        s.pos == start
+    let is_starting_state = |s: &State| s.pos == start;
 
-    };
+    let path =
+        search.reconstruct_path_single(result.unwrap(), get_prev_candidates, is_starting_state);
 
-    let path = search.reconstruct_path_single(result.unwrap(), get_prev_candidates, is_starting_state);
+    let path: FxHashMap<_, _> = path.into_iter().map(|s| (s.pos, s.ps)).collect();
 
-    // dbg!(&path);
+    let mut cheats = FxHashMap::default();
+    let mut part1 = 0;
+    for (path_point, time) in &path {
+        for cheat_dir in RCDirection::four() {
+            let cheat_target = *path_point + cheat_dir * 2;
+            if let Some(&time_after_cheat) = path.get(&cheat_target) {
+                let time_after_cheat = time_after_cheat as isize;
+                let time = *time as isize;
+                let time_saved = time_after_cheat - time - 2;
+                if time_saved > 0 {
+                    // eprintln!(
+                    //     "skipping from {} to {} gains {}ps",
+                    //     path_point,
+                    //     cheat_target,
+                    //     time_saved
+                    // );
 
-    todo!();
-    let part1 = 0;
+                    *cheats.entry(time_saved).or_insert(0) += 1;
+
+                    if time_saved >= 100 {
+                        part1 += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    dbg!(&cheats);
+
     let part2 = 0;
     Ok((part1, part2))
 }
