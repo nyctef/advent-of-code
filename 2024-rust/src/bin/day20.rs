@@ -60,7 +60,31 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
     let result = search.run_single(get_next_candidates, is_target_state);
 
-    dbg!(result);
+    // dbg!(&result);
+
+    let get_prev_candidates = |s: State| {
+        let mut prevs = vec![];
+
+        for dir in RCDirection::four() {
+            let target_pos = s.pos + dir;
+            if grid.index_opt(target_pos) == Some('.') {
+                prevs.push(State {
+                    ps: s.ps - 1,
+                    pos: target_pos,
+                });
+            }
+        }
+
+        prevs
+    };
+    let is_starting_state = |s: &State| {
+        s.pos == start
+
+    };
+
+    let path = search.reconstruct_path_single(result.unwrap(), get_prev_candidates, is_starting_state);
+
+    // dbg!(&path);
 
     todo!();
     let part1 = 0;

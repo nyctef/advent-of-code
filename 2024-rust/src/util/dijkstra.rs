@@ -1,6 +1,6 @@
-use std::cmp::Reverse;
+use std::cmp::{Ordering, Reverse};
 use std::collections::hash_map::Entry;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, VecDeque};
 use std::hash::Hash;
 
 /// T: the state type
@@ -25,7 +25,7 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
     }
 
     pub fn run_single(
-        mut self,
+        &mut self,
         get_next_candidates: impl FnMut(T) -> Vec<T>,
         is_target_state: impl Fn(&T) -> bool,
     ) -> Option<T> {
@@ -97,8 +97,56 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
     }
 
     pub fn push(&mut self, entry: T) {
-        self.queue.push(Reverse(entry));
+        self.queue.push(Reverse(entry.clone()));
+        self.bests.insert((self.get_key)(&entry), entry);
     }
+
+    pub fn reconstruct_path_single(
+        &self,
+        result: T,
+        mut get_prev_candidates: impl FnMut(T) -> Vec<T>,
+        is_starting_state: impl Fn(&T) -> bool,
+    ) -> Vec<T> {
+        let mut path = vec![];
+
+        // let mut q = VecDeque::new();
+        // q.push_front(result);
+        // while let Some(next) = q.pop_front()
+
+        let mut next = result;
+        'outer: loop {
+            path.push(next.clone());
+
+            // eprintln!("next {:?}, is_starting {}", next, is);
+
+            if is_starting_state(&next) {
+                break;
+            }
+
+            let next_candidates = get_prev_candidates(next.clone());
+
+            // eprintln!("  candidates {:?}", next_candidates);
+            for nc in next_candidates {
+                let bests = self.bests.get(&(self.get_key)(&nc));
+
+                if let Some(b) = bests {
+
+                    if b.cmp(&nc) == Ordering::Equal {
+                        // this looks like the right path
+                        // we just take this one greedily since we don't want to
+                        // handle there being multiple paths in this case
+                        next = b.clone();
+                        continue 'outer;
+                    }
+
+                }
+            }
+        }
+
+        path.reverse();
+        path
+    }
+
     /*
 
     pub fn get_best_scores(&self) -> &HashMap<K, Vec<S>> {
