@@ -94,9 +94,13 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: usize) -> usize {
     // let mut cheats2_by_time = FxHashMap::default();
     let mut cheats2_by_start_end = FxHashMap::default();
+    let mut seen = FxHashSet::default();
+    let mut search = VecDeque::new();
+    let four = RCDirection::four();
     for (path_point, time) in path {
-        let mut seen = FxHashSet::default();
-        let mut search = VecDeque::new();
+        seen.clear();
+        search.clear();
+
         search.push_front((0, *path_point));
         while let Some((cheat_time, next_pos)) = search.pop_front() {
             if !seen.insert(next_pos) {
@@ -126,8 +130,8 @@ fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: us
                     }
                 }
             }
-            for dir in RCDirection::four() {
-                let next_next_pos = next_pos + dir;
+            for dir in &four {
+                let next_next_pos = next_pos + *dir;
                 search.push_back((cheat_time + 1, next_next_pos));
             }
         }
