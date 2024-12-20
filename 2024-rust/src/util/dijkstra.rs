@@ -1,6 +1,6 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::hash_map::Entry;
-use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
 
 /// T: the state type

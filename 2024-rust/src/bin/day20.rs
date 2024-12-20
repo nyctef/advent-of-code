@@ -157,7 +157,7 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
     dbg!(&cheats2_by_time
         .iter()
-        .filter(|(time, count)| time >= &&50)
+        .filter(|(time, _)| time >= &&50)
         .sorted()
         .collect_vec());
 
