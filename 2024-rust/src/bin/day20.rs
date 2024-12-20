@@ -1,5 +1,6 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
+use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::{hash_map::Entry, VecDeque};
 
@@ -83,10 +84,27 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
     let path =
         search.reconstruct_path_single(result.unwrap(), get_prev_candidates, is_starting_state);
 
-    let path: FxHashMap<_, _> = path.into_iter().map(|s| (s.pos, s.ps)).collect();
+    let path_positions = path.iter().map(|s| s.pos).collect_vec();
 
-    let part1 = count_cheats(grid.width(), grid.height(), &path, 2);
-    let part2 = count_cheats(grid.width(), grid.height(), &path, 20);
+    let mut path_lookup = GridLookup::<usize>::new(grid.width(), grid.height());
+    for s in path {
+        path_lookup.set(&s.pos, s.ps);
+    }
+
+    let part1 = count_cheats(
+        grid.width(),
+        grid.height(),
+        &path_positions,
+        &path_lookup,
+        2,
+    );
+    let part2 = count_cheats(
+        grid.width(),
+        grid.height(),
+        &path_positions,
+        &path_lookup,
+        20,
+    );
 
     Ok((part1, part2))
 }
@@ -94,13 +112,15 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 fn count_cheats(
     width: usize,
     height: usize,
-    path: &FxHashMap<CharGridIndexRC, usize>,
+    path: &[CharGridIndexRC],
+    path_lookup: &GridLookup<usize>,
     allowed_cheat_time: usize,
 ) -> usize {
     let mut cheats_by_start_end = FxHashMap::default();
     let mut seen = GridLookup::<bool>::new(width, height);
     let mut search = VecDeque::new();
-    for (path_point, time) in path {
+    for path_point in path {
+        let time = path_lookup.get(path_point);
         seen.clear();
         search.clear();
 
@@ -116,7 +136,7 @@ fn count_cheats(
             }
 
             if next_pos != *path_point {
-                if let Some(time_after_cheat) = path.get(&next_pos) {
+                if let Some(time_after_cheat) = path_lookup.get_opt(&next_pos) {
                     let time_after_cheat = *time_after_cheat as isize;
                     let current_time = (time + cheat_time) as isize;
 
