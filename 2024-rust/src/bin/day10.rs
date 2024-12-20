@@ -35,7 +35,7 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
                 continue;
             }
 
-            for neighbor in RCDirection::four().into_iter().map(|d| next + d) {
+            for neighbor in RCDirection::four().iter().map(|d| next + d) {
                 if grid.index_opt(neighbor) == Some((current_height as u8 + 1) as char) {
                     trail.push_back(neighbor);
                 }

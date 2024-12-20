@@ -1,8 +1,7 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::{hash_map::Entry, VecDeque};
+use std::collections::VecDeque;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
