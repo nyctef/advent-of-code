@@ -92,8 +92,7 @@ fn solve_for(input: &str) -> Result<(usize, usize)> {
 }
 
 fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: usize) -> usize {
-    // let mut cheats2_by_time = FxHashMap::default();
-    let mut cheats2_by_start_end = FxHashMap::default();
+    let mut cheats_by_start_end = FxHashMap::default();
     let mut seen = FxHashSet::default();
     let mut search = VecDeque::new();
     let four = RCDirection::four();
@@ -117,15 +116,11 @@ fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: us
                     let current_time = (time + cheat_time) as isize;
 
                     let time_saved = time_after_cheat - current_time;
-                    if time_saved > 0 {
-                        let by_start_end = cheats2_by_start_end.entry((path_point, next_pos));
+                    if time_saved >= 100 {
+                        let by_start_end = cheats_by_start_end.entry((path_point, next_pos));
 
                         if let Entry::Vacant(e) = by_start_end {
-                            // *cheats2_by_time.entry(time_saved).or_insert(0) += 1;
-
-                            if time_saved >= 100 {
-                                e.insert(time_saved);
-                            }
+                            e.insert(time_saved);
                         }
                     }
                 }
@@ -137,12 +132,7 @@ fn count_cheats(path: &FxHashMap<CharGridIndexRC, usize>, allowed_cheat_time: us
         }
     }
 
-    // dbg!(&cheats2_by_time
-    //     .iter()
-    //     .filter(|(time, _)| time >= &&50)
-    //     .sorted()
-    //     .collect_vec());
-    cheats2_by_start_end.len()
+    cheats_by_start_end.len()
 }
 
 #[test]
