@@ -1,6 +1,7 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use rustc_hash::FxHashMap;
 use std::iter;
 
 pub fn main() -> Result<()> {
@@ -8,13 +9,14 @@ pub fn main() -> Result<()> {
 
     let input = get_input(2024, 21)?;
 
-    let (part1, part2) = solve_for(&input)?;
+    let part1 = solve_for(&input, 2)?;
+    let part2 = solve_for(&input, 25)?;
 
     println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(usize, u64)> {
+fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
     let codes = input.trim().lines().collect_vec();
 
     let keypad = CharGrid::from_string(
@@ -35,71 +37,69 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
     let directions_start = directions.find_single_char('A');
 
     let mut part1 = 0;
+
+    let mut cost_per_level = FxHashMap::default();
+    let dirs = vec!['A', '^', '<', 'v', '>'];
+    for depth in (0..=nesting_level).rev() {
+        for &start in &dirs {
+            for &end in &dirs {
+                if depth == nesting_level {
+                    cost_per_level.insert((start, end, depth), 1);
+                } else {
+                    let possible_expansions =
+                        track_moves(directions.find_single_char(start), &vec![end], &directions);
+                    let possible_expansions = expand_moves(possible_expansions);
+
+                    let get_expansion_cost = |expansion: &Vec<char>| {
+                        let mut current = 'A';
+                        let mut total = 0;
+                        for i in 0..expansion.len() {
+                            total += cost_per_level
+                                .get(&(current, expansion[i], depth + 1))
+                                .unwrap();
+                            current = expansion[i];
+                        }
+                        total
+                    };
+
+                    let min_expansion_cost = possible_expansions
+                        .iter()
+                        .map(get_expansion_cost)
+                        .min()
+                        .unwrap();
+                    cost_per_level.insert((start, end, depth), min_expansion_cost);
+                }
+            }
+        }
+    }
+
+    // dbg!(&cost_per_level);
+
     for code in codes {
-        eprintln!("code: {:?}", code);
+        eprintln!("code: {}", code);
         let first_robot_moves = track_moves(keypad_start, &code.chars().collect_vec(), &keypad);
         let first_robot_moves = expand_moves(first_robot_moves);
-        eprintln!("first robot: {:?}", first_robot_moves);
 
-        let mut current_moves_to_solve: Vec<Vec<char>> = first_robot_moves;
-        for n in 0..25 {
-            eprintln!(
-                "n {} current_moves_to_solve.len() {}",
-                n,
-                current_moves_to_solve.len()
-            );
-            let mut next_moves_lengths = current_moves_to_solve
-                .iter()
-                .map(|m| {
-                    eprint!(".");
-                    let next_moves = track_moves(directions_start, m, &directions);
-                    let mut shortest_path_length = 0;
-                    for nm in next_moves {
-                        shortest_path_length += nm.iter().map(|nmc| nmc.len()).min().unwrap();
-                    }
-                    shortest_path_length
-                })
-                .collect_vec();
+        let mut lowest_len = usize::MAX;
+        for candidate in first_robot_moves {
+            let mut current = 'A';
+            let mut total = 0;
+            for m in candidate {
+                total += cost_per_level
+                    .get(&(current, m, 0))
+                    .unwrap();
+                current = m;
+            }
 
-            let best_next_moves_len = *next_moves_lengths.iter().min().unwrap();
-
-            let mut i = 0;
-            current_moves_to_solve.retain(|m| {
-                let keep = next_moves_lengths[i] == best_next_moves_len;
-                i += 1;
-                keep
-            });
-
-            eprintln!(
-                "best next moves len: {} | cut current moves to solve down to {}",
-                best_next_moves_len,
-                current_moves_to_solve.len()
-            );
-
-            let next_moves_to_solve = current_moves_to_solve
-                .iter()
-                .flat_map(|m| {
-                    eprint!("'");
-                    let next_moves = track_moves(directions_start, m, &directions);
-                    expand_moves(next_moves)
-                })
-                .unique()
-                .collect_vec();
-
-            current_moves_to_solve = next_moves_to_solve;
+            lowest_len = lowest_len.min(total);
         }
-        let lowest_len = current_moves_to_solve
-            .iter()
-            .map(|m| m.len())
-            .min()
-            .unwrap();
+
         let complexity = lowest_len * code.trim_matches('A').parse::<usize>().unwrap();
         eprintln!("complexity: {}", complexity);
         part1 += complexity;
     }
 
-    let part2 = 0;
-    Ok((part1, part2))
+    Ok(part1)
 }
 
 fn expand_moves(forest: Vec<Vec<Vec<char>>>) -> Vec<Vec<char>> {
@@ -233,9 +233,8 @@ fn test_example1() -> Result<()> {
 456A
 379A
 "###;
-    let (part1, part2) = solve_for(input)?;
+    let part1 = solve_for(input, 2)?;
 
     assert_eq!(part1, 126384);
-    assert_eq!(part2, 0);
     Ok(())
 }
