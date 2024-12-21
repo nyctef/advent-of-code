@@ -51,11 +51,11 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
                     let get_expansion_cost = |expansion: &Vec<char>| {
                         let mut current = 'A';
                         let mut total = 0;
-                        for i in 0..expansion.len() {
+                        for &move_ in expansion {
                             total += cost_per_level
-                                .get(&(current, expansion[i], depth + 1))
+                                .get(&(current, move_, depth + 1))
                                 .unwrap();
-                            current = expansion[i];
+                            current = move_;
                         }
                         total
                     };
@@ -82,11 +82,11 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
         for candidate in first_robot_moves {
             let mut current = 'A';
             let mut total = 0;
-            for m in candidate {
+            for move_ in candidate {
                 total += cost_per_level
-                    .get(&(current, m, 0))
+                    .get(&(current, move_, 0))
                     .unwrap();
-                current = m;
+                current = move_;
             }
 
             lowest_len = lowest_len.min(total);
@@ -152,6 +152,7 @@ fn track_moves(start: CharGridIndexRC, target: &[char], map: &CharGrid) -> Vec<V
         // good transitions: (up<->down, left<->down, right<->down)
         // two moves: (left<->right, left<->up, right<->up)
 
+        #[allow(clippy::comparison_chain)]
         let move_horizontally = |result: &mut Vec<char>, robot_pos: &mut CharGridIndexRC| {
             if dist.coldiff < 0 {
                 result.extend(iter::repeat_n('<', dist.coldiff.unsigned_abs()));
@@ -160,6 +161,7 @@ fn track_moves(start: CharGridIndexRC, target: &[char], map: &CharGrid) -> Vec<V
             }
             robot_pos.col = (robot_pos.col as isize + dist.coldiff) as usize;
         };
+        #[allow(clippy::comparison_chain)]
         let move_vertically = |result: &mut Vec<char>, robot_pos: &mut CharGridIndexRC| {
             if dist.rowdiff < 0 {
                 result.extend(iter::repeat_n('^', dist.rowdiff.unsigned_abs()));
