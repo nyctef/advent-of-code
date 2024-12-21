@@ -1,7 +1,7 @@
-use std::iter;
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use std::iter;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -37,79 +37,45 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
     let mut part1 = 0;
     for code in codes {
         eprintln!("code: {:?}", code);
-        let mut first_robot_pos = keypad_start;
-        let mut first_robot_moves = vec![];
-        for code_char in code.chars() {
-            let target = keypad.find_single_char(code_char);
-            let dist = RCDirection::from_to(first_robot_pos, target);
-            if dist.coldiff < 0 {
-                first_robot_moves.extend(iter::repeat_n('<', dist.coldiff.abs() as usize));
-            } else if dist.coldiff > 0 {
-                first_robot_moves.extend(iter::repeat_n('>', dist.coldiff.abs() as usize));
-            }
-            if dist.rowdiff < 0 {
-                first_robot_moves.extend(iter::repeat_n('^', dist.rowdiff.abs() as usize));
-            } else if dist.rowdiff > 0 {
-                first_robot_moves.extend(iter::repeat_n('v', dist.rowdiff.abs() as usize));
-            }
-
-            first_robot_moves.push('A');
-            first_robot_pos = target;
-        }
+        let first_robot_moves = track_moves(keypad_start, code.chars().collect_vec(), &keypad);
         eprintln!("first robot: {:?}", first_robot_moves);
 
-        let mut second_robot_pos = directions_start;
-        let mut second_robot_moves = vec![];
-        for &code_char in &first_robot_moves {
-
-            let target = directions.find_single_char(code_char);
-            let dist = RCDirection::from_to(second_robot_pos, target);
-            if dist.coldiff < 0 {
-                second_robot_moves.extend(iter::repeat_n('<', dist.coldiff.abs() as usize));
-            } else if dist.coldiff > 0 {
-                second_robot_moves.extend(iter::repeat_n('>', dist.coldiff.abs() as usize));
-            }
-            if dist.rowdiff < 0 {
-                second_robot_moves.extend(iter::repeat_n('^', dist.rowdiff.abs() as usize));
-            } else if dist.rowdiff > 0 {
-                second_robot_moves.extend(iter::repeat_n('v', dist.rowdiff.abs() as usize));
-            }
-
-            second_robot_moves.push('A');
-            second_robot_pos = target;
-        }
+        let second_robot_moves = track_moves(directions_start, first_robot_moves, &directions);
         eprintln!("second robot: {:?}", second_robot_moves);
 
-        let mut third_robot_pos = directions_start;
-        let mut third_robot_moves = vec![];
-        for &code_char in &second_robot_moves {
-
-            let target = directions.find_single_char(code_char);
-            let dist = RCDirection::from_to(third_robot_pos, target);
-            if dist.coldiff < 0 {
-                third_robot_moves.extend(iter::repeat_n('<', dist.coldiff.abs() as usize));
-            } else if dist.coldiff > 0 {
-                third_robot_moves.extend(iter::repeat_n('>', dist.coldiff.abs() as usize));
-            }
-            if dist.rowdiff < 0 {
-                third_robot_moves.extend(iter::repeat_n('^', dist.rowdiff.abs() as usize));
-            } else if dist.rowdiff > 0 {
-                third_robot_moves.extend(iter::repeat_n('v', dist.rowdiff.abs() as usize));
-            }
-
-            third_robot_moves.push('A');
-            third_robot_pos = target;
-        }
+        let third_robot_moves = track_moves(directions_start, second_robot_moves, &directions);
         eprintln!("third robot: {:?}", third_robot_moves);
 
         let complexity = third_robot_moves.len() * code.trim_matches('A').parse::<usize>().unwrap();
         eprintln!("complexity: {}", complexity);
         part1 += complexity;
-
     }
 
     let part2 = 0;
     Ok((part1, part2))
+}
+
+fn track_moves(start: CharGridIndexRC, target: Vec<char>, map: &CharGrid) -> Vec<char> {
+    let mut robot_pos = start;
+    let mut result = vec![];
+    for &t in &target {
+        let target_pos = map.find_single_char(t);
+        let dist = RCDirection::from_to(robot_pos, target_pos);
+        if dist.coldiff < 0 {
+            result.extend(iter::repeat_n('<', dist.coldiff.abs() as usize));
+        } else if dist.coldiff > 0 {
+            result.extend(iter::repeat_n('>', dist.coldiff.abs() as usize));
+        }
+        if dist.rowdiff < 0 {
+            result.extend(iter::repeat_n('^', dist.rowdiff.abs() as usize));
+        } else if dist.rowdiff > 0 {
+            result.extend(iter::repeat_n('v', dist.rowdiff.abs() as usize));
+        }
+
+        result.push('A');
+        robot_pos = target_pos;
+    }
+    result
 }
 
 #[test]
