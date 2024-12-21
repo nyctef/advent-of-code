@@ -34,8 +34,6 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
 <v>
 "###,
     );
-    let directions_start = directions.find_single_char('A');
-
     let mut part1 = 0;
 
     let mut cost_per_level = FxHashMap::default();
@@ -47,7 +45,7 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
                     cost_per_level.insert((start, end, depth), 1);
                 } else {
                     let possible_expansions =
-                        track_moves(directions.find_single_char(start), &vec![end], &directions);
+                        track_moves(directions.find_single_char(start), &[end], &directions);
                     let possible_expansions = expand_moves(possible_expansions);
 
                     let get_expansion_cost = |expansion: &Vec<char>| {
@@ -135,8 +133,7 @@ fn test_expand_moves() {
 fn track_moves(start: CharGridIndexRC, target: &[char], map: &CharGrid) -> Vec<Vec<Vec<char>>> {
     let mut robot_pos = start;
     let mut choices_per_t = vec![vec![vec![]]];
-    let mut panic_pos = map.find_single_char('.');
-    let mut prev_direction = RCDirection::left();
+    let panic_pos = map.find_single_char('.');
     for &t in target {
         let target_pos = map.find_single_char(t);
         let dist = RCDirection::from_to(robot_pos, target_pos);
@@ -157,17 +154,17 @@ fn track_moves(start: CharGridIndexRC, target: &[char], map: &CharGrid) -> Vec<V
 
         let move_horizontally = |result: &mut Vec<char>, robot_pos: &mut CharGridIndexRC| {
             if dist.coldiff < 0 {
-                result.extend(iter::repeat_n('<', dist.coldiff.abs() as usize));
+                result.extend(iter::repeat_n('<', dist.coldiff.unsigned_abs()));
             } else if dist.coldiff > 0 {
-                result.extend(iter::repeat_n('>', dist.coldiff.abs() as usize));
+                result.extend(iter::repeat_n('>', dist.coldiff.unsigned_abs()));
             }
             robot_pos.col = (robot_pos.col as isize + dist.coldiff) as usize;
         };
         let move_vertically = |result: &mut Vec<char>, robot_pos: &mut CharGridIndexRC| {
             if dist.rowdiff < 0 {
-                result.extend(iter::repeat_n('^', dist.rowdiff.abs() as usize));
+                result.extend(iter::repeat_n('^', dist.rowdiff.unsigned_abs()));
             } else if dist.rowdiff > 0 {
-                result.extend(iter::repeat_n('v', dist.rowdiff.abs() as usize));
+                result.extend(iter::repeat_n('v', dist.rowdiff.unsigned_abs()));
             }
             robot_pos.row = (robot_pos.row as isize + dist.rowdiff) as usize;
         };
