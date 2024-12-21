@@ -19,7 +19,7 @@ pub fn main() -> Result<()> {
 fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
     let codes = input.trim().lines().collect_vec();
 
-    let keypad = CharGrid::from_string(
+    let numeric_keypad = CharGrid::from_string(
         r###"
 789
 456
@@ -27,25 +27,23 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
 .0A
 "###,
     );
-    let keypad_start = keypad.find_single_char('A');
-    let directions = CharGrid::from_string(
+    let directional_keypad = CharGrid::from_string(
         r###"
 .^A
 <v>
 "###,
     );
-    let mut part1 = 0;
 
     let mut cost_per_level = FxHashMap::default();
-    let dirs = vec!['A', '^', '<', 'v', '>'];
+    let keys = vec!['A', '^', '<', 'v', '>'];
     for depth in (0..=nesting_level).rev() {
-        for &start in &dirs {
-            for &end in &dirs {
+        for &start_key in &keys {
+            for &end_key in &keys {
                 if depth == nesting_level {
-                    cost_per_level.insert((start, end, depth), 1);
+                    cost_per_level.insert((start_key, end_key, depth), 1);
                 } else {
                     let possible_expansions =
-                        track_moves(directions.find_single_char(start), &[end], &directions);
+                        track_moves(start_key, &[end_key], &directional_keypad);
                     let possible_expansions = expand_moves(possible_expansions);
 
                     let get_expansion_cost = |expansion: &Vec<char>| {
@@ -63,7 +61,7 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
                         .map(get_expansion_cost)
                         .min()
                         .unwrap();
-                    cost_per_level.insert((start, end, depth), min_expansion_cost);
+                    cost_per_level.insert((start_key, end_key, depth), min_expansion_cost);
                 }
             }
         }
@@ -71,9 +69,10 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
 
     // dbg!(&cost_per_level);
 
+    let mut total_complexity = 0;
     for code in codes {
         eprintln!("code: {}", code);
-        let first_robot_moves = track_moves(keypad_start, &code.chars().collect_vec(), &keypad);
+        let first_robot_moves = track_moves('A', &code.chars().collect_vec(), &numeric_keypad);
         let first_robot_moves = expand_moves(first_robot_moves);
 
         let mut lowest_len = usize::MAX;
@@ -90,10 +89,10 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
 
         let complexity = lowest_len * code.trim_matches('A').parse::<usize>().unwrap();
         eprintln!("complexity: {}", complexity);
-        part1 += complexity;
+        total_complexity += complexity;
     }
 
-    Ok(part1)
+    Ok(total_complexity)
 }
 
 fn expand_moves(forest: Vec<Vec<Vec<char>>>) -> Vec<Vec<char>> {
@@ -126,7 +125,8 @@ fn test_expand_moves() {
     );
 }
 
-fn track_moves(start: CharGridIndexRC, target: &[char], map: &CharGrid) -> Vec<Vec<Vec<char>>> {
+fn track_moves(start: char, target: &[char], map: &CharGrid) -> Vec<Vec<Vec<char>>> {
+    let start = map.find_single_char(start);
     let mut robot_pos = start;
     let mut choices_per_t = vec![vec![vec![]]];
     let panic_pos = map.find_single_char('.');
