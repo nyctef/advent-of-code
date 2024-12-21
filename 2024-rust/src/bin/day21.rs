@@ -58,18 +58,35 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
 fn track_moves(start: CharGridIndexRC, target: Vec<char>, map: &CharGrid) -> Vec<char> {
     let mut robot_pos = start;
     let mut result = vec![];
+    let mut panic_pos = map.find_single_char('.');
     for &t in &target {
         let target_pos = map.find_single_char(t);
         let dist = RCDirection::from_to(robot_pos, target_pos);
-        if dist.coldiff < 0 {
-            result.extend(iter::repeat_n('<', dist.coldiff.abs() as usize));
-        } else if dist.coldiff > 0 {
-            result.extend(iter::repeat_n('>', dist.coldiff.abs() as usize));
-        }
-        if dist.rowdiff < 0 {
-            result.extend(iter::repeat_n('^', dist.rowdiff.abs() as usize));
-        } else if dist.rowdiff > 0 {
-            result.extend(iter::repeat_n('v', dist.rowdiff.abs() as usize));
+
+        // we need to avoid the `.` since the robot panics on that square
+        // if we're on the same row as the `.` then move vertically first
+
+        let move_horizontally = |result: &mut Vec<char>| {
+            if dist.coldiff < 0 {
+                result.extend(iter::repeat_n('<', dist.coldiff.abs() as usize));
+            } else if dist.coldiff > 0 {
+                result.extend(iter::repeat_n('>', dist.coldiff.abs() as usize));
+            }
+        };
+        let move_vertically = |result: &mut Vec<char>| {
+            if dist.rowdiff < 0 {
+                result.extend(iter::repeat_n('^', dist.rowdiff.abs() as usize));
+            } else if dist.rowdiff > 0 {
+                result.extend(iter::repeat_n('v', dist.rowdiff.abs() as usize));
+            }
+        };
+
+        if robot_pos.row == panic_pos.row {
+            move_vertically(&mut result);
+            move_horizontally(&mut result);
+        } else {
+            move_horizontally(&mut result);
+            move_vertically(&mut result);
         }
 
         result.push('A');
