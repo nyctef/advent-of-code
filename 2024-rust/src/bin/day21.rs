@@ -36,25 +36,63 @@ fn solve_for(input: &str) -> Result<(usize, u64)> {
 
     let mut part1 = 0;
     for code in codes {
-        let mut lowest_len = usize::MAX;
         eprintln!("code: {:?}", code);
-        let first_robot_moves = track_moves(keypad_start, code.chars().collect_vec(), &keypad);
+        let first_robot_moves = track_moves(keypad_start, &code.chars().collect_vec(), &keypad);
         let first_robot_moves = expand_moves(first_robot_moves);
-        // eprintln!("first robot: {:?}", first_robot_moves);
+        eprintln!("first robot: {:?}", first_robot_moves);
 
-        for first_robot in first_robot_moves {
-            let second_robot_moves = track_moves(directions_start, first_robot, &directions);
-            let second_robot_moves = expand_moves(second_robot_moves);
-            // eprintln!("second robot: {:?}", second_robot_moves);
+        let mut current_moves_to_solve: Vec<Vec<char>> = first_robot_moves;
+        for n in 0..25 {
+            eprintln!(
+                "n {} current_moves_to_solve.len() {}",
+                n,
+                current_moves_to_solve.len()
+            );
+            let mut next_moves_lengths = current_moves_to_solve
+                .iter()
+                .map(|m| {
+                    eprint!(".");
+                    let next_moves = track_moves(directions_start, m, &directions);
+                    let mut shortest_path_length = 0;
+                    for nm in next_moves {
+                        shortest_path_length += nm.iter().map(|nmc| nmc.len()).min().unwrap();
+                    }
+                    shortest_path_length
+                })
+                .collect_vec();
 
-            for second_robot in second_robot_moves {
-                let third_robot_moves = track_moves(directions_start, second_robot, &directions);
-                let third_robot_moves = expand_moves(third_robot_moves);
-                // eprintln!("third robot: {:?}", third_robot_moves);
-                let best = third_robot_moves.iter().map(|m| m.len()).min().unwrap();
-                lowest_len = lowest_len.min(best);
-            }
+            let best_next_moves_len = *next_moves_lengths.iter().min().unwrap();
+
+            let mut i = 0;
+            current_moves_to_solve.retain(|m| {
+                let keep = next_moves_lengths[i] == best_next_moves_len;
+                i += 1;
+                keep
+            });
+
+            eprintln!(
+                "best next moves len: {} | cut current moves to solve down to {}",
+                best_next_moves_len,
+                current_moves_to_solve.len()
+            );
+
+            let next_moves_to_solve = current_moves_to_solve
+                .iter()
+                .flat_map(|m| {
+                    eprint!("'");
+                    let next_moves = track_moves(directions_start, m, &directions);
+                    expand_moves(next_moves)
+                })
+                .unique()
+                .collect_vec();
+
+            current_moves_to_solve = next_moves_to_solve;
         }
+        let lowest_len = current_moves_to_solve
+            .iter()
+            .map(|m| m.len())
+            .min()
+            .unwrap();
         let complexity = lowest_len * code.trim_matches('A').parse::<usize>().unwrap();
         eprintln!("complexity: {}", complexity);
         part1 += complexity;
@@ -94,11 +132,12 @@ fn test_expand_moves() {
     );
 }
 
-fn track_moves(start: CharGridIndexRC, target: Vec<char>, map: &CharGrid) -> Vec<Vec<Vec<char>>> {
+fn track_moves(start: CharGridIndexRC, target: &[char], map: &CharGrid) -> Vec<Vec<Vec<char>>> {
     let mut robot_pos = start;
     let mut choices_per_t = vec![vec![vec![]]];
     let mut panic_pos = map.find_single_char('.');
-    for &t in &target {
+    let mut prev_direction = RCDirection::left();
+    for &t in target {
         let target_pos = map.find_single_char(t);
         let dist = RCDirection::from_to(robot_pos, target_pos);
 
@@ -149,6 +188,7 @@ fn track_moves(start: CharGridIndexRC, target: Vec<char>, map: &CharGrid) -> Vec
             if robot_1_pos == panic_pos {
                 choice_1_has_panicked = true;
             }
+
             assert!(robot_1_pos == target_pos);
             choice_1.push('A');
         }
