@@ -52,9 +52,7 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
                         let mut current = 'A';
                         let mut total = 0;
                         for &move_ in expansion {
-                            total += cost_per_level
-                                .get(&(current, move_, depth + 1))
-                                .unwrap();
+                            total += cost_per_level.get(&(current, move_, depth + 1)).unwrap();
                             current = move_;
                         }
                         total
@@ -83,9 +81,7 @@ fn solve_for(input: &str, nesting_level: usize) -> Result<usize> {
             let mut current = 'A';
             let mut total = 0;
             for move_ in candidate {
-                total += cost_per_level
-                    .get(&(current, move_, 0))
-                    .unwrap();
+                total += cost_per_level.get(&(current, move_, 0)).unwrap();
                 current = move_;
             }
 
