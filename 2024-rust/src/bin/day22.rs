@@ -26,7 +26,6 @@ fn solve_for(input: &str) -> (u64, u64) {
     let count = 2000;
 
     for seed in seeds {
-        eprintln!("seed: {}", seed);
         let mut sequences_to_bananas = FxHashMap::default();
         let mut prices = vec![0_i8; count + 1];
         let mut diffs = vec![0_i8; count + 1];
@@ -38,30 +37,28 @@ fn solve_for(input: &str) -> (u64, u64) {
             prices[i + 1] = (x % 10) as i8;
             diffs[i + 1] = prices[i + 1] - prices[i];
         }
-        // dbg!(&prices, &diffs);
-        //
+
         for i in 4..count {
-            let sequence = &diffs[i-3..=i];
+            let sequence = &diffs[i - 3..=i];
             let sequence = sequence.to_vec();
             let bananas = prices[i];
 
-            // we only store the first instance of each banana per seed
+            // we only store the first instance of each banana per seed...
             sequences_to_bananas.entry(sequence).or_insert(bananas);
-
         }
 
         for (seq, banans) in sequences_to_bananas {
+            // ...but in the end we want to count the total bananas for a sequence across all seeds
             *total_sequences_to_bananas.entry(seq).or_insert(0) += banans as u64;
-
         }
-
-        // dbg!(&sequences_to_bananas);
 
         part1 += x;
     }
 
-    let max = total_sequences_to_bananas.iter().max_by(|a, b| a.1.cmp(&b.1)).unwrap();
-    dbg!(&max);
+    let max = total_sequences_to_bananas
+        .iter()
+        .max_by(|a, b| a.1.cmp(b.1))
+        .unwrap();
     let part2 = *max.1;
 
     (part1, part2)
@@ -69,11 +66,11 @@ fn solve_for(input: &str) -> (u64, u64) {
 
 fn next(mut x: u64) -> u64 {
     x = x ^ (x * 64);
-    x = x % 16777216;
+    x %= 16777216;
     x = x ^ (x / 32);
-    x = x % 16777216;
+    x %= 16777216;
     x = x ^ (x * 2048);
-    x = x % 16777216;
+    x %= 16777216;
     x
 }
 
@@ -85,10 +82,9 @@ fn test_example1() {
 100
 2024
 "###;
-    let (part1, part2) = solve_for(input);
+    let (part1, _) = solve_for(input);
 
     assert_eq!(part1, 37327623);
-    assert_eq!(part2, 23);
 }
 
 #[test]
@@ -99,8 +95,7 @@ fn test_example2() {
 3
 2024
 "###;
-    let (part1, part2) = solve_for(input);
+    let (_, part2) = solve_for(input);
 
-    // assert_eq!(part1, 37327623);
     assert_eq!(part2, 23);
 }
