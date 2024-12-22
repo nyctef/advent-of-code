@@ -39,7 +39,7 @@ fn solve_for(input: &str) -> (u64, u64) {
             diffs[i + 1] = prices[i + 1] - prices[i];
         }
 
-        for i in 4..count {
+        for i in 4..=count {
             let sequence = &diffs[i - 3..=i];
             let bananas = prices[i];
 
