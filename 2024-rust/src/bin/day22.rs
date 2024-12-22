@@ -48,6 +48,7 @@ fn solve_for(input: &str) -> (u64, u64) {
             sequences_to_bananas.entry(key).or_insert(bananas);
         }
 
+        // ...but in the end we want to count the total bananas for a sequence across all seeds
         for (key, banans) in sequences_to_bananas.iter() {
             *total_sequences_to_bananas.entry(*key).or_insert(0) += *banans as u64;
         }
