@@ -1,7 +1,6 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -44,7 +43,7 @@ fn solve_for(input: &str) -> (u64, u64) {
 
             // we only store the first instance of each banana per seed...
             let key = get_key(sequence);
-            if sequences_to_bananas[key] == None {
+            if sequences_to_bananas[key].is_none() {
                 sequences_to_bananas[key] = Some(bananas);
             }
         }
@@ -63,7 +62,6 @@ fn solve_for(input: &str) -> (u64, u64) {
 
         part1 += x;
     }
-
 
     let part2 = total_sequences_to_bananas
         .iter()
