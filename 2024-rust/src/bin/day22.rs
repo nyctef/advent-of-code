@@ -22,11 +22,11 @@ fn solve_for(input: &str) -> (u64, u64) {
         .collect_vec();
 
     let mut part1 = 0;
-    let mut total_sequences_to_bananas = FxHashMap::default();
+    let mut total_sequences_to_bananas = vec![None; 160000];
     let count = 2000;
 
     for seed in seeds {
-        let mut sequences_to_bananas = FxHashMap::default();
+        let mut sequences_to_bananas = vec![None; 160000];
         let mut prices = vec![0_i8; count + 1];
         let mut diffs = vec![0_i8; count + 1];
         prices[0] = (seed % 10) as i8;
@@ -40,28 +40,51 @@ fn solve_for(input: &str) -> (u64, u64) {
 
         for i in 4..count {
             let sequence = &diffs[i - 3..=i];
-            let sequence = sequence.to_vec();
             let bananas = prices[i];
 
             // we only store the first instance of each banana per seed...
-            sequences_to_bananas.entry(sequence).or_insert(bananas);
+            let key = get_key(sequence);
+            if sequences_to_bananas[key] == None {
+                sequences_to_bananas[key] = Some(bananas);
+            }
         }
 
-        for (seq, banans) in sequences_to_bananas {
+        for i in 0..total_sequences_to_bananas.len() {
             // ...but in the end we want to count the total bananas for a sequence across all seeds
-            *total_sequences_to_bananas.entry(seq).or_insert(0) += banans as u64;
+            let banans = sequences_to_bananas[i];
+            if let Some(banans) = banans {
+                let banans = banans as u64;
+                match total_sequences_to_bananas[i] {
+                    Some(already) => total_sequences_to_bananas[i] = Some(banans + already),
+                    None => total_sequences_to_bananas[i] = Some(banans),
+                }
+            }
         }
 
         part1 += x;
     }
 
-    let max = total_sequences_to_bananas
+
+    let part2 = total_sequences_to_bananas
         .iter()
-        .max_by(|a, b| a.1.cmp(b.1))
+        .filter_map(|x| *x)
+        .max()
         .unwrap();
-    let part2 = *max.1;
 
     (part1, part2)
+}
+
+fn get_key(sequence: &[i8]) -> usize {
+    assert!(sequence.len() == 4);
+
+    // a sequence is a set of diff values ranging from -9 to +9
+    // so we can pack them into a single number in base 20
+    // (technically base 19 would be enough, but this looks prettier)
+
+    ((sequence[0] + 10) as usize * 20_usize.pow(0))
+        + ((sequence[1] + 10) as usize * 20_usize.pow(1))
+        + ((sequence[2] + 10) as usize * 20_usize.pow(2))
+        + ((sequence[3] + 10) as usize * 20_usize.pow(3))
 }
 
 fn next(mut x: u64) -> u64 {
