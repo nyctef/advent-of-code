@@ -1,7 +1,7 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -49,7 +49,7 @@ fn solve_for(input: &str) -> (u64, u64) {
         }
 
         for (key, banans) in sequences_to_bananas.iter() {
-            *total_sequences_to_bananas.entry(key.clone()).or_insert(0) += banans.clone() as u64;
+            *total_sequences_to_bananas.entry(*key).or_insert(0) += *banans as u64;
         }
 
         part1 += x;
