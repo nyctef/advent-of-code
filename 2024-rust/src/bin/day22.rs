@@ -1,6 +1,7 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -21,16 +22,11 @@ fn solve_for(input: &str) -> (u64, u64) {
         .collect_vec();
 
     let mut part1 = 0;
-    let mut total_sequences_to_bananas = vec![None; 160000];
+    let mut total_sequences_to_bananas = FxHashMap::default();
     let count = 2000;
 
     for seed in seeds {
-        // turns out allocating a new vec on each loop is faster than keeping the same vec
-        // around and calling .fill(None) on it!
-        //
-        // (something to do with the OS making sure that there are pages of zero-filled memory
-        // lying around and ready to be used?)
-        let mut sequences_to_bananas = vec![None; 160000];
+        let mut sequences_to_bananas = FxHashMap::default();
         let mut prices = vec![0_i8; count + 1];
         let mut diffs = vec![0_i8; count + 1];
         prices[0] = (seed % 10) as i8;
@@ -48,21 +44,11 @@ fn solve_for(input: &str) -> (u64, u64) {
 
             // we only store the first instance of each banana per seed...
             let key = get_key(sequence);
-            if sequences_to_bananas[key].is_none() {
-                sequences_to_bananas[key] = Some(bananas);
-            }
+            sequences_to_bananas.entry(key).or_insert(bananas);
         }
 
-        for i in 0..total_sequences_to_bananas.len() {
-            // ...but in the end we want to count the total bananas for a sequence across all seeds
-            let banans = sequences_to_bananas[i];
-            if let Some(banans) = banans {
-                let banans = banans as u64;
-                match total_sequences_to_bananas[i] {
-                    Some(already) => total_sequences_to_bananas[i] = Some(banans + already),
-                    None => total_sequences_to_bananas[i] = Some(banans),
-                }
-            }
+        for (key, banans) in sequences_to_bananas {
+            *total_sequences_to_bananas.entry(key).or_insert(0) += banans as u64;
         }
 
         part1 += x;
@@ -70,11 +56,10 @@ fn solve_for(input: &str) -> (u64, u64) {
 
     let part2 = total_sequences_to_bananas
         .iter()
-        .filter_map(|x| *x)
-        .max()
-        .unwrap();
+        .max_by(|a, b| a.1.cmp(b.1))
+        .unwrap().1;
 
-    (part1, part2)
+    (part1, *part2)
 }
 
 fn get_key(sequence: &[i8]) -> usize {
