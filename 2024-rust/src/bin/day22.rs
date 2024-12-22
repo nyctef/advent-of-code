@@ -25,6 +25,11 @@ fn solve_for(input: &str) -> (u64, u64) {
     let count = 2000;
 
     for seed in seeds {
+        // turns out allocating a new vec on each loop is faster than keeping the same vec
+        // around and calling .fill(None) on it!
+        //
+        // (something to do with the OS making sure that there are pages of zero-filled memory
+        // lying around and ready to be used?)
         let mut sequences_to_bananas = vec![None; 160000];
         let mut prices = vec![0_i8; count + 1];
         let mut diffs = vec![0_i8; count + 1];
