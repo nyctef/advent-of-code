@@ -23,10 +23,11 @@ fn solve_for(input: &str) -> (u64, u64) {
 
     let mut part1 = 0;
     let mut total_sequences_to_bananas = FxHashMap::default();
+    let mut sequences_to_bananas = FxHashMap::default();
     let count = 2000;
 
     for seed in seeds {
-        let mut sequences_to_bananas = FxHashMap::default();
+        sequences_to_bananas.clear();
         let mut prices = vec![0_i8; count + 1];
         let mut diffs = vec![0_i8; count + 1];
         prices[0] = (seed % 10) as i8;
@@ -47,8 +48,8 @@ fn solve_for(input: &str) -> (u64, u64) {
             sequences_to_bananas.entry(key).or_insert(bananas);
         }
 
-        for (key, banans) in sequences_to_bananas {
-            *total_sequences_to_bananas.entry(key).or_insert(0) += banans as u64;
+        for (key, banans) in sequences_to_bananas.iter() {
+            *total_sequences_to_bananas.entry(key.clone()).or_insert(0) += banans.clone() as u64;
         }
 
         part1 += x;
@@ -57,7 +58,8 @@ fn solve_for(input: &str) -> (u64, u64) {
     let part2 = total_sequences_to_bananas
         .iter()
         .max_by(|a, b| a.1.cmp(b.1))
-        .unwrap().1;
+        .unwrap()
+        .1;
 
     (part1, *part2)
 }
