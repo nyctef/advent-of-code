@@ -30,37 +30,8 @@ fn solve_for(input: &str) -> (usize, String) {
         connections.insert(connection);
     }
 
-    for &c1 in &computers {
-        for &c2 in &computers {
-            for &c3 in &computers {
-                if !(c1.starts_with('t') || c2.starts_with('t') || c3.starts_with('t')) {
-                    continue;
-                }
-
-                let mut conn1 = vec![c1, c2];
-                let mut conn2 = vec![c2, c3];
-                let mut conn3 = vec![c3, c1];
-                conn1.sort();
-                conn2.sort();
-                conn3.sort();
-
-                if connections.contains(&conn1)
-                    && connections.contains(&conn2)
-                    && connections.contains(&conn3)
-                {
-                    let mut triple = vec![c1, c2, c3];
-                    triple.sort();
-                    // eprintln!("found triple {:?}", triple);
-                    triples.insert(triple);
-                }
-            }
-        }
-    }
-
-    // eprintln!("triples {:?}", triples);
-
     let mut connection_map = FxHashMap::default();
-    for conn in connections {
+    for conn in &connections {
         connection_map
             .entry(conn[0])
             .or_insert(vec![])
@@ -71,15 +42,38 @@ fn solve_for(input: &str) -> (usize, String) {
             .push(conn[0]);
     }
 
+    for &c1 in &computers {
+        for &c2 in &connection_map[c1] {
+            for &c3 in &connection_map[c2] {
+                if !(c1.starts_with('t') || c2.starts_with('t') || c3.starts_with('t')) {
+                    continue;
+                }
+
+                if !(connection_map[c3].contains(&c1)) {
+                    continue;
+                }
+
+                let mut triple = vec![c1, c2, c3];
+                triple.sort();
+                // eprintln!("found triple {:?}", triple);
+                triples.insert(triple);
+            }
+        }
+    }
+
+    // eprintln!("triples {:?}", triples);
+
     let part1 = triples.len();
 
     let mut result = vec![];
+    let mut largest_found = 3;
     bron_kerbosch(
         FxHashSet::default(),
         computers.clone(),
         FxHashSet::default(),
         &connection_map,
         &mut result,
+        &mut largest_found,
     );
 
     let mut largest = result
@@ -98,10 +92,11 @@ fn solve_for(input: &str) -> (usize, String) {
 ///
 /// Bron-Kerbosch is an algorithm for finding "cliques" (fully-connected subgraphs).
 ///
-/// In particular Bron_kerbosch finds all "maximal" cliques - cliques that could not be expanded
+/// In particular Bron-Kerbosch finds all "maximal" cliques - cliques that could not be expanded
 /// any further by adding a neighboring vertex. For today's puzzle, we care about the largest
 /// maximal clique - called the "maximum" clique, so we'll look through the results to find that
-/// once we're done with this algorithm.
+/// once we're done with this algorithm, and we'll backtrack early if the current clique we're
+/// looking at couldn't get any bigger than the biggest one we've found so far.
 ///
 /// A simpler algorithm for finding maximal cliques could look like the following:
 /// - for each vertex in the graph
@@ -151,13 +146,16 @@ fn bron_kerbosch<'i>(
     mut x: FxHashSet<&'i str>,
     connections: &FxHashMap<&'i str, Vec<&'i str>>,
     result: &mut Vec<Vec<&'i str>>,
+    largest_found: &mut usize,
 ) {
-    if p.is_empty() && x.is_empty() && r.len() > 3 {
+    if p.is_empty() && x.is_empty() && r.len() > *largest_found {
+        *largest_found = r.len();
         result.push(Vec::from_iter(r.iter().copied()));
     }
 
     // take a copy of P since we mutate it inside the loop
     let candidates = p.iter().copied().collect_vec();
+
     for v in candidates {
         let neighbors = FxHashSet::from_iter(connections[v].iter().copied());
 
@@ -166,7 +164,11 @@ fn bron_kerbosch<'i>(
         let next_p = &p & &neighbors;
         let next_x = &x & &neighbors;
 
-        bron_kerbosch(next_r, next_p, next_x, connections, result);
+        // we only care about the (single) maximum clique, and the largest that this clique
+        // could get is R + P
+        if next_r.len() + next_p.len() > *largest_found {
+            bron_kerbosch(next_r, next_p, next_x, connections, result, largest_found);
+        }
 
         p.remove(v);
         x.insert(v);
