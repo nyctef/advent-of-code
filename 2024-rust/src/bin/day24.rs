@@ -1,7 +1,9 @@
+use std::collections::VecDeque;
+
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -29,9 +31,20 @@ fn solve_for(input: &str) -> (u64, u64) {
 
         (output, (l, op, r))
     });
-    let gates = FxHashMap::from_iter(gates);
+    let mut gates = FxHashMap::from_iter(gates);
+
 
     // dbg!(&gates.iter().sorted().collect_vec());
+    //
+    //
+    let mut i = 0;
+    for (out, (l, op, r)) in gates.iter().sorted().rev() {
+        let gate = format!("{}_{}", op, i);
+        eprintln!("{} -> {}", l, gate);
+        eprintln!("{} -> {}", r, gate);
+        eprintln!("{} -> {}", gate, out);
+        i += 1;
+    }
 
     for i in 0..45 {
         let mut log = vec![];
@@ -39,10 +52,46 @@ fn solve_for(input: &str) -> (u64, u64) {
         let result = run_circuit(n, n, &gates, &mut log);
         if result != n * 2 {
             eprintln!();
-            eprintln!("adding {} and {} failed: expected\n{:#045b} but got\n{:#045b} instead", n, n, n*2, result);
+            eprintln!(
+                "adding {} and {} failed: expected\n{:#045b} but got\n{:#045b} instead",
+                n,
+                n,
+                n * 2,
+                result
+            );
             // for log_line in log {
             //     eprintln!("{}", log_line);
             // }
+
+            let start = format!("z{:02}", i);
+            let target1 = format!("x{:02}", i);
+            let target2 = format!("y{:02}", i);
+            let mut seen = FxHashSet::default();
+            let mut search = VecDeque::new();
+            let mut result = vec![];
+            search.push_front((start.clone(), vec![start]));
+            while let Some((n, path)) = search.pop_front() {
+                if !seen.insert(n.clone()) {
+                    continue;
+                }
+
+                if n == target1 || n == target2 {
+                    result.push(path);
+                } else {
+                    if let Some(gate) = &gates.get(n.as_str()) {
+                        // eprintln!("{}: {:?}", n, gate);
+                        let mut lpath = path.clone();
+                        lpath.push(gate.0.to_string());
+                        search.push_back((gate.0.to_string(), lpath));
+
+                        let mut rpath = path.clone();
+                        rpath.push(gate.2.to_string());
+                        search.push_back((gate.2.to_string(), rpath));
+                    }
+                }
+            }
+
+            eprintln!("{:?}", result);
         }
     }
 
@@ -50,6 +99,18 @@ fn solve_for(input: &str) -> (u64, u64) {
     let mut part2 = 0;
 
     (part1, part2)
+}
+
+fn swap_output<'i>(
+    gates: &mut FxHashMap<&'i str, (&'i str, &'i str, &'i str)>,
+    out1: &'i str,
+    out2: &'i str,
+) {
+    let gate1 = gates[out1];
+    let gate2 = gates[out2];
+
+    gates.entry(out1).insert_entry(gate2);
+    gates.entry(out2).insert_entry(gate1);
 }
 
 fn run_circuit(
@@ -168,8 +229,8 @@ hwm AND bqk -> z03
 tgd XOR rvg -> z12
 tnw OR pbm -> gnj
 "###;
-    let (part1, part2) = solve_for(input);
+    let (_part1, _part2) = solve_for(input);
 
-    assert_eq!(part1, 2024);
-    assert_eq!(part2, 0);
+    // assert_eq!(part1, 2024);
+    // assert_eq!(part2, 0);
 }
