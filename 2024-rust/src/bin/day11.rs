@@ -7,19 +7,19 @@ pub fn main() -> Result<()> {
 
     let input = get_input(2024, 11)?;
 
-    let (part1, part2, thousand) = solve_for(&input)?;
+    let (part1, part2) = solve_for(&input)?;
 
-    println!("Part 1: {} | Part 2: {} | 1000: {}", part1, part2, thousand);
+    println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(usize, usize, usize)> {
+fn solve_for(input: &str) -> Result<(usize, usize)> {
     let sequence = all_numbers_u64(input.trim());
 
     let mut cache = FxHashMap::default();
     let part1 = blink_memoized_seq(&mut cache, &sequence, 25);
     let part2 = blink_memoized_seq(&mut cache, &sequence, 75);
-    let thousand = blink_memoized_seq(&mut cache, &sequence, 1000);
+    // let thousand = blink_memoized_seq(&mut cache, &sequence, 1000);
 
-    Ok((part1, part2, thousand))
+    Ok((part1, part2))
 }
