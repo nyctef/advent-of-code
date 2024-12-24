@@ -1,7 +1,9 @@
+use std::time::Instant;
+
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::{eyre, Result};
 use itertools::Itertools;
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -24,7 +26,9 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
 
     let mut guard_pos = guard_original_pos;
     let mut guard_direction = RCDirection::up();
-    let mut guard_visited_positions = HashSet::new();
+    let mut guard_visited_positions = FxHashSet::default();
+
+    let part1_timer = Instant::now();
 
     while grid.is_in_bounds(guard_pos) {
         guard_visited_positions.insert(guard_pos);
@@ -40,17 +44,19 @@ fn solve_for(input: &str) -> Result<(u64, u64)> {
         guard_pos = next_pos;
     }
 
-    let mut obstacle_placements = HashSet::new();
+    eprintln!("part 1 took {}ms", part1_timer.elapsed().as_millis());
+    eprintln!("visited positions: {}", guard_visited_positions.len());
+    let part2_timer = Instant::now();
+
+    let mut part2 = 0;
     for &possible_obstacle in guard_visited_positions.iter() {
         if does_guard_loop(&grid, possible_obstacle) && possible_obstacle != guard_original_pos {
-            obstacle_placements.insert(possible_obstacle);
+            part2 += 1;
         }
     }
+    eprintln!("part 2 took {}ms", part2_timer.elapsed().as_millis());
 
-    Ok((
-        guard_visited_positions.len().try_into().unwrap(),
-        obstacle_placements.len().try_into().unwrap(),
-    ))
+    Ok((guard_visited_positions.len().try_into().unwrap(), part2))
 }
 
 fn does_guard_loop(grid: &CharGrid, extra_obstacle: CharGridIndexRC) -> bool {
@@ -62,7 +68,7 @@ fn does_guard_loop(grid: &CharGrid, extra_obstacle: CharGridIndexRC) -> bool {
 
     let mut guard_pos = guard_original_pos;
     let mut guard_direction = RCDirection::up();
-    let mut guard_visited_positions_directions = HashSet::new();
+    let mut guard_visited_positions_directions = FxHashSet::default();
 
     while grid.is_in_bounds(guard_pos) {
         let is_new_position =
