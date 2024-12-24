@@ -20,10 +20,10 @@ fn solve_for(input: &str) -> (u64, u64) {
     let (inputs, gates) = input.trim().split_once("\n\n").unwrap();
     let inputs = inputs.lines().map(|l| {
         let (wire, value) = l.split_once(": ").unwrap();
-        let value = if value == "0" { false } else { true };
+        let value = value != "0";
         (wire, value)
     });
-    let inputs = FxHashMap::from_iter(inputs);
+    let _inputs = FxHashMap::from_iter(inputs);
 
     let gates = gates.lines().map(|l| {
         let (input, output) = l.split_once(" -> ").unwrap();
@@ -31,19 +31,17 @@ fn solve_for(input: &str) -> (u64, u64) {
 
         (output, (l, op, r))
     });
-    let mut gates = FxHashMap::from_iter(gates);
+    let gates = FxHashMap::from_iter(gates);
 
-
+    // swap_output(&mut gates, "abc", "def");
     // dbg!(&gates.iter().sorted().collect_vec());
     //
     //
-    let mut i = 0;
-    for (out, (l, op, r)) in gates.iter().sorted().rev() {
+    for (i, (out, (l, op, r))) in gates.iter().sorted().rev().enumerate() {
         let gate = format!("{}_{}", op, i);
         eprintln!("{} -> {}", l, gate);
         eprintln!("{} -> {}", r, gate);
         eprintln!("{} -> {}", gate, out);
-        i += 1;
     }
 
     for i in 0..45 {
@@ -77,17 +75,15 @@ fn solve_for(input: &str) -> (u64, u64) {
 
                 if n == target1 || n == target2 {
                     result.push(path);
-                } else {
-                    if let Some(gate) = &gates.get(n.as_str()) {
-                        // eprintln!("{}: {:?}", n, gate);
-                        let mut lpath = path.clone();
-                        lpath.push(gate.0.to_string());
-                        search.push_back((gate.0.to_string(), lpath));
+                } else if let Some(gate) = &gates.get(n.as_str()) {
+                    // eprintln!("{}: {:?}", n, gate);
+                    let mut lpath = path.clone();
+                    lpath.push(gate.0.to_string());
+                    search.push_back((gate.0.to_string(), lpath));
 
-                        let mut rpath = path.clone();
-                        rpath.push(gate.2.to_string());
-                        search.push_back((gate.2.to_string(), rpath));
-                    }
+                    let mut rpath = path.clone();
+                    rpath.push(gate.2.to_string());
+                    search.push_back((gate.2.to_string(), rpath));
                 }
             }
 
@@ -95,12 +91,13 @@ fn solve_for(input: &str) -> (u64, u64) {
         }
     }
 
-    let mut part1 = 0;
-    let mut part2 = 0;
+    let part1 = 0;
+    let part2 = 0;
 
     (part1, part2)
 }
 
+#[allow(dead_code)]
 fn swap_output<'i>(
     gates: &mut FxHashMap<&'i str, (&'i str, &'i str, &'i str)>,
     out1: &'i str,
@@ -164,16 +161,14 @@ fn run_circuit(
 
     let z_values = values
         .iter()
-        .filter(|(k, v)| k.starts_with('z'))
+        .filter(|(k, _)| k.starts_with('z'))
         .sorted()
-        .map(|(k, v)| v);
+        .map(|(_, v)| v);
     // dbg!(&z_values);
 
     let mut part1 = 0;
-    let mut p2 = 0;
-    for z in z_values {
-        part1 += z * 2_u64.pow(p2);
-        p2 += 1;
+    for (p2, z) in z_values.enumerate() {
+        part1 += z * 2_u64.pow(p2 as u32);
     }
     part1
 }
