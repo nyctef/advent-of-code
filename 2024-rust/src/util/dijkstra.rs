@@ -1,7 +1,9 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::hash_map::Entry;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, VecDeque};
 use std::hash::Hash;
+
+use itertools::Itertools;
 
 /// T: the state type
 /// K: a unique key for the state for looking up scores
@@ -29,13 +31,7 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
         get_next_candidates: impl FnMut(T) -> Vec<T>,
         is_target_state: impl Fn(&T) -> bool,
     ) -> Option<T> {
-        self.run(get_next_candidates, &is_target_state);
-
-        // dbg!(&self
-        //     .bests
-        //     .values()
-        //     .filter(|b| is_target_state(b))
-        //     .collect_vec());
+        self.run(get_next_candidates, &is_target_state, true);
 
         // we may have queued up several candidates for the final state
         // before processing one and quitting the loop, so now we find the smallest here:
@@ -46,10 +42,31 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
             .cloned()
     }
 
+    pub fn run_all(
+        &mut self,
+        get_next_candidates: impl FnMut(T) -> Vec<T>,
+        is_target_state: impl Fn(&T) -> bool,
+    ) -> Vec<T> {
+        self.run(get_next_candidates, &is_target_state, true);
+
+        let result = self
+            .bests
+            .values()
+            .filter(|b| is_target_state(b))
+            .cloned()
+            .collect_vec();
+
+        if result.len() > 1 {
+            assert!(result.iter().all(|s| s.cmp(&result[0]) == Ordering::Equal));
+        }
+        result
+    }
+
     fn run(
         &mut self,
         mut get_next_candidates: impl FnMut(T) -> Vec<T>,
         is_target_state: impl Fn(&T) -> bool,
+        stop_early: bool,
     ) {
         let mut count: u64 = 0;
         while let Some(Reverse(current_state)) = self.queue.pop() {
@@ -68,7 +85,11 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
                 // the smallest step from the lowest-cost node, then if
                 // we reach the destination then we must have taken
                 // the shortest path.
-                return;
+                if stop_early {
+                    return;
+                } else {
+                    continue;
+                }
             }
             let candidates = get_next_candidates(current_state);
             for c in candidates {
@@ -109,15 +130,9 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
     ) -> Vec<T> {
         let mut path = vec![];
 
-        // let mut q = VecDeque::new();
-        // q.push_front(result);
-        // while let Some(next) = q.pop_front()
-
         let mut next = result;
         'outer: loop {
             path.push(next.clone());
-
-            // eprintln!("next {:?}, is_starting {}", next, is);
 
             if is_starting_state(&next) {
                 break;
@@ -125,7 +140,6 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
 
             let next_candidates = get_prev_candidates(next.clone());
 
-            // eprintln!("  candidates {:?}", next_candidates);
             for nc in next_candidates {
                 let bests = self.bests.get(&(self.get_key)(&nc));
 
@@ -143,6 +157,43 @@ impl<T: std::fmt::Debug + Clone + Ord, K: std::fmt::Debug + Eq + PartialEq + Has
 
         path.reverse();
         path
+    }
+
+    pub fn reconstruct_path_all(
+        &self,
+        result: T,
+        mut get_prev_candidates: impl FnMut(&T) -> Vec<T>,
+        is_starting_state: impl Fn(&T) -> bool,
+    ) -> Vec<Vec<T>> {
+        let mut paths = vec![];
+
+        let mut q = VecDeque::new();
+        q.push_front(vec![result]);
+        while let Some(mut next) = q.pop_front() {
+            let tail = next.last().unwrap();
+            if is_starting_state(tail) {
+                next.reverse();
+                paths.push(next);
+                continue;
+            }
+
+            let next_candidates = get_prev_candidates(tail);
+
+            for nc in next_candidates {
+                let bests = self.bests.get(&(self.get_key)(&nc));
+
+                if let Some(b) = bests {
+                    if b.cmp(&nc) == Ordering::Equal {
+                        // this looks like the right path
+                        let mut next_path = next.clone();
+                        next_path.push(nc);
+                        q.push_back(next_path);
+                    }
+                }
+            }
+        }
+
+        paths
     }
 
     /*

@@ -1,7 +1,7 @@
 use aoc_2024_rust::util::*;
 use color_eyre::eyre::Result;
-use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::VecDeque;
+use derive_more::Constructor;
+use rustc_hash::FxHashSet;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -14,122 +14,84 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> Result<(u64, u64)> {
-    let mut grid = CharGrid::from_string(input);
-    let mut best_score_found = u64::MAX;
+#[derive(Debug, Constructor, Clone, Eq, PartialEq, Hash)]
+struct State {
+    score: usize,
+    pos: CharGridIndexRC,
+    dir: RCDirection,
+}
 
-    let mut best_score_at_point = FxHashMap::default();
-    let mut queue = VecDeque::new();
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.score.cmp(&other.score)
+    }
+}
+
+fn solve_for(input: &str) -> Result<(usize, usize)> {
+    let mut grid = CharGrid::from_string(input);
+
     let start = grid.find_single_char('S');
     let end = grid.find_single_char('E');
     grid.set_index_rc(start, '.');
     grid.set_index_rc(end, '.');
-    queue.push_back((0, start, RCDirection::right()));
 
-    let mut overshot = 0;
-    let mut cannot_catch_up = 0;
-    let mut cannot_catch_up_with_one_turn = 0;
-    let mut cannot_catch_up_with_two_turns = 0;
-    let mut better_score_at_point = 0;
-    let mut at_end = 0;
+    let mut search = Dijkstra::new(|s: &State| (s.pos, s.dir));
+    search.push(State::new(0, start, RCDirection::right()));
 
-    while let Some((score, pos, dir)) = queue.pop_front() {
-        if score > best_score_found {
-            overshot += 1;
-            continue;
+    let get_next_candidates = |s: State| {
+        let mut nexts = vec![];
+
+        if grid[s.pos + s.dir] == '.' {
+            nexts.push(State::new(s.score + 1, s.pos + s.dir, s.dir));
         }
-        let best_case_distance = RCDirection::from_to(pos, end).manhattan_abs() as u64;
-        if score + best_case_distance > best_score_found {
-            cannot_catch_up += 1;
-            continue;
+        let dir_left = s.dir.counterclockwise();
+        if grid[s.pos + dir_left] == '.' {
+            nexts.push(State::new(s.score + 1000, s.pos, dir_left));
         }
-        if (pos.row != end.row && pos.col != end.col)
-            && (score + 1000 + best_case_distance) > best_score_found
-        {
-            cannot_catch_up_with_one_turn += 1;
-            continue;
+        let dir_right = s.dir.clockwise();
+        if grid[s.pos + dir_right] == '.' {
+            nexts.push(State::new(s.score + 1000, s.pos, dir_right));
         }
 
-        if (dir == RCDirection::down() || dir == RCDirection::left())
-            && score + best_case_distance + 2000 > best_score_found
-        {
-            cannot_catch_up_with_two_turns += 1;
-            continue;
-        }
+        nexts
+    };
 
-        let score_at_point = best_score_at_point.entry((pos, dir)).or_insert(score);
-        if *score_at_point < score {
-            better_score_at_point += 1;
-            continue;
-        }
-        *score_at_point = score;
-        if pos == end {
-            at_end += 1;
-            best_score_found = score;
-            continue;
-        }
+    let is_target_state = |s: &State| s.pos == end;
 
-        // this seems to be the best ordering: the turns being the latter call to `push_front`
-        // means they're the ones that end up at the front of the queue, and the massive score
-        // penalty for turning means those branches can be discarded more quickly
-        if grid[pos + dir] == '.' {
-            queue.push_front((score + 1, pos + dir, dir));
-        }
-        let dir_left = dir.counterclockwise();
-        if grid[pos + dir_left] == '.' {
-            queue.push_front((score + 1000, pos, dir_left));
-        }
-        let dir_right = dir.clockwise();
-        if grid[pos + dir_right] == '.' {
-            queue.push_front((score + 1000, pos, dir_right));
-        }
-    }
+    let results = search.run_all(get_next_candidates, is_target_state);
 
-    dbg!(
-        overshot,
-        cannot_catch_up,
-        cannot_catch_up_with_one_turn,
-        cannot_catch_up_with_two_turns,
-        better_score_at_point,
-        at_end
-    );
+    let is_starting_state = |s: &State| s.pos == start;
 
-    let mut best_paths_queue = VecDeque::new();
-    let mut best_path_squares = FxHashSet::default();
-    let mut best_path_seen = FxHashSet::default();
-    best_paths_queue.push_front((best_score_found, end, RCDirection::down()));
-    best_paths_queue.push_front((best_score_found, end, RCDirection::left()));
-
-    while let Some((score, pos, dir)) = best_paths_queue.pop_front() {
-        let opposite_dir = dir.clockwise().clockwise();
-        match best_score_at_point.get(&(pos, opposite_dir)) {
-            Some(&s) if s == score => {}
-            _ => continue,
-        }
-
-        best_path_squares.insert(pos);
-
-        if !best_path_seen.insert((pos, dir)) {
-            continue;
-        }
-
-        let char_in_front = grid[pos + dir];
+    let get_prev_candidates = |s: &State| {
+        let mut nexts = vec![];
+        let char_in_front = grid[s.pos - s.dir];
         if char_in_front == '.' {
-            best_paths_queue.push_front((score - 1, pos + dir, dir));
+            nexts.push(State::new(s.score - 1, s.pos - s.dir, s.dir));
         }
 
-        let dir_left = dir.counterclockwise();
-        if grid[pos + dir_left] == '.' {
-            best_paths_queue.push_front((score - 1000, pos, dir_left));
+        let dir_left = s.dir.counterclockwise();
+        if grid[s.pos - dir_left] == '.' {
+            nexts.push(State::new(s.score - 1000, s.pos, dir_left));
         }
-        let dir_right = dir.clockwise();
-        if grid[pos + dir_right] == '.' {
-            best_paths_queue.push_front((score - 1000, pos, dir_right));
+        let dir_right = s.dir.clockwise();
+        if grid[s.pos - dir_right] == '.' {
+            nexts.push(State::new(s.score - 1000, s.pos, dir_right));
         }
-    }
+        nexts
+    };
 
-    let part1 = best_score_found;
-    let part2 = best_path_squares.len() as u64;
+    let all_paths =
+        search.reconstruct_path_all(results[0].clone(), get_prev_candidates, is_starting_state);
+
+    let part2 = FxHashSet::from_iter(all_paths.into_iter().flatten().map(|s| s.pos)).len();
+
+    let part1 = results[0].score;
     Ok((part1, part2))
 }
 
