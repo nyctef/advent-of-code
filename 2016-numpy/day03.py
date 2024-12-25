@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 def solve_for(input: str):
     input = input.strip().splitlines()
 
-    triangles = np.array([np.array([int(x) for x in line.split()]) for line in input])
+    triangles = np.loadtxt(input, dtype=int)
 
     test1 = triangles[:, 0] < triangles[:, 1] + triangles[:, 2]
     test2 = triangles[:, 1] < triangles[:, 2] + triangles[:, 0]
