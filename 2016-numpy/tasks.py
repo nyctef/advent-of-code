@@ -1,6 +1,8 @@
 import shutil
 from pathlib import Path
 import subprocess
+import webbrowser
+from datetime import datetime
 
 
 def copy_template():
@@ -29,16 +31,36 @@ def copy_template():
     print(f"Created {next_day_file}")
 
 
-def run_latest():
+def _get_latest():
     project_root = Path(__file__).parent
-
     # Find the latest dayXX.py file
     day_files = sorted(project_root.glob("day*.py"))
     if not day_files:
         print("No dayXX.py files found.")
-        return
+        return None
 
-    latest_day_file = day_files[-1]
+    return day_files[-1]
+
+
+def run_latest():
+    latest_day_file = _get_latest()
+    if not latest_day_file:
+        return
 
     # Run the latest dayXX.py file
     subprocess.run(["poetry", "run", "python", latest_day_file])
+
+
+def open_web():
+    latest_day_file = _get_latest()
+    if not latest_day_file:
+        return
+
+    latest_day_number = int(latest_day_file.stem[3:])
+
+    current_day = latest_day_number
+
+    # Open the browser to the AoC puzzle
+    url = f"https://adventofcode.com/2016/day/{current_day}"
+    print(f"opening {url} ...")
+    webbrowser.open(url)

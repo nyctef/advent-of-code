@@ -2,6 +2,7 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 new:
     python -c "from tasks import copy_template; copy_template()"
-
 run:
     python -c "from tasks import run_latest; run_latest()"
+web:
+    python -c "from tasks import open_web; open_web()"
