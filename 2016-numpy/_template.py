@@ -23,5 +23,5 @@ def test_example_input():
 
 
 if __name__ == "__main__":
-    (part1, part2) = solve_for(get_input(2016, 2))
+    (part1, part2) = solve_for(get_input(2016, __DAY__))
     print(f"Part 1: {part1} | Part 2: {part2}")
