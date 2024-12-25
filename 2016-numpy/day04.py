@@ -23,13 +23,14 @@ def solve_for(input: str):
     for room, sector, checksum in lines:
         chars = list(room)
         rotation = int(sector) % 26
-        for i in range(len(chars)):
-            if chars[i].isalpha():
-                char = ord(chars[i]) - ord("a")
-                char = (char + rotation) % 26
-                char = char + ord("a")
-                chars[i] = chr(char)
-        decrypted_name = "".join(chars)
+        chars = np.array(list(room), dtype="<U1")
+        rotate = np.frompyfunc(
+            lambda x: chr(ord("a") + (((ord(x) - ord("a")) + rotation) % 26)), 1, 1
+        )
+        is_alpha = np.strings.isalpha(chars)
+        rotated = np.where(is_alpha, rotate(chars), chars)
+        decrypted_name = "".join(rotated)
+        # print(decrypted_name)
         if "north" in decrypted_name:
             part2 = sector
 
