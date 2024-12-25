@@ -21,9 +21,9 @@ def solve_for(input: str):
 
 
 def count_valid_triangles(triangles):
-    test1 = triangles[:, 0] < triangles[:, 1] + triangles[:, 2]
-    test2 = triangles[:, 1] < triangles[:, 2] + triangles[:, 0]
-    test3 = triangles[:, 2] < triangles[:, 0] + triangles[:, 1]
+    test1 = triangles[:, 0] < triangles[:, np.array([1, 2])].sum(axis=1)
+    test2 = triangles[:, 1] < triangles[:, np.array([2, 0])].sum(axis=1)
+    test3 = triangles[:, 2] < triangles[:, np.array([0, 1])].sum(axis=1)
     return (test1 & test2 & test3).sum()
 
 
