@@ -1,4 +1,5 @@
 from util import get_input
+import numpy as np
 
 
 def main():
