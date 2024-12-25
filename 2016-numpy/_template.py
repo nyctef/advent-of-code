@@ -1,14 +1,27 @@
 from util import get_input
 import numpy as np
+from numpy.typing import NDArray
 
 
-def main():
-    input = get_input(2016, __DAY__)
+def solve_for(input: str):
+    input = input.strip().splitlines()
 
-    print(input)
+    part1 = ""
+    part2 = ""
 
-    pass
+    return (part1, part2)
+
+
+def test_example_input():
+    example = """
+
+"""
+    (part1, part2) = solve_for(example)
+
+    assert part1 == ""
+    assert part2 == ""
 
 
 if __name__ == "__main__":
-    main()
+    (part1, part2) = solve_for(get_input(2016, 2))
+    print(f"Part 1: {part1} | Part 2: {part2}")
