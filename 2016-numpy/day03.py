@@ -13,9 +13,10 @@ def solve_for(input: str):
     test3 = triangles[:, 2] < triangles[:, 0] + triangles[:, 1]
     part1 = (test1 & test2 & test3).sum()
 
-    triangles = np.vstack(
-        [tris.T for tris in np.vsplit(triangles, triangles.shape[0] / 3)]
-    )
+    # reshape(-1, 3, 3): leave first dimension unspecified, and group into 3x3 matrices
+    # transpose(0, 2, 1): swap the last two dimensions (make the 3rd dimension the second and vice-versa)
+    # reshape(-1, 3): leave first dimension unspecified, and group into 3-element arrays again
+    triangles = triangles.reshape(-1, 3, 3).transpose(0, 2, 1).reshape(-1, 3)
 
     test1 = triangles[:, 0] < triangles[:, 1] + triangles[:, 2]
     test2 = triangles[:, 1] < triangles[:, 2] + triangles[:, 0]
