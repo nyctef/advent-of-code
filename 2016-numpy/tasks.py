@@ -47,8 +47,15 @@ def run_latest():
     if not latest_day_file:
         return
 
-    # Run the latest dayXX.py file
     subprocess.run(["poetry", "run", "python", latest_day_file])
+
+
+def test_latest():
+    latest_day_file = _get_latest()
+    if not latest_day_file:
+        return
+
+    subprocess.run(["poetry", "run", "pytest", latest_day_file])
 
 
 def open_web():
