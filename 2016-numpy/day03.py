@@ -13,7 +13,14 @@ def solve_for(input: str):
     test3 = triangles[:, 2] < triangles[:, 0] + triangles[:, 1]
     part1 = (test1 & test2 & test3).sum()
 
-    part2 = ""
+    triangles = np.vstack(
+        [tris.T for tris in np.vsplit(triangles, triangles.shape[0] / 3)]
+    )
+
+    test1 = triangles[:, 0] < triangles[:, 1] + triangles[:, 2]
+    test2 = triangles[:, 1] < triangles[:, 2] + triangles[:, 0]
+    test3 = triangles[:, 2] < triangles[:, 0] + triangles[:, 1]
+    part2 = (test1 & test2 & test3).sum()
 
     return (part1, part2)
 
@@ -30,7 +37,7 @@ def test_example_input():
     (part1, part2) = solve_for(example)
 
     assert part1 == 2
-    assert part2 == ""
+    assert part2 == 1
 
 
 if __name__ == "__main__":
