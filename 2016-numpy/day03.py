@@ -6,25 +6,12 @@ from numpy.typing import NDArray
 def solve_for(input: str):
     input = input.strip().splitlines()
 
-    triangles = [np.array([int(x) for x in line.split()]) for line in input]
+    triangles = np.array([np.array([int(x) for x in line.split()]) for line in input])
 
-    part1 = 0
-    for tri in triangles:
-        pairs = np.array(np.meshgrid(tri, tri)).T.reshape(-1, 2)
-        pairs = pairs[pairs[:, 0] < pairs[:, 1]]
-        leftover = np.array([np.setdiff1d(tri, pair) for pair in pairs])
-        print(pairs, leftover)
-        if leftover.size == 0:
-            # duplicate values means there isn't a third value left over
-            part1 += 1
-            continue
-        valid = True
-        for i in range(len(pairs)):
-            if not pairs[i].sum() > leftover[i]:
-                valid = False
-                break
-        if valid:
-            part1 += 1
+    test1 = triangles[:, 0] < triangles[:, 1] + triangles[:, 2]
+    test2 = triangles[:, 1] < triangles[:, 2] + triangles[:, 0]
+    test3 = triangles[:, 2] < triangles[:, 0] + triangles[:, 1]
+    part1 = (test1 & test2 & test3).sum()
 
     part2 = ""
 
@@ -33,11 +20,16 @@ def solve_for(input: str):
 
 def test_example_input():
     example = """
-
+1  1  1
+1  1  20
+1  20 1
+20 1  1
+1  2  3
+4  5  6
 """
     (part1, part2) = solve_for(example)
 
-    assert part1 == ""
+    assert part1 == 2
     assert part2 == ""
 
 
