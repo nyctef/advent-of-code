@@ -1,3 +1,4 @@
+import re
 from util import get_input
 import numpy as np
 from numpy.typing import NDArray
@@ -14,21 +15,28 @@ def solve_for(input: str):
         hash_result = hashlib.md5(hash_input).hexdigest()
         if hash_result.startswith("00000"):
             part1 += hash_result[5]
+            print(hash_result[5], end="", flush=True)
         counter += 1
+    print()
 
-    part2 = ""
+    part2 = list("        ")
+    counter = 0
+    while " " in part2:
+        counter += 1
+        hash_input = f"{input}{counter}".encode()
+        hash_result = hashlib.md5(hash_input).hexdigest()
+        if hash_result.startswith("00000"):
+            position = hash_result[5]
+            char = hash_result[6]
+            if not position.isdigit():
+                continue
+            position = int(position)
+            if position < 0 or position > 7 or part2[position] != " ":
+                continue
+            part2[position] = char
+            print("".join(part2))
 
-    return (part1, part2)
-
-
-def test_example_input():
-    example = """
-
-"""
-    (part1, part2) = solve_for(example)
-
-    assert part1 == ""
-    assert part2 == ""
+    return (part1, "".join(part2))
 
 
 if __name__ == "__main__":
