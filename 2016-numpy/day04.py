@@ -20,15 +20,25 @@ def solve_for(input: str):
         if "".join(values[indexes]) == checksum:
             part1 += int(sector)
 
+    part2 = "???"
+    translations = []
+    for t in range(26):
+        translations.append(
+            str.maketrans(
+                {
+                    k + ord("a"): v + ord("a")
+                    for k, v in [(x, (x + t) % 26) for x in range(26)]
+                }
+            )
+        )
     for room, sector, checksum in lines:
         chars = list(room)
         rotation = int(sector) % 26
         chars = np.array(list(room), dtype="<U1")
-        rotate = np.frompyfunc(
-            lambda x: chr(ord("a") + (((ord(x) - ord("a")) + rotation) % 26)), 1, 1
-        )
         is_alpha = np.strings.isalpha(chars)
-        rotated = np.where(is_alpha, rotate(chars), chars)
+        rotated = np.where(
+            is_alpha, np.strings.translate(chars, translations[rotation]), chars
+        )
         decrypted_name = "".join(rotated)
         # print(decrypted_name)
         if "north" in decrypted_name:
@@ -47,7 +57,7 @@ totally-real-room-200[decoy]
     (part1, part2) = solve_for(example)
 
     assert part1 == 1514
-    assert part2 == ""
+    assert part2 == "???"
 
 
 if __name__ == "__main__":
