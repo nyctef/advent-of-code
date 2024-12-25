@@ -20,7 +20,18 @@ def solve_for(input: str):
         if "".join(values[indexes]) == checksum:
             part1 += int(sector)
 
-    part2 = ""
+    for room, sector, checksum in lines:
+        chars = list(room)
+        rotation = int(sector) % 26
+        for i in range(len(chars)):
+            if chars[i].isalpha():
+                char = ord(chars[i]) - ord("a")
+                char = (char + rotation) % 26
+                char = char + ord("a")
+                chars[i] = chr(char)
+        decrypted_name = "".join(chars)
+        if "north" in decrypted_name:
+            part2 = sector
 
     return (part1, part2)
 
