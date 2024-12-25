@@ -1,0 +1,7 @@
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+
+new:
+    poetry run python -c "from tasks import copy_template; copy_template()"
+
+run:
+    poetry run python -c "from tasks import run_latest; run_latest()"
