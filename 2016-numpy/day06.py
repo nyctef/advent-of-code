@@ -22,7 +22,13 @@ def solve_for(input: str):
     modes = np.strings.decode(modes)
     part1 = "".join(modes)
 
-    part2 = ""
+    def unmode_1d(arr: NDArray):
+        (values, counts) = np.unique_counts(arr)
+        return values[counts.argmin()]
+
+    unmodes = np.apply_along_axis(unmode_1d, axis=1, arr=grid)
+    unmodes = np.strings.decode(unmodes)
+    part2 = "".join(unmodes)
 
     return (part1, part2)
 
