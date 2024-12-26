@@ -5,10 +5,10 @@ from numpy.typing import NDArray
 
 
 def solve_for(input: str):
-    input = input.strip().splitlines()
+    lines = input.strip().splitlines()
 
     lines = [
-        re.search(r"^([a-z-]+)(\d+)\[([a-z]+)\]$", line).groups() for line in input
+        re.search(r"^([a-z-]+)(\d+)\[([a-z]+)\]$", line).groups() for line in lines
     ]
     part1 = 0
     for room, sector, checksum in lines:

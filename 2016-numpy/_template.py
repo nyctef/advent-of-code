@@ -4,7 +4,7 @@ from numpy.typing import NDArray
 
 
 def solve_for(input: str):
-    input = input.strip().splitlines()
+    lines = input.strip().splitlines()
 
     part1 = ""
     part2 = ""

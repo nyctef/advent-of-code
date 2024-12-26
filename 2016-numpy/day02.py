@@ -4,7 +4,7 @@ from numpy.typing import NDArray
 
 
 def solve_for(input: str):
-    input = input.strip().splitlines()
+    lines = input.strip().splitlines()
 
     def to_dir(c: str) -> NDArray[np.int_]:
         match c:
@@ -19,7 +19,7 @@ def solve_for(input: str):
             case _:
                 raise ValueError(f"Invalid direction: {c}")
 
-    instructions = [[to_dir(c) for c in line] for line in input]
+    instructions = [[to_dir(c) for c in line] for line in lines]
 
     keypad = """
 123

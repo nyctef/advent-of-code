@@ -4,9 +4,9 @@ from numpy.typing import NDArray
 
 
 def solve_for(input: str):
-    input = input.strip().splitlines()
+    lines = input.strip().splitlines()
 
-    triangles = np.loadtxt(input, dtype=int)
+    triangles = np.loadtxt(lines, dtype=int)
 
     part1 = count_valid_triangles(triangles)
 

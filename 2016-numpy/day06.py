@@ -4,10 +4,10 @@ from numpy.typing import NDArray
 
 
 def solve_for(input: str):
-    input = input.strip().splitlines()
+    lines = input.strip().splitlines()
 
-    grid = np.empty((len(input), len(input[0])), dtype="S1")
-    for i, line in enumerate(input):
+    grid = np.empty((len(lines), len(lines[0])), dtype="S1")
+    for i, line in enumerate(lines):
         grid[i] = list(line)
 
     grid = grid.T
