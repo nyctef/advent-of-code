@@ -1,0 +1,36 @@
+import re
+from util import get_input
+import numpy as np
+from numpy.typing import NDArray
+
+
+def solve_for(input: str):
+    lines = input.strip().splitlines()
+
+    abba = r"(.)(?!\1)(.)\2\1"
+    wrapped_abba = rf"\[[^]]*{abba}[^]]*\]"
+    part1 = len(
+        [l for l in lines if re.search(abba, l) and not re.search(wrapped_abba, l)]
+    )
+
+    part2 = ""
+
+    return (part1, part2)
+
+
+def test_example_input():
+    example = """
+abba[mnop]qrst
+abcd[bddb]xyyx
+aaaa[qwer]tyui
+ioxxoj[asdfgh]zxcvbn
+"""
+    (part1, part2) = solve_for(example)
+
+    assert part1 == 2
+    assert part2 == ""
+
+
+if __name__ == "__main__":
+    (part1, part2) = solve_for(get_input(2016, 7))
+    print(f"Part 1: {part1} | Part 2: {part2}")

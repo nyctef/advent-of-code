@@ -55,7 +55,7 @@ enarar
     (part1, part2) = solve_for(example)
 
     assert part1 == "easter"
-    assert part2 == ""
+    assert part2 == "advent"
 
 
 if __name__ == "__main__":
