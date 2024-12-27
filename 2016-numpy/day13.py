@@ -41,22 +41,25 @@ def solve_for(input: str, target: Point):
     search = deque()
     search.appendleft((0, start))
     seen = set()
+    seen_50 = set()
     while len(search):
         (steps, pos) = search.popleft()
         if pos == target:
             part1 = steps
-            break
 
         if pos in seen:
             continue
         seen.add(pos)
+
+        if steps <= 50:
+            seen_50.add(pos)
 
         for dir in Dir.four():
             next_pos = pos + dir
             if not is_wall(next_pos):
                 search.append((steps + 1, next_pos))
 
-    part2 = ""
+    part2 = len(seen_50)
 
     return (part1, part2)
 
