@@ -185,6 +185,15 @@ def solve_for(input: str, part2: bool):
             fewest_turns = current.turns
             continue
 
+        minimum_turns_remaining = 0
+        for lower_floor in range(1, 3):
+            # we have to take at least lower_floor trips up the elevator to take
+            # two items each time from the lower floors
+            # TODO: check the exact math here to make it more accurate
+            minimum_turns_remaining += (len(floors[3 - lower_floor]) / 2) * lower_floor
+        if current.turns + minimum_turns_remaining >= fewest_turns:
+            continue
+
         seen_key = str(current.floors) + " " + str(current.elevator)
         best_at_floors = seen.get(seen_key)
         if best_at_floors is None or best_at_floors > current.turns:
