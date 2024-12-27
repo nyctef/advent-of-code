@@ -3,40 +3,33 @@ from util import get_input
 import numpy as np
 from numpy.typing import NDArray
 
+marker_re = re.compile(r"\((\d+)x(\d+)\)")
 
 def solve_for(input: str):
     input = input.strip().replace("\n", "")
 
-    marker_re  =re.compile(r'\((\d+)x(\d+)\)')
+    part1 = decompress(input, 0, len(input), False)
+    part2 = decompress(input, 0, len(input), True)
 
-    ptr = 0
-    count = 0
-    while ptr < len(input):
-        print(input[ptr])
-        if input[ptr] == '(':
-            assert(marker := marker_re.search(input, ptr))
-            print("marker", input[marker.start(): marker.end()])
-            (length, reps) = tuple(int(x) for x in marker.groups())
-            ptr = marker.end() + length
-            count += length * reps
-        else:
-            count += 1
-            ptr += 1
-
-    part1 = count
-    part2 = ""
 
     return (part1, part2)
 
-
-def test_example_input():
-    example = """
-
-"""
-    (part1, part2) = solve_for(example)
-
-    assert part1 == ""
-    assert part2 == ""
+def decompress(input, start, length, recurse):
+    # print(f"decompress {start=} {length=}")
+    ptr = start
+    count = 0
+    while ptr < start + length:
+        if input[ptr] == "(":
+            assert (marker := marker_re.search(input, ptr))
+            # print("marker", input[marker.start() : marker.end()])
+            (sublen, reps) = tuple(int(x) for x in marker.groups())
+            subcount = decompress(input, marker.end(), sublen, recurse) if recurse else sublen
+            ptr = marker.end() + sublen
+            count += subcount * reps
+        else:
+            count += 1
+            ptr += 1
+    return count
 
 
 if __name__ == "__main__":
