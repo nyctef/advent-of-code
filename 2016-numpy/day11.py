@@ -160,13 +160,14 @@ def solve_for(input: str):
     fewest_turns = 99999999999
     search = MinHeap()
     search.push(state)
+    seen = {}
     counter = 1
     while len(search):
         current = search.pop()
 
         if counter % 10_000 == 0:
             print(
-                f"  {len(search)=} {current.turns=} {score(current.floors)=} {fewest_turns=}"
+                f"  {len(search)=} {current.turns=} {score(current.floors)=} {fewest_turns=} {len(seen)=}"
             )
         counter += 1
 
@@ -174,6 +175,13 @@ def solve_for(input: str):
             continue
         if is_done(current.floors):
             fewest_turns = current.turns
+            continue
+
+        seen_key = str(current.floors) + " " + str(current.elevator)
+        best_at_floors = seen.get(seen_key)
+        if best_at_floors is None or best_at_floors > current.turns:
+            seen[seen_key] = current.turns
+        else:
             continue
 
         for next in next_states(current):
