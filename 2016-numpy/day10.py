@@ -38,7 +38,6 @@ def solve_for(input: str):
                 values.sort()
 
                 if [17, 61] == values:
-                    print(f"bot {bot} compared 17 with 61")
                     part1 = bot
 
                 [lowvalue, highvalue] = values
@@ -53,7 +52,7 @@ def solve_for(input: str):
                 else:
                     bots[num2].append(highvalue)
 
-    part2 = ""
+    part2 = outputs[0][0] * outputs[1][0] * outputs[2][0]
 
     return (part1, part2)
 
