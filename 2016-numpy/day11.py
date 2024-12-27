@@ -138,6 +138,7 @@ def next_states(state: State):
             next_state_down[elevator - 1].append(item2)
             result.append(State(turns + 1, elevator - 1, next_state_down))
 
+    result = [State(s.turns, s.elevator, normalize_floors(s.floors)) for s in result]
     return [r for r in result if is_valid(r.floors)]
 
 
@@ -199,6 +200,32 @@ def test_floors_valid():
     assert is_valid([["mc A", "gen A"]]) == True
     assert is_valid([["mc A", "gen A", "gen B"]]) == True
     assert is_valid([["mc A", "gen B"]]) == False
+
+
+def normalize_floors(floors: list):
+    name_counter = 1
+    renames = {}
+    result = []
+    for floor in floors:
+        new_floor = []
+        for item in floor:
+            (typ, name) = item.split(" ")
+            if name in renames:
+                name = renames[name]
+            else:
+                renames[name] = name_counter
+                name = name_counter
+                name_counter += 1
+            new_floor.append(f"{typ} {name}")
+
+        result.append(new_floor)
+
+    return result
+
+
+def test_normalize_floors():
+    assert normalize_floors([["mc A"]]) == [["mc 1"]]
+    assert normalize_floors([["mc asdf"]]) == [["mc 1"]]
 
 
 def test_example_input():
