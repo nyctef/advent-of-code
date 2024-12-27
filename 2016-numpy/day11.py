@@ -68,7 +68,7 @@ class MinHeap:
 
 def score(floors: list):
     # TODO: does the scoring function matter significantly here?
-    return 3 * len(floors[3]) + len(floors[2])
+    return 3 * len(floors[3]) + len(floors[2]) - len(floors[0])
 
 
 def is_done(floors: list):
@@ -99,9 +99,10 @@ class State:
     floors: list
 
     def __lt__(self, other):
+        if score(self.floors) != score(other.floors):
+            return score(self.floors) > score(other.floors)
         if self.turns != other.turns:
             return self.turns < other.turns
-        # return score(self.floors) > score(other.floors)
         return False
 
 
@@ -142,8 +143,14 @@ def next_states(state: State):
     return [r for r in result if is_valid(r.floors)]
 
 
-def solve_for(input: str):
+def solve_for(input: str, part2: bool):
     lines = input.strip().splitlines()
+
+    if part2:
+        lines[
+            0
+        ] += "An elerium generator. An elerium-compatible microchip. A dilithium generator. A dilithium-compatible microchip."
+
     floors = []
     for line in lines:
         floor = []
@@ -188,10 +195,7 @@ def solve_for(input: str):
         for next in next_states(current):
             search.push(next)
 
-    part1 = fewest_turns
-    part2 = ""
-
-    return (part1, part2)
+    return fewest_turns
 
 
 def test_floors_valid():
@@ -218,6 +222,7 @@ def normalize_floors(floors: list):
                 name_counter += 1
             new_floor.append(f"{typ} {name}")
 
+        new_floor.sort()
         result.append(new_floor)
 
     return result
@@ -235,12 +240,13 @@ The second floor contains a hydrogen generator.
 The third floor contains a lithium generator.
 The fourth floor contains nothing relevant.
 """
-    (part1, part2) = solve_for(example)
+    part1 = solve_for(example, False)
 
     assert part1 == 11
-    assert part2 == ""
 
 
 if __name__ == "__main__":
-    (part1, part2) = solve_for(get_input(2016, 11))
+    part1 = "???"
+    # part1 = solve_for(get_input(2016, 11), False)
+    part2 = solve_for(get_input(2016, 11), True)
     print(f"Part 1: {part1} | Part 2: {part2}")
