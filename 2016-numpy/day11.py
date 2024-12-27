@@ -99,10 +99,10 @@ class State:
     floors: list
 
     def __lt__(self, other):
-        if score(self.floors) != score(other.floors):
-            return score(self.floors) > score(other.floors)
         if self.turns != other.turns:
             return self.turns < other.turns
+        if score(self.floors) != score(other.floors):
+            return score(self.floors) > score(other.floors)
         return False
 
 
@@ -186,7 +186,7 @@ def solve_for(input: str, part2: bool):
             continue
 
         minimum_turns_remaining = 0
-        for lower_floor in range(1, 3):
+        for lower_floor in range(1, 4):
             # we have to take at least lower_floor trips up the elevator to take
             # two items each time from the lower floors
             # TODO: check the exact math here to make it more accurate
@@ -256,6 +256,6 @@ The fourth floor contains nothing relevant.
 
 if __name__ == "__main__":
     part1 = "???"
-    # part1 = solve_for(get_input(2016, 11), False)
+    part1 = solve_for(get_input(2016, 11), False)
     part2 = solve_for(get_input(2016, 11), True)
     print(f"Part 1: {part1} | Part 2: {part2}")
