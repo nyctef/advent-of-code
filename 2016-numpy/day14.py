@@ -33,7 +33,7 @@ def solve_for(input: str, part2: bool):
             validated_threes = []
             for num, three_indexes in threes.items():
                 for ti in three_indexes:
-                    if any(fi for fi in fives[num] if ti < fi and ti > fi - 1001):
+                    if any(fi for fi in fives[num] if ti + 1 <= fi <= ti + 1001):
                         validated_threes.append(ti)
             print(f"num validated threes: {len(validated_threes)}")
             if len(validated_threes) >= 64:
@@ -43,12 +43,11 @@ def solve_for(input: str, part2: bool):
 
 def test_example_input():
     example = """abc"""
-    part1 = "???"
-    # part1 = solve_for(example, False)
+    part1 = solve_for(example, False)
     part2 = solve_for(example, True)
 
-    assert part2 == 22551
     assert part1 == 22728
+    assert part2 == 22551
 
 
 if __name__ == "__main__":
