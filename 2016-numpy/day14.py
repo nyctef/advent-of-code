@@ -38,7 +38,12 @@ def solve_for(input: str, part2: bool):
             print(f"num validated threes: {len(validated_threes)}")
             if len(validated_threes) >= 64:
                 validated_threes.sort()
-                return validated_threes[63]
+                candidate = validated_threes[63]
+                if i > candidate + 1000:
+                    # need to go for at least another 1000 hashes after our possible solution,
+                    # since we might discover another five-match soon which would validate
+                    # an earlier three-match
+                    return candidate
 
 
 def test_example_input():
@@ -52,6 +57,6 @@ def test_example_input():
 
 if __name__ == "__main__":
     part1 = "???"
-    # part1 = solve_for(get_input(2016, 14), False)
+    part1 = solve_for(get_input(2016, 14), False)
     part2 = solve_for(get_input(2016, 14), True)
     print(f"Part 1: {part1} | Part 2: {part2}")
