@@ -10,16 +10,18 @@ threes_re = re.compile(r"(.)\1\1")
 fives_re = re.compile(r"(.)\1\1\1\1")
 
 
-def solve_for(input: str):
+def solve_for(input: str, part2: bool):
     salt = input.strip()
 
     threes = defaultdict(list)
     fives = defaultdict(list)
 
-    part1 = ""
-
     for i in itertools.count():
         hash = hashlib.md5(f"{salt}{i}".encode("ascii")).hexdigest()
+
+        if part2:
+            for _ in range(2016):
+                hash = hashlib.md5(hash.encode("ascii")).hexdigest()
 
         if m := threes_re.search(hash):
             # print(f"found three {m.group(1)} at index {i}")
@@ -36,22 +38,21 @@ def solve_for(input: str):
             print(f"num validated threes: {len(validated_threes)}")
             if len(validated_threes) >= 64:
                 validated_threes.sort()
-                part1 = validated_threes[63]
-                break
-
-    part2 = ""
-
-    return (part1, part2)
+                return validated_threes[63]
 
 
 def test_example_input():
     example = """abc"""
-    (part1, part2) = solve_for(example)
+    part1 = "???"
+    # part1 = solve_for(example, False)
+    part2 = solve_for(example, True)
 
+    assert part2 == 22551
     assert part1 == 22728
-    assert part2 == ""
 
 
 if __name__ == "__main__":
-    (part1, part2) = solve_for(get_input(2016, 14))
+    part1 = "???"
+    # part1 = solve_for(get_input(2016, 14), False)
+    part2 = solve_for(get_input(2016, 14), True)
     print(f"Part 1: {part1} | Part 2: {part2}")
