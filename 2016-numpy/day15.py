@@ -36,8 +36,10 @@ def mod_mul_inverse(x, N):
     return y
 
 
-def solve_for(input: str):
+def solve_for(input: str, part2: bool):
     lines = input.strip().splitlines()
+    if part2:
+        lines.append("Disc #7 has 11 positions; at time=0, it is at position 0.")
     digits_re = re.compile(r"\d+")
     discs = []
     for line in lines:
@@ -60,12 +62,11 @@ def solve_for(input: str):
     ys = [int(large_mod / n) for n in ns]
     zs = [mod_mul_inverse(y, n) for (y, n) in zip(ys, ns)]
 
-    part1 = sum([a * y * z for (a, y, z) in zip(as_, ys, zs)])
-    while part1 < 0:
-        part1 += large_mod
-    part2 = ""
+    result = sum([a * y * z for (a, y, z) in zip(as_, ys, zs)])
+    while result < 0:
+        result += large_mod
 
-    return (part1, part2)
+    return result
 
 
 def test_example_input():
@@ -73,12 +74,12 @@ def test_example_input():
 Disc #1 has 5 positions; at time=0, it is at position 4.
 Disc #2 has 2 positions; at time=0, it is at position 1.
 """
-    (part1, part2) = solve_for(example)
+    part1 = solve_for(example, False)
 
     assert part1 == 5
-    assert part2 == ""
 
 
 if __name__ == "__main__":
-    (part1, part2) = solve_for(get_input(2016, 15))
+    part1 = solve_for(get_input(2016, 15), False)
+    part2 = solve_for(get_input(2016, 15), True)
     print(f"Part 1: {part1} | Part 2: {part2}")
