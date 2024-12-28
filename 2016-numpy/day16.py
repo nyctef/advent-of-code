@@ -54,5 +54,5 @@ def test_example_input():
 
 if __name__ == "__main__":
     part1 = solve_for(get_input(2016, 16), 272)
-    part2 = "???"
+    part2 = solve_for(get_input(2016, 16), 35651584)
     print(f"Part 1: {part1} | Part 2: {part2}")
