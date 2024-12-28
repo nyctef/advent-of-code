@@ -19,12 +19,12 @@ def solve_for(input: str):
     part1 = ""
 
     for i in itertools.count():
-        hash = hashlib.md5(f"{salt}{i}".encode()).hexdigest()
+        hash = hashlib.md5(f"{salt}{i}".encode("ascii")).hexdigest()
 
-        if m := threes_re.match(hash):
+        if m := threes_re.search(hash):
             # print(f"found three {m.group(1)} at index {i}")
             threes[m.group(1)].append(i)
-        if m := fives_re.match(hash):
+        if m := fives_re.search(hash):
             print(f"found five {m.group(1)} at index {i}")
             fives[m.group(1)].append(i)
 
