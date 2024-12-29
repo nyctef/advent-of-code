@@ -1,8 +1,17 @@
 import shutil
 from pathlib import Path
 import subprocess
+import sys
 import webbrowser
 from datetime import datetime
+
+
+def _maybe_poetry(input: list):
+    if sys.prefix == sys.base_prefix:
+        return ["poetry", "run"] + input
+    else:
+        # already in virtualenv: https://stackoverflow.com/a/1883251
+        return input
 
 
 def copy_template():
@@ -47,7 +56,7 @@ def run_latest():
     if not latest_day_file:
         return
 
-    subprocess.run(["poetry", "run", "python", latest_day_file])
+    subprocess.run(_maybe_poetry(["python", latest_day_file]))
 
 
 def test_latest():
@@ -55,7 +64,7 @@ def test_latest():
     if not latest_day_file:
         return
 
-    subprocess.run(["poetry", "run", "pytest", latest_day_file])
+    subprocess.run(_maybe_poetry(["pytest", latest_day_file]))
 
 
 def open_web():
