@@ -1,3 +1,4 @@
+from collections import deque
 from dataclasses import dataclass
 import re
 from util import get_input
@@ -12,6 +13,7 @@ def solve_for(input: str):
     nodes = [parse_node(line) for line in lines]
 
     part1 = set()
+    moves = set()
     for a in nodes:
         for b in nodes:
             if a == b:
@@ -26,15 +28,69 @@ def solve_for(input: str):
                 # print(pair)
                 part1.add(pair)
 
+                if abs(a.x - b.x) <= 1 and abs(a.y - b.y) <= 1:
+                    moves.add(a)
+                    moves.add(b)
+
     node_map = {(node.x, node.y): node for node in nodes}
     start = node_map[(0, 0)]
-    target_x = max(node.x for node in nodes)
-    target = node_map[(target_x, 0)]
+    max_x = max(node.x for node in nodes)
+    max_y = max(node.y for node in nodes)
+    max_avail = max(node.size - node.used for node in nodes)
+    target = node_map[(max_x, 0)]
+    zero = [node for node in nodes if node.used == 0]
+    wall = set((node.x, node.y) for node in nodes if node.used > max_avail)
+    print(f"{zero=}")
+
+    for y in range(max_y + 1):
+        for x in range(max_x + 1):
+            node = node_map.get((x, y))
+            if node is None:
+                print(" ", end="")
+            elif node.used > max_avail:
+                print("#", end="")
+            elif node.used == 0:
+                print("0", end="")
+            elif node == start:
+                print("S", end="")
+            elif node == target:
+                print("T", end="")
+            elif node in moves:
+                print("?", end="")
+            else:
+                print(".", end="")
+
+        print()
 
     print(start, target)
     print(list(node for node in nodes if node.size - node.used >= target.used))
 
-    part2 = ""
+    part2 = "???"
+    search = deque()
+    seen = {}
+    search.append((0, (zero[0].x, zero[0].y), (target.x, target.y)))
+    while len(search):
+        (turns, (zx, zy), (tx, ty)) = search.popleft()
+        best_turns_here = seen.get((zx, zy, tx, ty))
+        if best_turns_here is not None and best_turns_here <= turns:
+            continue
+        seen[(zx, zy, tx, ty)] = turns
+
+        if (tx, ty) == (0, 0):
+            part2 = turns
+            break
+
+        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            nz = (zx + dx, zy + dy)
+            if nz[0] > max_x or nz[0] < 0 or nz[1] > max_y or nz[1] < 0:
+                continue
+            if nz in wall:
+                continue
+            nt = (tx, ty)
+            if nz == nt:
+                # the zero and target are swapping
+                nt = zx, zy
+            search.append((turns + 1, nz, nt))
 
     return (len(part1), part2)
 
