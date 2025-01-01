@@ -9,21 +9,22 @@ def solve_for(input: str):
     lines = input.strip().splitlines()
 
     target = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-    for a in itertools.count(2000):
+    for a in itertools.count():
         if a % 1000 == 0:
             print(a)
         out = []
         run(lines, a, out)
         # print(out)
         if out[:10] == target or out[1:11] == target:
-            print(out)
-            print(a)
+            part1 = a
             break
+
+    part2 = "*******"
 
     return (part1, part2)
 
 
-def run(lines, start_a, out: list):
+def run(lines, start_a, out: list, target_len=20):
     registers = defaultdict(lambda: 0)
     registers["a"] = start_a
     pc = 0
@@ -51,15 +52,19 @@ def run(lines, start_a, out: list):
                 pc += 1
             case "jnz":
                 val = int(x) if x.isdigit() else registers[x]
+                # if pc == 28:
+                #     print(f"{pc=} {val=}")
                 if val != 0:
                     pc += int(y)
                 else:
                     pc += 1
             case "out":
+                # print(f"out {pc=}")
                 val = int(x) if x.isdigit() else registers[x]
                 out.append(val)
-                if (len(out) > 1 and out[0] == out[1]) or len(out) > 20:
+                if (len(out) > 1 and out[0] == out[1]) or len(out) > target_len:
                     return
+                pc += 1
 
 
 def test_example_input():
