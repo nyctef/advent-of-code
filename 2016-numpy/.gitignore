@@ -1,3 +1,4 @@
 .cookie
 __pycache__/
 inputs/
+scratch/
