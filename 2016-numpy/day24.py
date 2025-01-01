@@ -41,25 +41,29 @@ def solve_for(input: str):
         assert (dists[(y, x)]) == dist
 
     part1 = 9999999999999999
+    part2 = 9999999999999999
     search = deque()
     seen = {}
     search.append((0, [0]))
     while len(search):
         (steps, collected) = search.popleft()
-        # sorted = list(collected)
-        # sorted.sort()
-        # key = (tuple(sorted), collected[-1])
-        # best = seen.get(key)
-        # if best is not None and best <= steps:
-        #     continue
-        # seen[key] = steps
+        sorted = list(collected)
+        sorted.sort()
+        key = (tuple(sorted), collected[-1])
+        best = seen.get(key)
+        if best is not None and best <= steps:
+            continue
+        seen[key] = steps
 
         remaining = set(nums.keys()) - set(collected)
 
         if not len(remaining):
-            print(f"{steps=} {collected=}")
+            # print(f"{steps=} {collected=}")
             if steps < part1:
                 part1 = steps
+            part2_steps = steps + dists[(collected[-1], 0)]
+            if part2_steps < part2:
+                part2 = part2_steps
             continue
 
         prev_collected = collected[-1]
@@ -68,8 +72,6 @@ def solve_for(input: str):
             new_collected.append(r)
             new_steps = steps + dists[(prev_collected, r)]
             search.append((new_steps, new_collected))
-
-    part2 = ""
 
     return (part1, part2)
 
