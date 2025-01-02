@@ -1,7 +1,7 @@
 use aoc_2017_rust::util::*;
 use color_eyre::{eyre::Result, owo_colors::OwoColorize};
 use itertools::Itertools;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -19,12 +19,13 @@ fn solve_for(input: &str) -> (u64, u64) {
     let mut part1 = 0;
     let mut part2 = 0;
 
-    let mut seen = FxHashSet::default();
+    let mut seen = FxHashMap::default();
     let mut memory = nums.clone();
     let len = memory.len();
     loop {
         // eprintln!("{:?}", memory);
-        if !seen.insert(memory.clone()) {
+        if let Some(last_seen) = seen.insert(memory.clone(), part1) {
+            part2 = part1 - last_seen;
             break;
         }
         let (i, x) = memory
@@ -55,5 +56,5 @@ fn test_example1() {
     let (part1, part2) = solve_for(input);
 
     assert_eq!(part1, 5);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 4);
 }
