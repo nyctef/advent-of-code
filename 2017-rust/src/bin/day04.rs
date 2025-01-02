@@ -23,6 +23,15 @@ fn solve_for(input: &str) -> (u64, u64) {
         if line.split(" ").counts().iter().all(|(_, v)| *v == 1) {
             part1 += 1
         }
+        if line
+            .split(" ")
+            .map(|x| x.chars().sorted().collect_vec())
+            .counts()
+            .iter()
+            .all(|(_, v)| *v == 1)
+        {
+            part2 += 1
+        }
     }
 
     (part1, part2)
@@ -38,5 +47,5 @@ aa bb cc dd aaa
     let (part1, part2) = solve_for(input);
 
     assert_eq!(part1, 2);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 2);
 }
