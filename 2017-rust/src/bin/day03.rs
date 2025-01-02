@@ -1,6 +1,7 @@
 use aoc_2017_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -16,8 +17,9 @@ pub fn main() -> Result<()> {
 fn solve_for(input: &str) -> (i64, u64) {
     let target: u64 = input.trim().parse().unwrap();
     let (x, y) = pos(target);
-    let mut part1 = x.abs() + y.abs();
-    let mut part2 = 0;
+    let part1 = x.abs() + y.abs();
+
+    let part2 = part2(target);
 
     (part1, part2)
 }
@@ -65,6 +67,58 @@ fn pos(n: u64) -> (i64, i64) {
     }
 
     (pos_x, pos_y)
+}
+
+fn part2(n: u64) -> u64 {
+    let mut filled_values = FxHashMap::default();
+    filled_values.entry((0, 0)).insert_entry(1);
+
+    let mut pos_x = 0;
+    let mut pos_y = 0;
+    let mut dir_x = 1;
+    let mut dir_y = 0;
+    let mut dist = 1;
+    let mut steps = dist;
+    let mut dir_change_count = 2;
+    let diags = [
+        (-1, 0),
+        (1, 0),
+        (-1, 1),
+        (1, 1),
+        (-1, -1),
+        (1, -1),
+        (0, 1),
+        (0, -1),
+    ];
+    loop {
+        if steps == 0 {
+            steps = dist;
+            (dir_x, dir_y) = (dir_y, -dir_x);
+            dir_change_count -= 1;
+        }
+        if dir_change_count == 0 {
+            dist += 1;
+            steps = dist;
+            dir_change_count = 2;
+        }
+
+        pos_x += dir_x;
+        pos_y += dir_y;
+        steps -= 1;
+
+        let mut square_value = 0;
+        for (dx, dy) in diags.iter() {
+            if let Some(neighbor) = filled_values.get(&(pos_x + dx, pos_y + dy)) {
+                square_value += neighbor;
+            }
+        }
+        if square_value > n {
+            return square_value;
+        }
+        filled_values
+            .entry((pos_x, pos_y))
+            .insert_entry(square_value);
+    }
 }
 
 #[test]
