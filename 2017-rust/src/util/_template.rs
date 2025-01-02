@@ -14,11 +14,12 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> (u64, u64) {
-    // ...
     let mut part1 = 0;
     let mut part2 = 0;
 
+    // ...
     todo!();
+
     (part1, part2)
 }
 
