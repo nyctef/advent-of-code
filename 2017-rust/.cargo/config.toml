@@ -1,0 +1,6 @@
+[alias]
+# inspired by (but not exactly) https://github.com/matklad/cargo-xtask
+xtask = "run --bin xtask --"
+xnew = "xtask new_day"
+xtest = "xtask test_day"
+xrun = "xtask run_day"
