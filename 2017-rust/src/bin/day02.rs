@@ -16,15 +16,15 @@ pub fn main() -> Result<()> {
 fn part1(input: &str) -> u64 {
     let sheet = input.trim().lines().map(all_numbers_u64).collect_vec();
 
-    return sheet
+    sheet
         .iter()
         .map(|l| l.iter().max().unwrap() - l.iter().min().unwrap())
-        .sum();
+        .sum()
 }
 fn part2(input: &str) -> u64 {
     let sheet = input.trim().lines().map(all_numbers_u64).collect_vec();
 
-    return sheet
+    sheet
         .iter()
         .map(|l| {
             for i1 in 0..l.len() {
@@ -39,7 +39,7 @@ fn part2(input: &str) -> u64 {
             }
             panic!()
         })
-        .sum();
+        .sum()
 }
 #[test]
 fn test_example1() {
