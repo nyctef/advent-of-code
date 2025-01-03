@@ -15,7 +15,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> (i64, u64) {
+fn solve_for(input: &str) -> (i64, i64) {
     let mut part1 = 0;
     let mut part2 = 0;
 
@@ -24,7 +24,6 @@ fn solve_for(input: &str) -> (i64, u64) {
         .lines()
         .map(|l| {
             let parts = l.split(' ');
-            eprintln!("{:?}", parts.clone().collect_vec());
             assert!(parts.clone().count() == 7);
 
             let part = |i: usize| parts.clone().nth(i).unwrap();
@@ -68,6 +67,7 @@ fn solve_for(input: &str) -> (i64, u64) {
                 Operation::Inc(x) => *reg += x,
                 Operation::Dec(x) => *reg -= x,
             }
+            part2 = part2.max(*reg);
         }
     }
 
@@ -111,5 +111,5 @@ c inc -20 if c == 10
     let (part1, part2) = solve_for(input);
 
     assert_eq!(part1, 1);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 10);
 }
