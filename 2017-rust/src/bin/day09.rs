@@ -1,6 +1,5 @@
 use aoc_2017_rust::util::*;
 use color_eyre::eyre::Result;
-use itertools::Itertools;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -20,7 +19,7 @@ fn solve_for(input: &str) -> (usize, u64) {
     let mut stack = vec![];
     let chars = input.trim().chars();
     for char in chars {
-            eprintln!("stack: {:?} char: {}", stack, char);
+        // eprintln!("stack: {:?} char: {}", stack, char);
         match char {
             _ if stack.last() == Some(&'!') => {
                 stack.pop();
@@ -30,7 +29,7 @@ fn solve_for(input: &str) -> (usize, u64) {
             }
             '!' => stack.push('!'),
             _ if stack.last() == Some(&'<') => {
-                // inside garbage
+                part2 += 1;
             }
             '{' => stack.push('{'),
             '<' => stack.push('<'),
@@ -39,7 +38,7 @@ fn solve_for(input: &str) -> (usize, u64) {
                 part1 += stack.len();
                 stack.pop();
             }
-            ',' => {},
+            ',' => {}
             _ => panic!("unrecognised char {}", char),
         }
     }
