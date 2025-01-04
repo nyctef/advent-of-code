@@ -1,7 +1,6 @@
 use aoc_2017_rust::util::*;
-use color_eyre::{eyre::Result, owo_colors::OwoColorize};
-use itertools::Itertools;
-use rustc_hash::{FxHashMap, FxHashSet};
+use color_eyre::eyre::Result;
+use rustc_hash::FxHashMap;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -17,7 +16,7 @@ pub fn main() -> Result<()> {
 fn solve_for(input: &str) -> (u64, u64) {
     let nums = all_numbers(input);
     let mut part1 = 0;
-    let mut part2 = 0;
+    let part2;
 
     let mut seen = FxHashMap::default();
     let mut memory = nums.clone();
@@ -33,7 +32,7 @@ fn solve_for(input: &str) -> (u64, u64) {
             .copied() // since max_by will return the last item in case of a tie, and we want the first
             .enumerate()
             .rev()
-            .max_by_key(|(i, x)| *x)
+            .max_by_key(|(_, x)| *x)
             .unwrap();
 
         // eprintln!("max: {x} at {i}");

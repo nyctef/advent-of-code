@@ -15,8 +15,6 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> (&str, u32) {
-    let mut part2 = 0;
-
     let mut parents = FxHashMap::default();
     let mut children = FxHashMap::default();
     let mut weights = FxHashMap::<&str, u32>::default();
@@ -57,7 +55,7 @@ fn solve_for(input: &str) -> (&str, u32) {
 
     eprintln!("{:?}", problem);
 
-    let problem_parent = *&parents[problem];
+    let problem_parent = parents[problem];
     let problem_parent_children = &children[problem_parent];
     let nonproblem_child = problem_parent_children
         .iter()
@@ -73,7 +71,7 @@ fn solve_for(input: &str) -> (&str, u32) {
         target_weight,
         correct_child_weight
     );
-    part2 = target_weight - correct_child_weight;
+    let part2 = target_weight - correct_child_weight;
 
     (root, part2)
 }
@@ -83,8 +81,8 @@ fn is_unbalanced<'i>(
     root: &'i str,
     summed_weights: &FxHashMap<&'i str, u32>,
 ) -> Option<&'i str> {
-    let mut bad_proc = root;
-    let mut bad_chld = &children[bad_proc];
+    let bad_proc = root;
+    let bad_chld = &children[bad_proc];
     let weight_counts = bad_chld.iter().map(|c| summed_weights[c]).counts();
     if weight_counts.len() != 1 {
         eprintln!("{}'s children are unbalanced", bad_proc);
@@ -99,10 +97,10 @@ fn is_unbalanced<'i>(
             .map(|c| (c, summed_weights[c]))
             .find(|x| x.1 == *odd_weight)
             .unwrap();
-        return Some(odd_proc.0);
+        Some(odd_proc.0)
     } else {
         eprintln!("{}'s children are balanced", bad_proc);
-        return None;
+        None
     }
 }
 
@@ -113,7 +111,7 @@ fn get_summed_weights<'i>(
     result: &mut FxHashMap<&'i str, u32>,
 ) {
     // eprintln!("{:?}", start);
-    let this_weight = *&weights[start];
+    let this_weight = weights[start];
     match children.get(start) {
         Some(chld) => {
             chld.iter()

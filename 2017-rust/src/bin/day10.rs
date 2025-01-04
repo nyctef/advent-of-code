@@ -24,11 +24,12 @@ fn solve_for(input: &str, max: u8) -> (u16, String) {
     let mut skip_size = 0;
     let mut pos = 0;
 
+    #[allow(clippy::explicit_counter_loop)]
     for l in lengths {
-        let mut slice = knot.slice(pos, l.into());
+        let mut slice = knot.slice(pos, l);
         slice.reverse();
 
-        pos += l as usize;
+        pos += l;
         pos += skip_size;
         skip_size += 1;
     }
@@ -80,7 +81,7 @@ impl Knot {
         for batch in &batches {
             let mut x = 0;
             for b in batch {
-                x = x ^ b;
+                x ^= b;
             }
             hash.write_fmt(format_args!("{:02x}", x)).unwrap();
         }
@@ -95,7 +96,7 @@ struct RingSliceMut<'a> {
     length: usize,
 }
 
-impl<'a> RingSliceMut<'a> {
+impl RingSliceMut<'_> {
     fn reverse(&mut self) {
         for i in 0..self.length / 2 {
             let s = self.map_index(i);
@@ -117,8 +118,7 @@ fn test_example1() {
     let input = r###"
 3, 4, 1, 5
 "###;
-    let (part1, part2) = solve_for(input, 4);
+    let (part1, _) = solve_for(input, 4);
 
     assert_eq!(part1, 12);
-    assert_eq!(part2, 0);
 }

@@ -16,9 +16,6 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> (i64, i64) {
-    let mut part1 = 0;
-    let mut part2 = 0;
-
     let instructions = input
         .trim()
         .lines()
@@ -51,6 +48,7 @@ fn solve_for(input: &str) -> (i64, i64) {
         .collect_vec();
 
     let mut registers = FxHashMap::default();
+    let mut part2 = 0;
 
     for instr in instructions {
         let other: i64 = *registers.entry(instr.other).or_default();
@@ -71,7 +69,7 @@ fn solve_for(input: &str) -> (i64, i64) {
         }
     }
 
-    part1 = *registers.values().max().unwrap();
+    let part1 = *registers.values().max().unwrap();
 
     (part1, part2)
 }
