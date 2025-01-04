@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::{fmt::Write, ops::BitXor};
 
 use aoc_2017_rust::util::*;
 use color_eyre::eyre::Result;
@@ -78,7 +78,7 @@ impl Knot {
         let batches = self.items.into_iter().chunks(16);
 
         batches.into_iter().fold(String::with_capacity(32), |mut a, n| {
-            let x = n.fold(0, |a, n| a ^ n);
+            let x = n.fold(0, BitXor::bitxor);
             a.write_fmt(format_args!("{:02x}", x)).unwrap();
             a
         })
