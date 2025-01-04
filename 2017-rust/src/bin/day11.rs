@@ -15,44 +15,38 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> (isize, u64) {
+fn solve_for(input: &str) -> (usize, u64) {
     let mut part1 = 0;
     let mut part2 = 0;
 
-    let mut n_s: isize = 0;
-    let mut ne_sw: isize = 0;
-    let mut nw_se: isize = 0;
+    let mut steps = input.trim().split(',').counts();
 
-    for step in input.trim().split(",") {
-        match step {
-            "n" => n_s += 1,
-            "s" => n_s -= 1,
-            "ne" => ne_sw += 1,
-            "sw" => ne_sw -= 1,
-            "nw" => nw_se += 1,
-            "se" => nw_se -= 1,
-            _ => panic!("unrecognised direction {step}"),
+    let dirs = ["n", "ne", "se", "s", "sw", "nw"];
+    for (l, mid, r) in dirs.into_iter().circular_tuple_windows() {
+        // eg going 3 nw and 3 ne is equivalent to just going 3 n
+        let l_steps = *steps.entry(l).or_default();
+        let r_steps = *steps.entry(r).or_default();
+        if l_steps > 0 && r_steps > 0 {
+            let common = l_steps.min(r_steps);
+            *steps.entry(l).or_default() -= common;
+            *steps.entry(r).or_default() -= common;
+            *steps.entry(mid).or_default() += common;
         }
     }
 
-    if nw_se > 0 && ne_sw > 0 {
-        let common = nw_se.min(ne_sw);
-        nw_se -= common;
-        ne_sw -= common;
-        n_s += common;
+    for (f, b) in [("n", "s"), ("ne", "sw"), ("nw", "se")] {
+        // going 5 n and 3 s is equivalent to just going 2 n
+        let f_steps = steps[f];
+        let b_steps = steps[b];
+        if f_steps > 0 && b_steps > 0 {
+            let common = f_steps.min(b_steps);
+            steps.entry(f).and_modify(|e| *e -= common);
+            steps.entry(b).and_modify(|e| *e -= common);
+        }
     }
 
-    if nw_se < 0 && ne_sw < 0 {
-        let common = nw_se.max(ne_sw);
-        nw_se -= common;
-        ne_sw -= common;
-        n_s += common;
-    }
-
-
-
-    dbg!(&n_s, ne_sw, nw_se);
-    part1 = n_s.abs() + ne_sw.abs() + nw_se.abs();
+    dbg!(&steps);
+    part1 = steps.values().sum();
 
     (part1, part2)
 }
