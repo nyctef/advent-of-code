@@ -3,6 +3,7 @@ use core::panic;
 use aoc_2017_rust::util::*;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use rustc_hash::FxHashMap;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -15,16 +16,26 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> (usize, u64) {
+fn solve_for(input: &str) -> (usize, usize) {
     let mut part1 = 0;
     let mut part2 = 0;
 
-    let mut steps = input.trim().split(',').counts();
+    let mut steps = FxHashMap::default();
+    for step in input.trim().split(",") {
+        *steps.entry(step).or_default() += 1;
+        normalize(&mut steps);
+        part2 = part2.max(steps.values().sum());
+    }
 
+    part1 = steps.values().sum();
+    (part1, part2)
+}
+
+fn normalize(steps: &mut FxHashMap<&str, usize>) {
     let dirs = ["n", "ne", "se", "s", "sw", "nw"];
     for (l, mid, r) in dirs.into_iter().circular_tuple_windows() {
         // eg going 3 nw and 3 ne is equivalent to just going 3 n
-        let l_steps = *steps.entry(l).or_default();
+        let l_steps: usize = *steps.entry(l).or_default();
         let r_steps = *steps.entry(r).or_default();
         if l_steps > 0 && r_steps > 0 {
             let common = l_steps.min(r_steps);
@@ -44,11 +55,6 @@ fn solve_for(input: &str) -> (usize, u64) {
             steps.entry(b).and_modify(|e| *e -= common);
         }
     }
-
-    dbg!(&steps);
-    part1 = steps.values().sum();
-
-    (part1, part2)
 }
 
 #[test]
