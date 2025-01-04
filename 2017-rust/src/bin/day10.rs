@@ -77,15 +77,11 @@ impl Knot {
     fn dense_hash(self) -> String {
         let batches = self.items.into_iter().chunks(16);
 
-        let mut hash = String::new();
-        for batch in &batches {
-            let mut x = 0;
-            for b in batch {
-                x ^= b;
-            }
-            hash.write_fmt(format_args!("{:02x}", x)).unwrap();
-        }
-        hash
+        batches.into_iter().fold(String::with_capacity(32), |mut a, n| {
+            let x = n.fold(0, |a, n| a ^ n);
+            a.write_fmt(format_args!("{:02x}", x)).unwrap();
+            a
+        })
     }
 }
 
