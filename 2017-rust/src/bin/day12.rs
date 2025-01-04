@@ -30,7 +30,7 @@ fn solve_for(input: &str) -> (usize, u64) {
     let mut remaining = FxHashSet::from_iter(connections.keys());
 
     loop {
-        if remaining.len() == 0 {
+        if remaining.is_empty() {
             break;
         }
         let next_start = remaining.iter().cloned().next().unwrap();
