@@ -17,7 +17,7 @@ fn solve_for(input: &str) -> (i64, i64) {
     let mut part1 = 0;
     let mut part2 = 0;
 
-    let mut scanners = input
+    let scanners = input
         .trim()
         .lines()
         .map(|l| {
