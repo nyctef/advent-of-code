@@ -21,7 +21,7 @@ fn solve_for(input: &str) -> (isize, u64) {
 
     let mut n_s: isize = 0;
     let mut ne_sw: isize = 0;
-    let mut se_nw: isize = 0;
+    let mut nw_se: isize = 0;
 
     for step in input.trim().split(",") {
         match step {
@@ -29,14 +29,30 @@ fn solve_for(input: &str) -> (isize, u64) {
             "s" => n_s -= 1,
             "ne" => ne_sw += 1,
             "sw" => ne_sw -= 1,
-            "se" => se_nw += 1,
-            "nw" => se_nw -= 1,
+            "nw" => nw_se += 1,
+            "se" => nw_se -= 1,
             _ => panic!("unrecognised direction {step}"),
         }
     }
 
-    dbg!(&n_s, ne_sw, se_nw);
-    part1 = n_s.abs() + ne_sw.abs() + se_nw.abs();
+    if nw_se > 0 && ne_sw > 0 {
+        let common = nw_se.min(ne_sw);
+        nw_se -= common;
+        ne_sw -= common;
+        n_s += common;
+    }
+
+    if nw_se < 0 && ne_sw < 0 {
+        let common = nw_se.max(ne_sw);
+        nw_se -= common;
+        ne_sw -= common;
+        n_s += common;
+    }
+
+
+
+    dbg!(&n_s, ne_sw, nw_se);
+    part1 = n_s.abs() + ne_sw.abs() + nw_se.abs();
 
     (part1, part2)
 }
