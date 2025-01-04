@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use aoc_2017_rust::util::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
@@ -14,11 +16,8 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str, max: u8) -> (u16, u64) {
-    let mut part1 = 0;
-    let mut part2 = 0;
-
-    let mut nums = (0..=max).collect_vec();
+fn solve_for(input: &str, max: u8) -> (u16, String) {
+    let nums = (0..=max).collect_vec();
     let lengths = all_numbers_usize(input.trim());
 
     let mut knot = Knot::new(nums);
@@ -34,7 +33,28 @@ fn solve_for(input: &str, max: u8) -> (u16, u64) {
         skip_size += 1;
     }
 
-    part1 = knot.check();
+    let part1 = knot.check();
+
+    let nums = (0..=max).collect_vec();
+    let mut lengths = Vec::from(input.trim());
+    lengths.extend_from_slice(&[17, 31, 73, 47, 23]);
+
+    let mut knot = Knot::new(nums);
+    let mut skip_size = 0;
+    let mut pos = 0;
+
+    for _round in 0..64 {
+        for &l in &lengths {
+            let mut slice = knot.slice(pos, l.into());
+            slice.reverse();
+
+            pos += l as usize;
+            pos += skip_size;
+            skip_size += 1;
+        }
+    }
+
+    let part2 = knot.dense_hash();
 
     (part1, part2)
 }
@@ -51,6 +71,20 @@ impl Knot {
 
     fn slice(&mut self, start: usize, length: usize) -> RingSliceMut {
         RingSliceMut::new(self, start, length)
+    }
+
+    fn dense_hash(self) -> String {
+        let batches = self.items.into_iter().chunks(16);
+
+        let mut hash = String::new();
+        for batch in &batches {
+            let mut x = 0;
+            for b in batch {
+                x = x ^ b;
+            }
+            hash.write_fmt(format_args!("{:02x}", x)).unwrap();
+        }
+        hash
     }
 }
 
