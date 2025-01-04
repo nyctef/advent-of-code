@@ -27,20 +27,32 @@ fn solve_for(input: &str) -> (usize, u64) {
         connections.insert(source, dests);
     }
 
-    let mut seen = FxHashSet::default();
-    let mut search = VecDeque::default();
-    search.push_front("0");
-    while let Some(current) = search.pop_front() {
-        if !seen.insert(current) {
-            continue;
+    let mut remaining = FxHashSet::from_iter(connections.keys());
+
+    loop {
+        if remaining.len() == 0 {
+            break;
+        }
+        let next_start = remaining.iter().cloned().next().unwrap();
+        let mut seen = FxHashSet::default();
+        let mut search = VecDeque::default();
+        search.push_front(next_start);
+        while let Some(current) = search.pop_front() {
+            if !seen.insert(current) {
+                continue;
+            }
+            remaining.remove(&current);
+
+            for connected in &connections[current] {
+                search.push_back(connected);
+            }
         }
 
-        for connected in &connections[current] {
-            search.push_back(connected);
+        if seen.contains(&"0") {
+            part1 = seen.len();
         }
+        part2 += 1;
     }
-
-    part1 = seen.len();
 
     (part1, part2)
 }
@@ -59,5 +71,5 @@ fn test_example1() {
     let (part1, part2) = solve_for(input);
 
     assert_eq!(part1, 6);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 2);
 }
