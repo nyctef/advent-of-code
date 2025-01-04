@@ -13,7 +13,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve_for(input: &str) -> (u32, u64) {
+fn solve_for(input: &str) -> (i64, i64) {
     let mut part1 = 0;
     let mut part2 = 0;
 
@@ -21,22 +21,31 @@ fn solve_for(input: &str) -> (u32, u64) {
         .trim()
         .lines()
         .map(|l| {
-            let nums = all_numbers(l);
+            let nums = all_numbers_i64(l);
             // depth, length
             (nums[0], nums[1])
         })
         .collect_vec();
 
-   for &(depth, length) in &scanners {
+    for &(depth, length) in &scanners {
+        let cycle = (length - 1) * 2;
+        if depth % cycle == 0 {
+            part1 += length * depth;
+        }
+    }
 
-       let cycle = (length - 1) * 2;
-       if depth % cycle == 0 {
-           eprintln!("caught at {depth} with cycle {length}");
-           part1 += length * depth;
-
-       }
-
-   }
+    'next_delay: for delay in 1.. {
+        for &(depth, length) in &scanners {
+            let cycle = (length - 1) * 2;
+            let time = depth + delay;
+            if time % cycle == 0 {
+                // caught!
+                continue 'next_delay;
+            }
+        }
+        part2 = delay;
+        break;
+    }
 
     (part1, part2)
 }
@@ -52,5 +61,5 @@ fn test_example1() {
     let (part1, part2) = solve_for(input);
 
     assert_eq!(part1, 24);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 10);
 }
