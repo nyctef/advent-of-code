@@ -1,43 +1,31 @@
-use std::{fmt::Write, ops::BitXor};
-
 use aoc_2017_rust::util::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
+use std::ops::BitXor;
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
 
-    let input = get_input(2017, 10)?;
+    let input = get_input(2017, 14)?;
 
-    let (part1, part2) = solve_for(&input, 256);
+    let (part1, part2) = solve_for(&input);
 
     println!("Part 1: {} | Part 2: {}", part1, part2);
     Ok(())
 }
 
-fn solve_for(input: &str, knot_size: usize) -> (u16, String) {
-    let lengths = all_numbers_usize(input.trim());
+fn solve_for(input: &str) -> (u32, u64) {
+    let mut part1 = 0;
+    let mut part2 = 0;
+    let input = input.trim();
 
-    let mut knot = Knot::with_size(knot_size);
-    let mut skip_size = 0;
-    let mut pos = 0;
-
-    #[allow(clippy::explicit_counter_loop)]
-    for l in lengths {
-        let mut slice = knot.slice(pos, l);
-        slice.reverse();
-
-        pos += l;
-        pos += skip_size;
-        skip_size += 1;
+    for i in 0..128 {
+        let hash_input = format!("{input}-{i}");
+        let hash_input = Vec::from(hash_input);
+        let hash = Knot::run_full(&hash_input);
+        part1 += hash.count_ones();
     }
-
-    let part1 = knot.check();
-
-    let input_as_bytes = Vec::from(input.trim());
-
-    let part2 = Knot::run_full(&input_as_bytes);
 
     (part1, part2)
 }
@@ -53,8 +41,9 @@ impl Default for Knot {
     }
 }
 
+#[allow(dead_code)]
 impl Knot {
-    fn run_full(input: &[u8]) -> String {
+    fn run_full(input: &[u8]) -> u128 {
         let mut knot = Knot::default();
         let mut skip_size = 0;
         let mut pos = 0;
@@ -72,12 +61,11 @@ impl Knot {
             }
         }
 
-        let part2 = knot.dense_hash();
-        part2
+        knot.dense_hash()
     }
     fn with_size(size: usize) -> Self {
         Knot {
-            items: (0..size).map(|x| x as u8).collect_vec()
+            items: (0..size).map(|x| x as u8).collect_vec(),
         }
     }
 
@@ -89,16 +77,15 @@ impl Knot {
         RingSliceMut::new(self, start, length)
     }
 
-    fn dense_hash(self) -> String {
+    fn dense_hash(self) -> u128 {
         let batches = self.items.into_iter().chunks(16);
 
-        batches
-            .into_iter()
-            .fold(String::with_capacity(32), |mut a, n| {
-                let x = n.fold(0, BitXor::bitxor);
-                a.write_fmt(format_args!("{:02x}", x)).unwrap();
-                a
-            })
+        batches.into_iter().fold(0_u128, |mut a, n| {
+            let x = n.fold(0, BitXor::bitxor);
+            a <<= 8;
+            a |= Into::<u128>::into(x);
+            a
+        })
     }
 }
 
@@ -128,10 +115,9 @@ impl RingSliceMut<'_> {
 
 #[test]
 fn test_example1() {
-    let input = r###"
-3, 4, 1, 5
-"###;
-    let (part1, _) = solve_for(input, 5);
+    let input = "flqrgnkx";
+    let (part1, part2) = solve_for(input);
 
-    assert_eq!(part1, 12);
+    assert_eq!(part1, 8108);
+    assert_eq!(part2, 0);
 }
