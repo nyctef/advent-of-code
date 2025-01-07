@@ -2,7 +2,7 @@ use aoc_2017_rust::util::*;
 use color_eyre::eyre::Result;
 use derive_more::Constructor;
 use itertools::Itertools;
-use std::ops::BitXor;
+use std::{collections::VecDeque, ops::BitXor};
 
 pub fn main() -> Result<()> {
     color_eyre::install()?;
@@ -16,15 +16,54 @@ pub fn main() -> Result<()> {
 }
 
 fn solve_for(input: &str) -> (u32, u64) {
-    let mut part1 = 0;
-    let mut part2 = 0;
     let input = input.trim();
 
-    for i in 0..128 {
-        let hash_input = format!("{input}-{i}");
-        let hash_input = Vec::from(hash_input);
-        let hash = Knot::run_full(&hash_input);
-        part1 += hash.count_ones();
+    let mut field = (0..128)
+        .map(|i| {
+            let hash_input = Vec::from(format!("{input}-{i}"));
+            Knot::run_full(&hash_input)
+        })
+        .collect_vec();
+
+    let part1 = field.iter().map(|l| l.count_ones()).sum();
+
+    let mut part2 = 0;
+
+    while let Some((i, line)) = field.iter().find_position(|&&l| l != 0) {
+        let col = line.trailing_zeros();
+        let pos = (i, col);
+
+        let mut search = VecDeque::new();
+        // eprintln!("starting at {pos:?}");
+        search.push_front(pos);
+        while let Some((r, c)) = search.pop_back() {
+            // r: which line (u128) in `field` we're looking at
+            // c: which bit in that u128 we're inspecting, counting from the right (LSB)
+            //    so   0b0000....00000X is where c=0
+            //    and  0b1000....000000 is where c=127
+            // eprintln!("now at {:?}", (r, c));
+            if field[r] & (1 << c) == 0 {
+                // we probably added this cell to the queue via two different paths (eg up-right
+                // and right-up)
+                continue;
+            }
+            // toggle this bit off
+            field[r] ^= 1 << c;
+
+            if r > 0 && field[r - 1] & (1 << c) > 0 {
+                search.push_back((r - 1, c));
+            }
+            if r < field.len() - 1 && field[r + 1] & (1 << c) > 0 {
+                search.push_back((r + 1, c));
+            }
+            if c > 0 && field[r] & (1 << (c - 1)) > 0 {
+                search.push_back((r, c - 1));
+            }
+            if c < 127 && field[r] & (1 << (c + 1)) > 0 {
+                search.push_back((r, c + 1));
+            }
+        }
+        part2 += 1;
     }
 
     (part1, part2)
@@ -119,5 +158,5 @@ fn test_example1() {
     let (part1, part2) = solve_for(input);
 
     assert_eq!(part1, 8108);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 1242);
 }
