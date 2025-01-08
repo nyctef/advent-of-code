@@ -62,5 +62,5 @@ se,sw,se,sw,sw
     let (part1, part2) = solve_for(input);
 
     assert_eq!(part1, 3);
-    assert_eq!(part2, 0);
+    assert_eq!(part2, 3);
 }
