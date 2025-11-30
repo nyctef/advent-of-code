@@ -2,6 +2,7 @@ module Main where
 
 import qualified Day01
 
+import qualified Data.Map as Map
 import System.Environment (getArgs)
 import Data.Time.Calendar (toGregorian)
 import Data.Time.Clock (getCurrentTime, utctDay)
@@ -29,10 +30,18 @@ main = do
 
     runDay day
 
+-- Dispatch map for all days
+solvers :: Map.Map Int (IO ())
+solvers = Map.fromList
+  [ (1, Day01.solve)
+  -- Add more days here as you implement them:
+  -- , (2, Day02.solve)
+  -- , (3, Day03.solve)
+  ]
+
 runDay :: Int -> IO ()
-runDay 1 = do
-    putStrLn "Day 1:"
-    Day01.solve
 runDay day = do
     putStrLn $ "Day " ++ show day ++ ":"
-    putStrLn "  Not yet implemented"
+    case Map.lookup day solvers of
+        Just solver -> solver
+        Nothing -> putStrLn "  Not yet implemented"
