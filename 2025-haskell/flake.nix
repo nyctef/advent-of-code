@@ -1,0 +1,53 @@
+{
+  description = "Advent of Code 2025 - Haskell";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+
+        haskellPackages = pkgs.haskellPackages;
+
+        packageName = "aoc2025";
+      in
+      {
+        packages.${packageName} = haskellPackages.callCabal2nix packageName ./. { };
+
+        packages.default = self.packages.${system}.${packageName};
+
+        devShells.default = pkgs.mkShell {
+          buildInputs = with haskellPackages; [
+            ghc
+            cabal-install
+            haskell-language-server
+            ghcid
+
+            # Useful tools
+            pkgs.zlib
+          ];
+
+          inputsFrom = [
+            self.packages.${system}.${packageName}.env
+          ];
+
+          shellHook = ''
+            echo "Advent of Code 2025 - Haskell Development Environment"
+            echo "GHC version: $(ghc --version)"
+            echo "Cabal version: $(cabal --version | head -n1)"
+            echo ""
+            echo "Quick start:"
+            echo "  cabal build              - Build the project"
+            echo "  cabal run aoc2025        - Run the main executable"
+            echo "  cabal test               - Run tests"
+            echo "  cabal repl               - Start GHCi REPL"
+            echo "  ghcid                    - Auto-reload on file changes"
+          '';
+        };
+      }
+    );
+}
