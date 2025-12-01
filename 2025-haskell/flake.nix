@@ -11,7 +11,7 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        haskellPackages = pkgs.haskellPackages;
+        haskellPackages = pkgs.haskell.packages.ghc9122;
 
         packageName = "aoc2025";
       in
