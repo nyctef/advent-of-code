@@ -38,6 +38,7 @@
             cabal-install
             haskell-language-server
             ghcid
+            ormolu
 
             # Useful tools
             pkgs.zlib
@@ -58,6 +59,7 @@
             echo "  cabal test               - Run tests"
             echo "  cabal repl               - Start GHCi REPL"
             echo "  ghcid                    - Auto-reload on file changes"
+            echo "  ./format.sh              - Format all Haskell files with ormolu"
           '';
         };
       }
