@@ -62,7 +62,7 @@ part2 input =
       steps = scanl rotate (50 :: Int, 0) <$> diffs
       numZeros = sum . (map snd) <$> steps
 
-      result = trace (show steps) (fromRight (-1) numZeros)
+      result = fromRight (-1) numZeros
    in result
 
 solve :: IO ()
