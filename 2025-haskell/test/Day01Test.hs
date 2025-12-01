@@ -20,9 +20,8 @@ test_part1 = testCase "Day 1 - Part 1" $ do
   L99
   R14
   L82
-
   """ @?= 3
 
 test_part2 :: TestTree
-test_part2 = testCase "Day 1 - Part 2" $ do
-  Day01.part2 "" @?= 0
+test_part2 = testGroup  "Day 1 - Part 2" [ testCase "example1" $ do
+  Day01.part2 "" @?= 0 ]
