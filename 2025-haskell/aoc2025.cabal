@@ -45,8 +45,13 @@ test-suite aoc2025-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Main.hs
+    -- TODO: is there a good way to avoid listing out all these files?
+    other-modules:
+        Day01Test
     build-depends:
         base >=4.18 && <5,
         aoc2025,
         tasty,
-        tasty-hunit
+        tasty-hunit,
+        tasty-discover
+    build-tool-depends: tasty-discover:tasty-discover

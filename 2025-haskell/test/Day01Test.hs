@@ -1,16 +1,15 @@
 {-# LANGUAGE MultilineStrings #-}
 
-module Day01Test (tests) where
+module Day01Test where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Day01
 
-tests :: TestTree
-tests = testGroup "Day 1"
-  [ testCase "Part 1 - placeholder" $ do
-      Day01.part1 """
+test_part1 :: TestTree
+test_part1 = testCase "Day 1 - Part 1 - placeholder" $ do
+  Day01.part1 """
 L68
 L30
 R48
@@ -21,8 +20,8 @@ L1
 L99
 R14
 L82
-      """ @?= 3
+  """ @?= 3
 
-  , testCase "Part 2 - placeholder" $ do
-      Day01.part2 "" @?= 0
-  ]
+test_part2 :: TestTree
+test_part2 = testCase "Day 1 - Part 2 - placeholder" $ do
+  Day01.part2 "" @?= 0
