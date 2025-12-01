@@ -53,10 +53,10 @@ part2 input =
       parsed = (parse instructions "" text)
       diffs = (map toInt) <$> parsed
       rotate :: (Int, Int) -> Int -> (Int, Int)
-      rotate (x, _) y =
-        let hack = if x == 0 && (x + y) < 0 then -1 else 0
-            newPos = (x + y) `mod` 100
-            zeros = if (x + y) == 0 then 1 else (abs $ (x + y) `div` 100)
+      rotate (pos, _) diff =
+        let hack = if pos == 0 && (pos + diff) < 0 then -1 else 0
+            newPos = (pos + diff) `mod` 100
+            zeros = if (pos + diff) == 0 then 1 else (abs $ (pos + diff) `div` 100)
             res = zeros + hack
          in (newPos, res)
       steps = scanl rotate (50 :: Int, 0) <$> diffs

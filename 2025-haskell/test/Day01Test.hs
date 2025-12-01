@@ -34,6 +34,8 @@ test_part2 =
         Day01.part2 example1 @?= 6,
       testCase "example2" $
         Day01.part2 "R1000" @?= 10,
+      testCase "example2b" $
+        Day01.part2 "L1000" @?= 10,
       testCase "example3" $
         Day01.part2 "L70" @?= 1,
       testCase "example4" $ Day01.part2 "L50" @?= 1,
