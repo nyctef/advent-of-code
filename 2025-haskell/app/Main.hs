@@ -24,10 +24,6 @@ main = do
                 putStrLn "Usage: aoc2025 [DAY]"
                 return 1  -- Default to day 1 on error
 
-    putStrLn "Advent of Code 2025"
-    putStrLn "==================="
-    putStrLn ""
-
     runDay day
 
 -- Dispatch map for all days

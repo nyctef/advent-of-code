@@ -20,6 +20,7 @@ test_part1 = testCase "Day 1 - Part 1" $ do
   L99
   R14
   L82
+
   """ @?= 3
 
 test_part2 :: TestTree
