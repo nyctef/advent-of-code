@@ -48,7 +48,22 @@ part1 input =
    in result
 
 part2 :: String -> Int
-part2 input = 0 -- TODO: implement
+part2 input =
+  let text = strip input
+      parsed = (parse instructions "" text)
+      diffs = (map toInt) <$> parsed
+      rotate :: (Int, Int) -> Int -> (Int, Int)
+      rotate (x, _) y =
+        let hack = if x == 0 && (x + y) < 0 then -1 else 0
+            newPos = (x + y) `mod` 100
+            zeros = if (x + y) == 0 then 1 else (abs $ (x + y) `div` 100)
+            res = zeros + hack
+         in (newPos, res)
+      steps = scanl rotate (50 :: Int, 0) <$> diffs
+      numZeros = sum . (map snd) <$> steps
+
+      result = trace (show steps) (fromRight (-1) numZeros)
+   in result
 
 solve :: IO ()
 solve = do
