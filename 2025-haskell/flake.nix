@@ -16,7 +16,19 @@
         packageName = "aoc2025";
       in
       {
-        packages.${packageName} = haskellPackages.callCabal2nix packageName ./. { };
+        packages.${packageName} =
+          pkgs.haskell.lib.overrideCabal
+            (haskellPackages.callCabal2nix packageName ./. { })
+            (oldAttrs: {
+              # Limit GHC to 2 parallel jobs instead of default
+              configureFlags = (oldAttrs.configureFlags or []) ++ [
+                "--ghc-option=-j2"
+                "--ghc-option=+RTS"
+                "--ghc-option=-A128M"  # Allocation area
+                "--ghc-option=-M2G"    # Max heap size per process
+                "--ghc-option=-RTS"
+              ];
+            });
 
         packages.default = self.packages.${system}.${packageName};
 
