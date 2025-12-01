@@ -38,6 +38,9 @@ test_part2 =
         Day01.part2 "L1000" @?= 10,
       testCase "example3" $
         Day01.part2 "L70" @?= 1,
-      testCase "example4" $ Day01.part2 "L50" @?= 1,
+      testCase "example4b" $ Day01.part2 "R50" @?= 1,
+      testCase "example4b" $ Day01.part2 "R150" @?= 2,
+      testCase "example4c" $ Day01.part2 "L50" @?= 1,
+      testCase "example4d" $ Day01.part2 "L150" @?= 2,
       testCase "example5" $ Day01.part2 "L50\nL5" @?= 1
     ]
