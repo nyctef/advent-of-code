@@ -21,6 +21,7 @@
             (haskellPackages.callCabal2nix packageName ./. { })
             (oldAttrs: {
               # Limit GHC to 2 parallel jobs instead of default
+              # this was an attempt to fix GHC getting OOM-killed in WSL on some machines
               configureFlags = (oldAttrs.configureFlags or []) ++ [
                 "--ghc-option=-j2"
                 "--ghc-option=+RTS"
@@ -40,7 +41,6 @@
             ghcid
             ormolu
 
-            # Useful tools
             pkgs.zlib
             pkgs.pkg-config
             pkgs.pcre
@@ -51,16 +51,11 @@
           ];
 
           shellHook = ''
-            echo "Advent of Code 2025 - Haskell Development Environment"
-            echo "GHC version: $(ghc --version)"
-            echo "Cabal version: $(cabal --version | head -n1)"
-            echo ""
             echo "Quick start:"
-            echo "  cabal build              - Build the project"
-            echo "  cabal run aoc2025        - Run the main executable"
-            echo "  cabal test               - Run tests"
-            echo "  cabal repl               - Start GHCi REPL"
-            echo "  ghcid                    - Auto-reload on file changes"
+            echo "  cabal run                - Run puzzles with actual inputs"
+            echo "  cabal test               - Run tests with example inputs"
+            echo "  cabal repl               - Start a repl where per-day code can be imported"
+            echo "  ghcid                    - Show build output and auto-reload on file changes"
             echo "  ./format.sh              - Format all Haskell files with ormolu"
           '';
         };
