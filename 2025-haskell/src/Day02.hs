@@ -55,7 +55,7 @@ countInRange f r = toInteger $ sum $ filter f [lo r .. hi r]
 
 part1 :: Text -> Integer
 part1 input =
-  let text = T.filter (not . isSpace) $ T.strip input
+  let text = T.filter (not . isSpace) input
       parsed = parse ranges "" text
       invalids = map (countInRange isInvalid1) <$> parsed
       total = sum <$> invalids
@@ -67,7 +67,7 @@ part1 input =
 
 part2 :: Text -> Integer
 part2 input =
-  let text = T.filter (not . isSpace) $ T.strip input
+  let text = T.filter (not . isSpace) input
       parsed = parse ranges "" text
       invalids = map (countInRange isInvalid2) <$> parsed
       total = sum <$> invalids
