@@ -40,6 +40,7 @@
             haskell-language-server
             ghcid
             ormolu
+            hlint
 
             pkgs.zlib
             pkgs.pkg-config
@@ -57,6 +58,7 @@
             echo "  cabal repl               - Start a repl where per-day code can be imported"
             echo "  ghcid                    - Show build output and auto-reload on file changes"
             echo "  ./format.sh              - Format all Haskell files with ormolu"
+            echo "  ./lint.sh                - Lint all Haskell files with hlint"
           '';
         };
       }
