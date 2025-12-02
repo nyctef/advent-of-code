@@ -42,6 +42,8 @@
 
             # Useful tools
             pkgs.zlib
+            pkgs.pkg-config
+            pkgs.pcre
           ];
 
           inputsFrom = [

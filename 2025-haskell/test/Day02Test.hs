@@ -13,13 +13,26 @@ example1 =
   824824821-824824827,2121212118-2121212124
   """
 
-test_isInvalid :: TestTree
-test_isInvalid = testGroup "isInvalid" [
-  testCase "1" $ Day02.isInvalid 1 @?= False,
-  testCase "11" $ Day02.isInvalid 11 @?= True,
-  testCase "111" $ Day02.isInvalid 111 @?= False,
+test_isInvalid1 :: TestTree
+test_isInvalid1 = testGroup "isInvalid1" [
+  testCase "1" $ Day02.isInvalid1 1 @?= False,
+  testCase "11" $ Day02.isInvalid1 11 @?= True,
+  testCase "111" $ Day02.isInvalid1 111 @?= False,
 
-  testCase "12" $ Day02.isInvalid 12 @?= False
+  testCase "12" $ Day02.isInvalid1 12 @?= False,
+  testCase "121212" $ Day02.isInvalid1 121212 @?= False
+
+  ]
+
+test_isInvalid2 :: TestTree
+test_isInvalid2 = testGroup "isInvalid2" [
+  testCase "1" $ Day02.isInvalid2 1 @?= False,
+  testCase "11" $ Day02.isInvalid2 11 @?= True,
+  testCase "111" $ Day02.isInvalid2 111 @?= True,
+  testCase "112" $ Day02.isInvalid2 112 @?= False,
+
+  testCase "12" $ Day02.isInvalid2 12 @?= False,
+  testCase "121212" $ Day02.isInvalid2 121212 @?= True
 
   ]
 
@@ -34,6 +47,6 @@ test_part2 =
   testGroup
     "Day 1 - Part 2"
     [ testCase "example1" $
-        Day02.part2 example1 @?= 6
+        Day02.part2 example1 @?= 4174379265
     ]
 

@@ -1,4 +1,4 @@
-module Day02 (solve, part1, part2, isInvalid) where
+module Day02 (solve, part1, part2, isInvalid1, isInvalid2) where
 
 import Data.Char (isSpace)
 import Data.Either
@@ -7,6 +7,7 @@ import InputFetcher (getInput)
 import Text.Parsec hiding (getInput)
 import Text.Parsec.String (Parser)
 import GHC.Num (integerLogBase)
+import Text.Regex.PCRE
 
 -- TODO: switch to Text to make stuff like this more efficient
 strip :: String -> String
@@ -39,8 +40,8 @@ numDigits i = toInteger $ (integerLogBase 10 i) + 1
 removeWs :: String -> String
 removeWs x = filter (not . isSpace) x
 
-isInvalid :: Integer -> Bool
-isInvalid i = let
+isInvalid1 :: Integer -> Bool
+isInvalid1 i = let
     d = numDigits i
     divisor = 10 ^ (d `div` 2)
     lowPart = i `mod` divisor
@@ -49,15 +50,25 @@ isInvalid i = let
           (d `mod` 2 == 0 && lowPart == highPart)
   in result
 
-countInvalid :: Range -> Integer
-countInvalid r = toInteger $ sum $ (filter isInvalid) $ [lo r..hi r] 
+isInvalid2 :: Integer -> Bool
+isInvalid2 i = let
+    asText = show i
+    result = asText =~ "^(\\d+)\\1+$"
+
+  in result
+
+countInvalid1 :: Range -> Integer
+countInvalid1 r = toInteger $ sum $ (filter isInvalid1) $ [lo r..hi r] 
+
+countInvalid2 :: Range -> Integer
+countInvalid2 r = toInteger $ sum $ (filter isInvalid2) $ [lo r..hi r] 
 
 
 part1 :: String -> Integer
 part1 input =
   let text = removeWs $ strip input
       parsed = (parse ranges "" text)
-      invalids = (map countInvalid) <$> parsed
+      invalids = (map countInvalid1) <$> parsed
       total = (sum <$> invalids)
 
 
@@ -65,8 +76,17 @@ part1 input =
         (fromRight (-1) total)
    in result
 
-part2 :: String -> Int
-part2 input = 0 -- TODO
+part2 :: String -> Integer
+part2 input = 
+  let text = removeWs $ strip input
+      parsed = (parse ranges "" text)
+      invalids = (map countInvalid2) <$> parsed
+      total = (sum <$> invalids)
+
+
+      result = -- trace (show parsed)
+        (fromRight (-1) total)
+   in result
 
 solve :: IO ()
 solve = do
