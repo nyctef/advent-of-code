@@ -4,6 +4,7 @@ import qualified Data.Map as Map
 import Data.Time.Calendar (toGregorian)
 import Data.Time.Clock (getCurrentTime, utctDay)
 import qualified Day01
+import qualified Day02
 import System.Environment (getArgs)
 import Text.Read (readMaybe)
 
@@ -28,10 +29,9 @@ main = do
 solvers :: Map.Map Int (IO ())
 solvers =
   Map.fromList
-    [ (1, Day01.solve)
-    -- Add more days here as you implement them:
-    -- , (2, Day02.solve)
-    -- , (3, Day03.solve)
+    [
+    (1, Day01.solve),
+    (2, Day02.solve)
     ]
 
 runDay :: Int -> IO ()

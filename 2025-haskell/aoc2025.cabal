@@ -14,6 +14,7 @@ library
     import:           warnings
     exposed-modules:
         Day01
+        Day02
         InputFetcher
     build-depends:
         base >=4.18 && <5,
@@ -49,6 +50,7 @@ test-suite aoc2025-test
     -- TODO: is there a good way to avoid listing out all these files?
     other-modules:
         Day01Test
+        Day02Test
     build-depends:
         base >=4.18 && <5,
         aoc2025,
