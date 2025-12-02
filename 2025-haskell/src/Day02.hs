@@ -57,11 +57,16 @@ isInvalid2 i = let
 
   in result
 
+
+
+countInRange :: (Integer -> Bool) -> Range -> Integer
+countInRange f r = toInteger $ sum $ (filter f) $ [lo r..hi r]
+
 countInvalid1 :: Range -> Integer
-countInvalid1 r = toInteger $ sum $ (filter isInvalid1) $ [lo r..hi r] 
+countInvalid1  = countInRange isInvalid1 
 
 countInvalid2 :: Range -> Integer
-countInvalid2 r = toInteger $ sum $ (filter isInvalid2) $ [lo r..hi r] 
+countInvalid2  = countInRange isInvalid2 
 
 
 part1 :: String -> Integer
