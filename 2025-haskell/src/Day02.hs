@@ -45,10 +45,7 @@ isInvalid1 i =
    in result
 
 isInvalid2 :: Integer -> Bool
-isInvalid2 i =
-  let asText = show i :: String
-      result = asText =~ ("^(\\d+)\\1+$" :: String) :: Bool
-   in result
+isInvalid2 i = show i =~ ("^(\\d+)\\1+$" :: String)
 
 countInRange :: (Integer -> Bool) -> Range -> Integer
 countInRange f r = toInteger $ sum $ filter f [lo r .. hi r]
