@@ -1,19 +1,15 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Day01 (solve, part1, part2) where
 
-import Data.Char (isSpace)
 import Data.Either
-import Debug.Trace (trace)
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import InputFetcher (getInput)
 import Text.Parsec hiding (getInput)
-import Text.Parsec.String (Parser)
+import Text.Parsec.Text (Parser)
 
--- TODO: switch to Text to make stuff like this more efficient
-strip :: String -> String
-strip = reverse . trimLeading . reverse
-  where
-    trimLeading [] = []
-    trimLeading (x : xs) =
-      if isSpace x then trimLeading xs else x : xs
 
 data Dir = L | R deriving (Show, Eq)
 
@@ -36,9 +32,9 @@ toInt :: Instruction -> Int
 toInt (Instruction L n) = -n
 toInt (Instruction R n) = n
 
-part1 :: String -> Int
+part1 :: Text -> Int
 part1 input =
-  let text = strip input
+  let text = T.strip input
       parsed = (parse instructions "" text)
       diffs = (map toInt) <$> parsed
       rotate x y = (x + y) `mod` 100
@@ -47,9 +43,9 @@ part1 input =
       result = fromRight (-1) numZeros
    in result
 
-part2 :: String -> Int
+part2 :: Text -> Int
 part2 input =
-  let text = strip input
+  let text = T.strip input
       parsed = (parse instructions "" text)
       diffs = (map toInt) <$> parsed
       rotate :: (Int, Int) -> Int -> (Int, Int)
@@ -65,8 +61,11 @@ part2 input =
       result = fromRight (-1) numZeros
    in result
 
+tshow :: Show a => a -> Text
+tshow = T.pack . show
+
 solve :: IO ()
 solve = do
   input <- getInput 2025 1
-  putStrLn $ "  Part 1: " ++ show (part1 input)
-  putStrLn $ "  Part 2: " ++ show (part2 input)
+  TIO.putStrLn $ "  Part 1: " <> tshow (part1 input)
+  TIO.putStrLn $ "  Part 2: " <> tshow (part2 input)

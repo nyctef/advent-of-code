@@ -1,11 +1,14 @@
 {-# LANGUAGE MultilineStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Day02Test where
 
+import Data.Text (Text)
 import qualified Day02
 import Test.Tasty
 import Test.Tasty.HUnit
 
+example1 :: Text
 example1 =
   """
   11-22,95-115,998-1012,1188511880-1188511890,222220-222224,

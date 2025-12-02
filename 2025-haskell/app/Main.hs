@@ -1,5 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import qualified Data.Map as Map
 import Data.Time.Calendar (toGregorian)
 import Data.Time.Clock (getCurrentTime, utctDay)
@@ -20,10 +25,13 @@ main = do
     (dayStr : _) -> case readMaybe dayStr of
       Just d | d >= 1 && d <= 12 -> return d
       _ -> do
-        putStrLn "Error: Day must be a number between 1 and 12"
-        putStrLn "Usage: aoc2025 [DAY]"
+        TIO.putStrLn "Error: Day must be a number between 1 and 12"
+        TIO.putStrLn "Usage: aoc2025 [DAY]"
         return 1 -- Default to day 1 on error
   runDay day
+
+tshow :: Show a => a -> Text
+tshow = T.pack . show
 
 -- Dispatch map for all days
 solvers :: Map.Map Int (IO ())
@@ -35,7 +43,7 @@ solvers =
 
 runDay :: Int -> IO ()
 runDay day = do
-  putStrLn $ "Day " ++ show day ++ ":"
+  TIO.putStrLn $ "Day " <> tshow day <> ":"
   case Map.lookup day solvers of
     Just solver -> solver
-    Nothing -> putStrLn "  Not yet implemented"
+    Nothing -> TIO.putStrLn "  Not yet implemented"

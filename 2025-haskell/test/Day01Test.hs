@@ -1,11 +1,14 @@
 {-# LANGUAGE MultilineStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Day01Test where
 
+import Data.Text (Text)
 import qualified Day01
 import Test.Tasty
 import Test.Tasty.HUnit
 
+example1 :: Text
 example1 =
   """
   L68
