@@ -62,18 +62,12 @@ isInvalid2 i = let
 countInRange :: (Integer -> Bool) -> Range -> Integer
 countInRange f r = toInteger $ sum $ (filter f) $ [lo r..hi r]
 
-countInvalid1 :: Range -> Integer
-countInvalid1  = countInRange isInvalid1 
-
-countInvalid2 :: Range -> Integer
-countInvalid2  = countInRange isInvalid2 
-
 
 part1 :: String -> Integer
 part1 input =
   let text = removeWs $ strip input
       parsed = (parse ranges "" text)
-      invalids = (map countInvalid1) <$> parsed
+      invalids = (map $ countInRange isInvalid1) <$> parsed
       total = (sum <$> invalids)
 
 
@@ -85,7 +79,7 @@ part2 :: String -> Integer
 part2 input = 
   let text = removeWs $ strip input
       parsed = (parse ranges "" text)
-      invalids = (map countInvalid2) <$> parsed
+      invalids = (map $ countInRange isInvalid2) <$> parsed
       total = (sum <$> invalids)
 
 
