@@ -31,13 +31,13 @@ range = do
   return $ Range (read n1) (read n2)
 
 ranges :: Parser [Range]
-ranges = range `sepBy` (char ',')
+ranges = range `sepBy` char ','
 
 numDigits :: Integer -> Integer
-numDigits i = toInteger $ (integerLogBase 10 i) + 1
+numDigits i = toInteger $ integerLogBase 10 i + 1
 
 removeWs :: String -> String
-removeWs x = filter (not . isSpace) x
+removeWs = filter (not . isSpace)
 
 isInvalid1 :: Integer -> Bool
 isInvalid1 i =
@@ -47,7 +47,7 @@ isInvalid1 i =
       highPart = i `div` divisor
       result =
         -- trace (show divisor ++ " " ++ show lowPart ++ " " ++ show highPart)
-        (d `mod` 2 == 0 && lowPart == highPart)
+        (even d && lowPart == highPart)
    in result
 
 isInvalid2 :: Integer -> Bool
@@ -57,30 +57,30 @@ isInvalid2 i =
    in result
 
 countInRange :: (Integer -> Bool) -> Range -> Integer
-countInRange f r = toInteger $ sum $ (filter f) $ [lo r .. hi r]
+countInRange f r = toInteger $ sum $ filter f [lo r .. hi r]
 
 part1 :: String -> Integer
 part1 input =
   let text = removeWs $ strip input
-      parsed = (parse ranges "" text)
-      invalids = (map $ countInRange isInvalid1) <$> parsed
-      total = (sum <$> invalids)
+      parsed = parse ranges "" text
+      invalids = map $ countInRange isInvalid1 <$> parsed
+      total = sum <$> invalids
 
       result =
         -- trace (show parsed)
-        (fromRight (-1) total)
+        fromRight (-1) total
    in result
 
 part2 :: String -> Integer
 part2 input =
   let text = removeWs $ strip input
-      parsed = (parse ranges "" text)
-      invalids = (map $ countInRange isInvalid2) <$> parsed
-      total = (sum <$> invalids)
+      parsed = parse ranges "" text
+      invalids = map $ countInRange isInvalid2 <$> parsed
+      total = sum <$> invalids
 
       result =
         -- trace (show parsed)
-        (fromRight (-1) total)
+        fromRight (-1) total
    in result
 
 solve :: IO ()
