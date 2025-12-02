@@ -29,9 +29,8 @@ main = do
 solvers :: Map.Map Int (IO ())
 solvers =
   Map.fromList
-    [
-    (1, Day01.solve),
-    (2, Day02.solve)
+    [ (1, Day01.solve),
+      (2, Day02.solve)
     ]
 
 runDay :: Int -> IO ()

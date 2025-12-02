@@ -3,10 +3,10 @@ module Day02 (solve, part1, part2, isInvalid1, isInvalid2) where
 import Data.Char (isSpace)
 import Data.Either
 import Debug.Trace (trace)
+import GHC.Num (integerLogBase)
 import InputFetcher (getInput)
 import Text.Parsec hiding (getInput)
 import Text.Parsec.String (Parser)
-import GHC.Num (integerLogBase)
 import Text.Regex.PCRE
 
 -- TODO: switch to Text to make stuff like this more efficient
@@ -33,35 +33,31 @@ range = do
 ranges :: Parser [Range]
 ranges = range `sepBy` (char ',')
 
-
 numDigits :: Integer -> Integer
-numDigits i = toInteger $ (integerLogBase 10 i) + 1 
+numDigits i = toInteger $ (integerLogBase 10 i) + 1
 
 removeWs :: String -> String
 removeWs x = filter (not . isSpace) x
 
 isInvalid1 :: Integer -> Bool
-isInvalid1 i = let
-    d = numDigits i
-    divisor = 10 ^ (d `div` 2)
-    lowPart = i `mod` divisor
-    highPart = i `div` divisor
-    result = -- trace (show divisor ++ " " ++ show lowPart ++ " " ++ show highPart)
-          (d `mod` 2 == 0 && lowPart == highPart)
-  in result
+isInvalid1 i =
+  let d = numDigits i
+      divisor = 10 ^ (d `div` 2)
+      lowPart = i `mod` divisor
+      highPart = i `div` divisor
+      result =
+        -- trace (show divisor ++ " " ++ show lowPart ++ " " ++ show highPart)
+        (d `mod` 2 == 0 && lowPart == highPart)
+   in result
 
 isInvalid2 :: Integer -> Bool
-isInvalid2 i = let
-    asText = show i
-    result = asText =~ "^(\\d+)\\1+$"
-
-  in result
-
-
+isInvalid2 i =
+  let asText = show i
+      result = asText =~ "^(\\d+)\\1+$"
+   in result
 
 countInRange :: (Integer -> Bool) -> Range -> Integer
-countInRange f r = toInteger $ sum $ (filter f) $ [lo r..hi r]
-
+countInRange f r = toInteger $ sum $ (filter f) $ [lo r .. hi r]
 
 part1 :: String -> Integer
 part1 input =
@@ -70,20 +66,20 @@ part1 input =
       invalids = (map $ countInRange isInvalid1) <$> parsed
       total = (sum <$> invalids)
 
-
-      result = -- trace (show parsed)
+      result =
+        -- trace (show parsed)
         (fromRight (-1) total)
    in result
 
 part2 :: String -> Integer
-part2 input = 
+part2 input =
   let text = removeWs $ strip input
       parsed = (parse ranges "" text)
       invalids = (map $ countInRange isInvalid2) <$> parsed
       total = (sum <$> invalids)
 
-
-      result = -- trace (show parsed)
+      result =
+        -- trace (show parsed)
         (fromRight (-1) total)
    in result
 
