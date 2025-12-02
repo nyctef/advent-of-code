@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Day02 (solve, part1, part2, isInvalid1, isInvalid2) where
 
 import Data.Char (isSpace)

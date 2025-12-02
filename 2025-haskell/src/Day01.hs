@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Day01 (solve, part1, part2) where
 
 import Data.Either

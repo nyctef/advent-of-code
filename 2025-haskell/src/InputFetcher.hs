@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module InputFetcher (getInput) where
 
 import qualified Data.ByteString.Char8 as BS

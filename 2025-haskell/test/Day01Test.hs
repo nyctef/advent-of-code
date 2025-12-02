@@ -1,6 +1,3 @@
-{-# LANGUAGE MultilineStrings #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Day01Test where
 
 import Data.Text (Text)
