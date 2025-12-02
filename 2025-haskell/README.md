@@ -1,5 +1,3 @@
-# Advent of Code 2025 - Haskell
-
 ## Setup
 
 Enter the development environment:
@@ -19,3 +17,10 @@ Create a `.session` file with your AoC session cookie for automatic input downlo
 ```bash
 cabal run aoc2025
 ```
+
+## AI disclaimer
+
+Claude has been used for initial project setup, learning about Haskell, linting and making build or structural changes.
+
+However, thinking about the puzzles themselves (and writing code for solving the puzzles) was done entirely manually.
+
