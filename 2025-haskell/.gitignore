@@ -29,3 +29,7 @@ result-*
 # AoC specific
 inputs/
 .session
+
+# scratch folder for temp files
+scratch/
+
