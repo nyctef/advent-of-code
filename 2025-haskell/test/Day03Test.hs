@@ -1,0 +1,27 @@
+module Day03Test where
+
+import Data.Text (Text)
+import Day03
+import Test.Tasty
+import Test.Tasty.HUnit
+
+example1 :: Text
+example1 =
+  """
+  987654321111111
+  811111111111119
+  234234234234278
+  818181911112111
+  """
+
+test_part1 :: TestTree
+test_part1 = testCase "Day 3 - Part 1" $ do
+  part1 example1 @?= 357
+
+test_part2 :: TestTree
+test_part2 =
+  testGroup
+    "Day 3 - Part 2"
+    [ testCase "example1" $
+        part2 example1 @?= 4174379265
+    ]

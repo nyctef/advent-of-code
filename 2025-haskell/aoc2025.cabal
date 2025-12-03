@@ -19,6 +19,7 @@ library
     exposed-modules:
         Day01
         Day02
+        Day03
         InputFetcher
     build-depends:
         base >=4.18 && <5,
@@ -54,6 +55,7 @@ test-suite aoc2025-test
     other-modules:
         Day01Test
         Day02Test
+        Day03Test
     build-depends:
         base >=4.18 && <5,
         aoc2025,
