@@ -1,4 +1,4 @@
-module Day03 (solve, part1, part2) where
+module Day03 (solve, part1, part2, parseInput) where
 
 import Data.Char (isSpace)
 import Data.Either
@@ -10,72 +10,67 @@ import InputFetcher (getInput)
 import Text.Parsec hiding (getInput)
 import Text.Parsec.Text (Parser)
 import Text.Regex.PCRE
+import Data.List
+import Data.Maybe
+import Text.Parsec.Error (messageString)
+import Control.Arrow (left)
 
-data Range = Range
-  { lo :: Integer,
-    hi :: Integer
-  }
-  deriving (Show, Eq)
+newtype Battery = Battery { battPower :: Integer } deriving (Show, Eq, Ord)
 
-range :: Parser Range
-range = do
-  n1 <- many1 digit
-  _ <- char '-'
-  n2 <- many1 digit
-  return $ Range (read n1) (read n2)
+newtype Bank = Bank { batteries :: [Battery] } deriving (Show)
 
-ranges :: Parser [Range]
-ranges = range `sepBy` char ','
+newtype Input = Input { banks :: [Bank] } deriving (Show)
 
-numDigits :: Integer -> Integer
-numDigits i = toInteger $ integerLogBase 10 i + 1
+batteryP :: Parser Battery
+-- battery = read <$> digit
+batteryP = do
+  d <- digit
+  let n = read [d]
+  return $ Battery n
 
-isInvalid1 :: Integer -> Bool
-isInvalid1 i =
-  let d = numDigits i
-      divisor = 10 ^ (d `div` 2)
-      lowPart = i `mod` divisor
-      highPart = i `div` divisor
-      result =
-        -- trace (show divisor ++ " " ++ show lowPart ++ " " ++ show highPart)
-        (even d && lowPart == highPart)
-   in result
+bankP :: Parser Bank
+bankP = Bank <$> many1 batteryP
 
-isInvalid2 :: Integer -> Bool
-isInvalid2 i = show i =~ ("^(\\d+)\\1+$" :: String)
+inputP :: Parser Input
+inputP = Input <$> bankP `sepBy` (char '\n')
 
-countInRange :: (Integer -> Bool) -> Range -> Integer
-countInRange f r = toInteger $ sum $ filter f [lo r .. hi r]
+getMaxJoltage :: Bank -> Integer
+getMaxJoltage bank = let
+  bs = batteries $ bank
+  firstBatt = maximum $ init bs
+  firstNum = battPower firstBatt
+  firstIndex = elemIndex firstBatt bs
+  rest = drop (fromJust firstIndex + 1) bs
+  secondNum = battPower $ maximum rest
+  result = 10*firstNum + secondNum
+  in result
 
-part1 :: Text -> Integer
+part1 :: Input -> Integer
 part1 input =
-  let text = T.filter (not . isSpace) input
-      parsed = parse ranges "" text
-      invalids = map (countInRange isInvalid1) <$> parsed
-      total = sum <$> invalids
+  let 
+      
+      
 
-      result =
-        -- trace (show parsed)
-        fromRight (-1) total
+      result = sum $ map getMaxJoltage $ banks input
    in result
 
-part2 :: Text -> Integer
+part2 :: Input -> Integer
 part2 input =
-  let text = T.filter (not . isSpace) input
-      parsed = parse ranges "" text
-      invalids = map (countInRange isInvalid2) <$> parsed
-      total = sum <$> invalids
-
-      result =
+  let result =
         -- trace (show parsed)
-        fromRight (-1) total
+        0
    in result
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
+parseInput :: Text -> Either String Input
+parseInput i = left show $ parse inputP "" $ T.strip i
+
 solve :: IO ()
 solve = do
-  input <- getInput 2025 2
-  TIO.putStrLn $ "  Part 1: " <> tshow (part1 input)
-  TIO.putStrLn $ "  Part 2: " <> tshow (part2 input)
+  input <- getInput 2025 3
+  let parsed = parseInput input
+  TIO.putStrLn $ "Input: " <> tshow parsed
+  TIO.putStrLn $ "  Part 1: " <> tshow (part1 <$> parsed)
+  TIO.putStrLn $ "  Part 2: " <> tshow (part2 <$> parsed)

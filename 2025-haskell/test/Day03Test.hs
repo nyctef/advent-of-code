@@ -4,6 +4,7 @@ import Data.Text (Text)
 import Day03
 import Test.Tasty
 import Test.Tasty.HUnit
+import Data.Either
 
 example1 :: Text
 example1 =
@@ -14,14 +15,20 @@ example1 =
   818181911112111
   """
 
+ignoreError = const $ error "couldn't parse"
+
 test_part1 :: TestTree
 test_part1 = testCase "Day 3 - Part 1" $ do
-  part1 example1 @?= 357
+  let parsed = parseInput example1
+  let parsed_ = either ignoreError id parsed
+  part1 parsed_ @?= 357
 
 test_part2 :: TestTree
 test_part2 =
   testGroup
     "Day 3 - Part 2"
-    [ testCase "example1" $
-        part2 example1 @?= 4174379265
+    [ testCase "example1" $ do
+        let parsed = parseInput example1
+        let parsed_ = either ignoreError id parsed
+        part2 parsed_ @?= 4174379265
     ]
