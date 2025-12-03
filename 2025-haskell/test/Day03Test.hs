@@ -1,6 +1,5 @@
 module Day03Test where
 
-import Data.Either
 import Data.Text (Text)
 import Day03
 import Test.Tasty
@@ -15,6 +14,7 @@ example1 =
   818181911112111
   """
 
+ignoreError :: b -> a
 ignoreError = const $ error "couldn't parse"
 
 test_part1 :: TestTree
@@ -32,3 +32,4 @@ test_part2 =
         let parsed_ = either ignoreError id parsed
         part2 parsed_ @?= 3121910778619
     ]
+
