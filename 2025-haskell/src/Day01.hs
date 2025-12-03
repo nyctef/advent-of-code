@@ -8,7 +8,6 @@ import InputFetcher (getInput)
 import Text.Parsec hiding (getInput)
 import Text.Parsec.Text (Parser)
 
-
 data Dir = L | R deriving (Show, Eq)
 
 data Instruction = Instruction
@@ -59,7 +58,7 @@ part2 input =
       result = fromRight (-1) numZeros
    in result
 
-tshow :: Show a => a -> Text
+tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
 solve :: IO ()

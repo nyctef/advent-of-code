@@ -11,7 +11,6 @@ import Text.Parsec hiding (getInput)
 import Text.Parsec.Text (Parser)
 import Text.Regex.PCRE
 
-
 data Range = Range
   { lo :: Integer,
     hi :: Integer
@@ -72,7 +71,7 @@ part2 input =
         fromRight (-1) total
    in result
 
-tshow :: Show a => a -> Text
+tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
 solve :: IO ()

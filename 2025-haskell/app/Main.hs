@@ -1,9 +1,9 @@
 module Main where
 
+import qualified Data.Map as Map
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Data.Map as Map
 import Data.Time.Calendar (toGregorian)
 import Data.Time.Clock (getCurrentTime, utctDay)
 import qualified Day01
@@ -28,7 +28,7 @@ main = do
         return 1 -- Default to day 1 on error
   runDay day
 
-tshow :: Show a => a -> Text
+tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
 -- Dispatch map for all days
