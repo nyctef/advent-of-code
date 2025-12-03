@@ -15,7 +15,7 @@ import Text.Printf
 newtype Battery = Battery {battPower :: Integer} deriving (Eq, Ord)
 
 instance Show Battery where
-  show b = "(" ++ (show (battPower b)) ++ ")"
+  show b = "(" ++ show (battPower b) ++ ")"
 
 newtype Bank = Bank {batteries :: [Battery]} deriving (Show)
 
@@ -32,11 +32,11 @@ bankP :: Parser Bank
 bankP = Bank <$> many1 batteryP
 
 inputP :: Parser Input
-inputP = Input <$> bankP `sepBy` (char '\n')
+inputP = Input <$> bankP `sepBy` char '\n'
 
 getMaxJoltage1 :: Bank -> Integer
 getMaxJoltage1 bank =
-  let bs = batteries $ bank
+  let bs = batteries bank
       firstBatt = maximum $ init bs
       firstNum = battPower firstBatt
       firstIndex = elemIndex firstBatt bs
@@ -50,7 +50,7 @@ initN n xs = take (length xs - n) xs
 
 getMaxJoltage2 :: Integer -> Bank -> Integer
 getMaxJoltage2 count bank =
-  let bs = batteries $ bank
+  let bs = batteries bank
       firstBatt = maximum $ initN (fromIntegral (count - 1)) bs
       firstNum = battPower firstBatt
       firstIndex = elemIndex firstBatt bs
