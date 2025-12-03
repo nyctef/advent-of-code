@@ -1,10 +1,10 @@
 module Day03Test where
 
+import Data.Either
 import Data.Text (Text)
 import Day03
 import Test.Tasty
 import Test.Tasty.HUnit
-import Data.Either
 
 example1 :: Text
 example1 =
