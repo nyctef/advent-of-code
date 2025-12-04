@@ -36,5 +36,5 @@ test_part2 =
     [ testCase "example1" $ do
         let parsed = parseInput example1
         let parsed_ = either ignoreError id parsed
-        part2 parsed_ @?= 3121910778619
+        part2 parsed_ @?= 43
     ]

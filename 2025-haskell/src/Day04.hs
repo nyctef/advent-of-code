@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Day04 (solve, part1, part2, parseInput) where
 
@@ -26,44 +26,66 @@ instance Show PointRC where
 
 -- instance Hashable PointRC where
 -- hashWithSalt s (PointRC r c) = s + (hash r) + (hash c)
-data GridRC = GridRC {grid :: HashMap PointRC Char, numCols ::Int, numRows ::Int} deriving (Show)
+data GridRC = GridRC {grid :: HashMap PointRC Char, numCols :: Int, numRows :: Int} deriving (Show)
+
 type Input = GridRC
 
 cells :: GridRC -> [PointRC]
-cells g = [ PointRC r c | r <- [0..numRows g], c <- [0..numCols g] ]
+cells g = [PointRC r c | r <- [0 .. numRows g], c <- [0 .. numCols g]]
 
 neighbor8 :: PointRC -> [PointRC]
-neighbor8 (PointRC r c) = [
-  PointRC (r-1) (c-1),
-  PointRC (r-1) c,
-  PointRC (r-1) (c+1),
-  PointRC (r) (c-1),
-  -- PointRC (r) c,
-  PointRC (r) (c+1),
-  PointRC (r+1) (c-1),
-  PointRC (r+1) c,
-  PointRC (r+1) (c+1)
+neighbor8 (PointRC r c) =
+  [ PointRC (r - 1) (c - 1),
+    PointRC (r - 1) c,
+    PointRC (r - 1) (c + 1),
+    PointRC (r) (c - 1),
+    -- PointRC (r) c,
+    PointRC (r) (c + 1),
+    PointRC (r + 1) (c - 1),
+    PointRC (r + 1) c,
+    PointRC (r + 1) (c + 1)
   ]
 
-countNeighbors :: GridRC -> PointRC -> Int
-countNeighbors g p = let
-  hashmap = grid g
-  neighborPoints = neighbor8 p
-  neighborValues = map (\p -> HashMap.findWithDefault '.' p hashmap) neighborPoints
-  boxes = filter (== '@') neighborValues
-  in length boxes
+-- countNeighbors :: GridRC -> PointRC -> Int
+-- countNeighbors g p =
+--   let hashmap = grid g
+--       neighborPoints = neighbor8 p
+--       neighborValues = map (\p -> HashMap.findWithDefault '.' p hashmap) neighborPoints
+--       boxes = filter (== '@') neighborValues
+--    in length boxes
+countNeighbors :: HashMap PointRC Char -> PointRC -> Int
+countNeighbors hashmap p =
+   let 
+       neighborPoints = neighbor8 p
+       neighborValues = map (\p -> HashMap.findWithDefault '.' p hashmap) neighborPoints
+       boxes = filter (== '@') neighborValues
+    in length boxes
 
 part1 :: Input -> Int
-part1 input = let 
-    points = HashMap.toList (grid input)
-    rolls = map fst $ filter (\p -> snd p == '@') points
-    counts = map (countNeighbors input) rolls
-    moveable = length $ filter (<4) counts
-  in --trace (show (filter (<4) counts))
-  moveable
+part1 input =
+  let points = HashMap.toList (grid input)
+      rolls = map fst $ filter (\p -> snd p == '@') points
+      counts = map (countNeighbors (grid input)) rolls
+      moveable = filter (< 4) counts
+   in -- trace (show (filter (<4) counts))
+      length moveable
 
-part2 :: Input -> Integer
-part2 input = undefined
+part2 :: Input -> Int
+part2 input = go (grid input)
+  where
+    go :: HashMap PointRC Char -> Int
+    go currentMap =
+      let points = HashMap.toList currentMap
+          rolls = map fst $ filter (\p -> snd p == '@') points
+          counts = map (\r -> (r, countNeighbors currentMap r)) rolls
+          moveable = map fst $ filter ((< 4) . snd) counts
+          notMoved :: PointRC -> Char -> Bool
+          notMoved k v = not $ k `elem` moveable
+          nextMap :: HashMap PointRC Char
+          nextMap = HashMap.filterWithKey notMoved currentMap
+          movedInRemainder = go nextMap
+       in  -- trace (show currentMap)
+          ( if length moveable == 0 then 0 else movedInRemainder + length moveable)
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
@@ -71,9 +93,9 @@ tshow = T.pack . show
 parseInput :: Text -> Either String Input
 parseInput i =
   let lines = T.lines i
-      cols = map (\l -> (zip [0..] ( T.unpack l))) lines
-      rows = zip [0..] cols
-      cells = [ (PointRC r c, val) | (r, cs) <- rows, (c, val) <- cs]
+      cols = map (\l -> (zip [0 ..] (T.unpack l))) lines
+      rows = zip [0 ..] cols
+      cells = [(PointRC r c, val) | (r, cs) <- rows, (c, val) <- cs]
       hashmap = HashMap.fromList cells
    in Right $ GridRC hashmap (length cols) (length rows)
 
