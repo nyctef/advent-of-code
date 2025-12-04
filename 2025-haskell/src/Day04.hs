@@ -38,9 +38,9 @@ neighbor8 (PointRC r c) =
   [ PointRC (r - 1) (c - 1),
     PointRC (r - 1) c,
     PointRC (r - 1) (c + 1),
-    PointRC (r) (c - 1),
+    PointRC r (c - 1),
     -- PointRC (r) c,
-    PointRC (r) (c + 1),
+    PointRC r (c + 1),
     PointRC (r + 1) (c - 1),
     PointRC (r + 1) c,
     PointRC (r + 1) (c + 1)
@@ -79,12 +79,12 @@ part2 input = go (grid input)
           counts = map (\r -> (r, countNeighbors currentMap r)) rolls
           moveable = map fst $ filter ((< 4) . snd) counts
           notMoved :: PointRC -> Char -> Bool
-          notMoved k v = not $ k `elem` moveable
+          notMoved k v = notElem k moveable
           nextMap :: HashMap PointRC Char
           nextMap = HashMap.filterWithKey notMoved currentMap
           movedInRemainder = go nextMap
        in -- trace (show currentMap)
-          (if length moveable == 0 then 0 else movedInRemainder + length moveable)
+          (if null moveable then 0 else movedInRemainder + length moveable)
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
@@ -92,7 +92,7 @@ tshow = T.pack . show
 parseInput :: Text -> Either String Input
 parseInput i =
   let lines = T.lines i
-      cols = map (\l -> (zip [0 ..] (T.unpack l))) lines
+      cols = map (zip [0 ..] . T.unpack) lines
       rows = zip [0 ..] cols
       cells = [(PointRC r c, val) | (r, cs) <- rows, (c, val) <- cs]
       hashmap = HashMap.fromList cells
