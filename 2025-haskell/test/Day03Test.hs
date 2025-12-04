@@ -32,4 +32,3 @@ test_part2 =
         let parsed_ = either ignoreError id parsed
         part2 parsed_ @?= 3121910778619
     ]
-
