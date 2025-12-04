@@ -6,11 +6,9 @@ import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import Debug.Trace
 import InputFetcher (getInput)
 import Text.Parsec hiding (count, getInput)
 import Text.Parsec.Text (Parser)
-import Text.Printf
 
 newtype Battery = Battery {battPower :: Integer} deriving (Eq, Ord)
 
@@ -58,7 +56,7 @@ getMaxJoltage2 count bank =
       secondNum = getMaxJoltage2 (count - 1) (Bank rest)
       concatted = read (show firstNum ++ show secondNum)
       result = if count == 1 then firstNum else concatted
-   in trace (printf "bank %s count %d -> firstNum %d result %d" (show bank) count firstNum result) result
+   in result
 
 part1 :: Input -> Integer
 part1 input = sum $ map getMaxJoltage1 $ banks input
