@@ -24,15 +24,15 @@ ignoreError :: b -> a
 ignoreError = const $ error "couldn't parse"
 
 test_part1 :: TestTree
-test_part1 = testCase "Day 3 - Part 1" $ do
+test_part1 = testCase "Day 4 - Part 1" $ do
   let parsed = parseInput example1
   let parsed_ = either ignoreError id parsed
-  part1 parsed_ @?= 357
+  part1 parsed_ @?= 13
 
 test_part2 :: TestTree
 test_part2 =
   testGroup
-    "Day 3 - Part 2"
+    "Day 4 - Part 2"
     [ testCase "example1" $ do
         let parsed = parseInput example1
         let parsed_ = either ignoreError id parsed

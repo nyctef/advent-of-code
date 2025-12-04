@@ -45,8 +45,22 @@ neighbor8 (PointRC r c) = [
   PointRC (r+1) (c+1)
   ]
 
-part1 :: Input -> Integer
-part1 input = trace (show input) 0
+countNeighbors :: GridRC -> PointRC -> Int
+countNeighbors g p = let
+  hashmap = grid g
+  neighborPoints = neighbor8 p
+  neighborValues = map (\p -> HashMap.findWithDefault '.' p hashmap) neighborPoints
+  boxes = filter (== '@') neighborValues
+  in length boxes
+
+part1 :: Input -> Int
+part1 input = let 
+    points = HashMap.toList (grid input)
+    rolls = map fst $ filter (\p -> snd p == '@') points
+    counts = map (countNeighbors input) rolls
+    moveable = length $ filter (<4) counts
+  in --trace (show (filter (<4) counts))
+  moveable
 
 part2 :: Input -> Integer
 part2 input = undefined
@@ -65,8 +79,8 @@ parseInput i =
 
 solve :: IO ()
 solve = do
-  input <- getInput 2025 3
+  input <- getInput 2025 4
   let parsed = parseInput input
-  TIO.putStrLn $ "Input: " <> tshow parsed
+  -- TIO.putStrLn $ "Input: " <> tshow parsed
   TIO.putStrLn $ "  Part 1: " <> tshow (part1 <$> parsed)
   TIO.putStrLn $ "  Part 2: " <> tshow (part2 <$> parsed)
