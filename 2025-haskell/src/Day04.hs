@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Day04 (solve, part1, part2, parseInput) where
 
 import Control.Arrow (left)
@@ -11,66 +13,30 @@ import InputFetcher (getInput)
 import Text.Parsec hiding (count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf
+import Data.HashMap.Strict (HashMap)
+import Data.Hashable (Hashable, hash)
+import GHC.Generics (Generic)
 
-newtype Battery = Battery {battPower :: Integer} deriving (Eq, Ord)
+data PointRC = PointRC { row :: Integer, col :: Integer } deriving (Eq, Generic)
+instance Show PointRC where
+  show p = printf "(r%d c%d)" (row p) (col p)
+-- instance Hashable PointRC where
+-- hashWithSalt s (PointRC r c) = s + (hash r) + (hash c)
 
-instance Show Battery where
-  show b = "(" ++ show (battPower b) ++ ")"
+data Input = Input { grid :: HashMap PointRC Char } deriving (Show)
 
-newtype Bank = Bank {batteries :: [Battery]} deriving (Show)
-
-newtype Input = Input {banks :: [Bank]} deriving (Show)
-
-batteryP :: Parser Battery
--- battery = read <$> digit
-batteryP = do
-  d <- digit
-  let n = read [d]
-  return $ Battery n
-
-bankP :: Parser Bank
-bankP = Bank <$> many1 batteryP
-
-inputP :: Parser Input
-inputP = Input <$> bankP `sepBy` char '\n'
-
-getMaxJoltage1 :: Bank -> Integer
-getMaxJoltage1 bank =
-  let bs = batteries bank
-      firstBatt = maximum $ init bs
-      firstNum = battPower firstBatt
-      firstIndex = elemIndex firstBatt bs
-      rest = drop (fromJust firstIndex + 1) bs
-      secondNum = battPower $ maximum rest
-      result = 10 * firstNum + secondNum
-   in result
-
-initN :: Int -> [a] -> [a]
-initN n xs = take (length xs - n) xs
-
-getMaxJoltage2 :: Integer -> Bank -> Integer
-getMaxJoltage2 count bank =
-  let bs = batteries bank
-      firstBatt = maximum $ initN (fromIntegral (count - 1)) bs
-      firstNum = battPower firstBatt
-      firstIndex = elemIndex firstBatt bs
-      rest = drop (fromJust firstIndex + 1) bs
-      secondNum = getMaxJoltage2 (count - 1) (Bank rest)
-      concatted = read (show firstNum ++ show secondNum)
-      result = if count == 1 then firstNum else concatted
-   in trace (printf "bank %s count %d -> firstNum %d result %d" (show bank) count firstNum result) result
 
 part1 :: Input -> Integer
-part1 input = sum $ map getMaxJoltage1 $ banks input
+part1 input = undefined
 
 part2 :: Input -> Integer
-part2 input = sum $ map (getMaxJoltage2 12) $ banks input
+part2 input = undefined
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
 parseInput :: Text -> Either String Input
-parseInput i = left show $ parse inputP "" $ T.strip i
+parseInput i = undefined
 
 solve :: IO ()
 solve = do
