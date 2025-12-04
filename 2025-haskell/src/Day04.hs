@@ -55,11 +55,10 @@ neighbor8 (PointRC r c) =
 --    in length boxes
 countNeighbors :: HashMap PointRC Char -> PointRC -> Int
 countNeighbors hashmap p =
-   let 
-       neighborPoints = neighbor8 p
-       neighborValues = map (\p -> HashMap.findWithDefault '.' p hashmap) neighborPoints
-       boxes = filter (== '@') neighborValues
-    in length boxes
+  let neighborPoints = neighbor8 p
+      neighborValues = map (\p -> HashMap.findWithDefault '.' p hashmap) neighborPoints
+      boxes = filter (== '@') neighborValues
+   in length boxes
 
 part1 :: Input -> Int
 part1 input =
@@ -84,8 +83,8 @@ part2 input = go (grid input)
           nextMap :: HashMap PointRC Char
           nextMap = HashMap.filterWithKey notMoved currentMap
           movedInRemainder = go nextMap
-       in  -- trace (show currentMap)
-          ( if length moveable == 0 then 0 else movedInRemainder + length moveable)
+       in -- trace (show currentMap)
+          (if length moveable == 0 then 0 else movedInRemainder + length moveable)
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
