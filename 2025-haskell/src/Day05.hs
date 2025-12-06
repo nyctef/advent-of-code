@@ -1,23 +1,11 @@
-
-
-
 module Day05 (solve, part1, part2, parseInput) where
 
-import Control.Arrow (left)
-import Data.HashMap.Strict (HashMap, empty)
-import qualified Data.HashMap.Strict as HashMap
-import Data.Hashable (Hashable, hash)
 import Data.List
-import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Debug.Trace
-import GHC.Generics (Generic)
 import InputFetcher (getInput)
-import Text.Parsec hiding (count, getInput)
-import Text.Parsec.Text (Parser)
-import Text.Printf
 
 data RangeInc = RangeInc {lowBound :: Int, highBound :: Int} deriving (Show, Eq, Ord)
 
@@ -34,6 +22,7 @@ part1 input =
 
 data MergeState = MergeState {totalSum :: Int, currentStart :: Int, currentEnd :: Int} deriving (Show)
 
+zeroMS :: MergeState
 zeroMS = MergeState 0 (-1) (-1)
 
 mergeRanges :: MergeState -> RangeInc -> MergeState
@@ -51,9 +40,11 @@ mergeRanges (MergeState t cs ce) (RangeInc ns ne)
   --        |------|
   -- cs     ns ce  ne
   | ns < ce = MergeState (t + ne - ns - (ce - ns)) ns ne
+  -- TODO: is there a nicer way to prove this function isn't partial to the compiler?
+  | otherwise = undefined
 
-traceAcc :: (Show a, Show b) => (a -> b -> a) -> (a -> b -> a)
-traceAcc f x n =
+_traceAcc :: (Show a, Show b) => (a -> b -> a) -> (a -> b -> a)
+_traceAcc f x n =
   let result = f x n
    in traceShow result result
 
