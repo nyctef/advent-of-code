@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
+
+
 
 module Day05 (solve, part1, part2, parseInput) where
 
@@ -61,7 +61,7 @@ part2 :: Input -> Int
 part2 input =
   let (ranges, _) = input
       sorted = sort ranges
-      merged = foldl ({- traceAcc -} mergeRanges) zeroMS $ {- trace (show sorted) -} sorted
+      merged = foldl ({- traceAcc -} mergeRanges) zeroMS {- trace (show sorted) -} sorted
    in totalSum merged
 
 tshow :: (Show a) => a -> Text
@@ -80,7 +80,7 @@ parseInput i =
       ingredientsL = T.lines $ T.strip ingredientsT
       ingredients = map (read . T.unpack) ingredientsL
       ranges = map parseRange rangesL
-   in Right $ (ranges, ingredients)
+   in Right (ranges, ingredients)
 
 solve :: IO ()
 solve = do
