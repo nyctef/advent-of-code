@@ -19,13 +19,13 @@ ignoreError = const $ error "couldn't parse"
 
 test_part1 :: TestTree
 test_part1 = testCase "Day 6 - Part 1" $ do
-  let parsed = parseInput example1
+  let parsed = parseInput1 example1
   let parsed_ = either ignoreError id parsed
   part1 parsed_ @?= 4277556
 
 testPart2 :: Text -> Int -> IO ()
 testPart2 input expected = do
-  let parsed = parseInput input
+  let parsed = parseInput2 input
   let parsed_ = either ignoreError id parsed
   part2 parsed_ @?= expected
 
@@ -34,5 +34,5 @@ test_part2 =
   testGroup
     "Day 6 - Part 2"
     [ testCase "example1" $
-        testPart2 example1 0
+        testPart2 example1 3263827
     ]
