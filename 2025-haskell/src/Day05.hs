@@ -34,10 +34,12 @@ part1 input =
 
 data MergeState = MergeState {totalSum :: Int, currentStart :: Int, currentEnd :: Int} deriving (Show)
 
-zeroMS = MergeState 0 0 0
+zeroMS = MergeState 0 (-1) (-1)
 
 mergeRanges :: MergeState -> RangeInc -> MergeState
 mergeRanges (MergeState t cs ce) (RangeInc ns ne)
+  -- next range is wholly contained by current range, so just ignore
+  | ns >= cs && ne <= ce = MergeState t cs ce
   -- next range starts after current range ends, so we just add the next range normally
   -- and the next state is replaced with the next range
   | ns > ce = MergeState (t + ne - ns + 1) ns ne
@@ -45,7 +47,7 @@ mergeRanges (MergeState t cs ce) (RangeInc ns ne)
   | ns == ce = MergeState (t + ne - ns) ns ne
   -- next range starts earlier than the current range ending, so we need to subtract the full overlap amount
   -- .....................
-  -- |---------|
+  -- \|---------|
   --        |------|
   -- cs     ns ce  ne
   | ns < ce = MergeState (t + ne - ns - (ce - ns)) ns ne
@@ -53,12 +55,13 @@ mergeRanges (MergeState t cs ce) (RangeInc ns ne)
 traceAcc :: (Show a, Show b) => (a -> b -> a) -> (a -> b -> a)
 traceAcc f x n =
   let result = f x n
-  in traceShow result result
+   in traceShow result result
 
 part2 :: Input -> Int
 part2 input =
   let (ranges, _) = input
-      merged = foldl ( mergeRanges) zeroMS $ sort ranges
+      sorted = sort ranges
+      merged = foldl ({- traceAcc -} mergeRanges) zeroMS $ {- trace (show sorted) -} sorted
    in totalSum merged
 
 tshow :: (Show a) => a -> Text
