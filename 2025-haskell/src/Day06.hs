@@ -69,7 +69,7 @@ traceAcc f x n =
 part2 :: Input2 -> Int
 part2 input = result
   where
-    rtl = rotateLeftVec input
+    rtl = rotateLeftVec $ {- traceShow input -} input
     withoutBlanks = V.filter isNotBlank rtl
     lines = V.map (splitMaybeOp . (T.span isDigit) . T.strip . T.pack . V.toList) withoutBlanks
     (total, pending) = {- traceShow lines -} (foldl ({- traceAcc -} accu) (0, []) lines)
@@ -88,9 +88,9 @@ parseInput1 i =
 
 parseInput2 :: Text -> Either String Input2
 parseInput2 i =
-  let lines = V.fromList $ T.splitOn "\n" i
+  let lines = V.fromList $ T.splitOn "\n" $ T.dropAround (=='\n') i
       chars = V.map (V.fromList . T.unpack) lines
-   in Right chars
+   in {- traceShow (V.length chars, V.map V.length chars) -} Right chars
 
 solve :: IO ()
 solve = do
