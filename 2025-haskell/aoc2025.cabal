@@ -21,6 +21,7 @@ library
         Day02
         Day03
         Day04
+        Day05
         InputFetcher
     build-depends:
         base >=4.18 && <5,
@@ -60,6 +61,7 @@ test-suite aoc2025-test
         Day02Test
         Day03Test
         Day04Test
+        Day05Test
     build-depends:
         base >=4.18 && <5,
         aoc2025,
