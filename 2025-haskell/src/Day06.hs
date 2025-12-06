@@ -28,28 +28,22 @@ type Input1 = (Vector (Vector Int), Vector Text)
 type Input2 = Vector (Vector Char)
 
 doMath :: Text -> V.Vector Int -> Int
-doMath "*" xs = foldl (*) 1 xs
-doMath "+" xs = foldl (+) 0 xs
+doMath "*" xs = product xs
+doMath "+" xs = sum xs
 doMath _ _ = undefined
-
-doMath2 :: Char -> [Int] -> Int
-doMath2 '*' xs = foldl (*) 1 xs
-doMath2 '+' xs = foldl (+) 0 xs
-doMath2 _ _ = undefined
-
 
 part1 :: Input1 -> Int
 part1 input =
   let (nums, ops) = input
-      height = V.length nums
-      length = V.length (nums V.! 0)
-      opsLength = V.length ops
+      -- height = V.length nums
+      -- length = V.length (nums V.! 0)
+      -- opsLength = V.length ops
       cols = transposeVec nums
       results = V.map (\(c, o) -> doMath o c) (cols `V.zip` ops)
    in {- traceShow (cols, results) -} V.sum results
 
 isNotBlank :: Vector Char -> Bool
-isNotBlank = V.any (\x -> x /= ' ')
+isNotBlank = V.any (/= ' ')
 
 splitMaybeOp :: (Text, Text) -> (Int, Maybe Char)
 splitMaybeOp (l, r) = (read $ T.unpack l_, if r_ /= "" then Just $ T.head r_ else Nothing)
@@ -57,22 +51,27 @@ splitMaybeOp (l, r) = (read $ T.unpack l_, if r_ /= "" then Just $ T.head r_ els
     l_ = T.strip l
     r_ = T.strip r
 
-accu :: (Int, [Int]) -> (Int, Maybe Char)   -> (Int, [Int])
-accu (t, pending) (n, (Just op))  = (t + doMath2 op (pending ++ [n]), [])
-accu (t, pending) (n, Nothing)  = (t, pending ++ [n])
+doMath2 :: Char -> [Int] -> Int
+doMath2 '*' xs = product xs
+doMath2 '+' xs = sum xs
+doMath2 _ _ = undefined
 
-traceAcc :: (Show a, Show b) => (a -> b -> a) -> (a -> b -> a)
-traceAcc f x n =
+accu :: (Int, [Int]) -> (Int, Maybe Char) -> (Int, [Int])
+accu (t, pending) (n, Just op) = (t + doMath2 op (pending ++ [n]), [])
+accu (t, pending) (n, Nothing) = (t, pending ++ [n])
+
+_traceAcc :: (Show a, Show b) => (a -> b -> a) -> (a -> b -> a)
+_traceAcc f x n =
   let result = f x n
    in traceShow result result
 
 part2 :: Input2 -> Int
 part2 input = result
   where
-    rtl = rotateLeftVec $ {- traceShow input -} input
+    rtl = rotateLeftVec {- traceShow input -} input
     withoutBlanks = V.filter isNotBlank rtl
-    lines = V.map (splitMaybeOp . (T.span isDigit) . T.strip . T.pack . V.toList) withoutBlanks
-    (total, pending) = {- traceShow lines -} (foldl ({- traceAcc -} accu) (0, []) lines)
+    linesT = V.map (splitMaybeOp . T.span isDigit . T.strip . T.pack . V.toList) withoutBlanks
+    (total, _) = {- traceShow lines -} foldl ({- traceAcc -} accu) (0, []) linesT
     result = total
 
 tshow :: (Show a) => a -> Text
@@ -82,15 +81,15 @@ parseInput1 :: Text -> Either String Input1
 parseInput1 i =
   let (numsT, opsT) = T.breakOnEnd "\n" $ T.strip i
       numsL = T.lines $ T.strip numsT
-      nums = V.fromList $ map (\l -> V.fromList $ map (read . T.unpack) (T.words l)) numsL
+      nums = V.fromList $ map (V.fromList . map (read . T.unpack) . T.words) numsL
       ops = V.fromList $ T.words opsT
    in Right (nums, ops)
 
 parseInput2 :: Text -> Either String Input2
 parseInput2 i =
-  let lines = V.fromList $ T.splitOn "\n" $ T.dropAround (=='\n') i
-      chars = V.map (V.fromList . T.unpack) lines
-   in {- traceShow (V.length chars, V.map V.length chars) -} Right chars
+  let linesT = V.fromList $ T.splitOn "\n" $ T.dropAround (== '\n') i
+      charsT = V.map (V.fromList . T.unpack) linesT
+   in {- traceShow (V.length chars, V.map V.length chars) -} Right charsT
 
 solve :: IO ()
 solve = do
