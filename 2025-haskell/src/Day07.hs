@@ -53,24 +53,26 @@ gget g p = HashMap.lookup p $ grid g
 gfind :: GridRC -> Char -> Maybe PointRC
 gfind g c = listToMaybe $ fmap fst $ filter ((== c) . snd) $ HashMap.toList $ grid g 
 
+_traceShow = seq
+
 type State1 = ([PointRC], Set PointRC, Set PointRC, Int)
 -- state: ([queue of points] [set of seen points] [set of exit points] [split count])
 solve1 :: GridRC -> State1 -> State1
 -- base case: no more points to search
-solve1 g ([], s, e, c) = traceShow ("done", e) ([], s, e, c)
+solve1 g ([], s, e, c) = _traceShow ("done", e) ([], s, e, c)
 -- optimization: skip a point if it's already seen
-solve1 g (( q:qs ), s, e, c) | Set.member q s = traceShow (q, "skipping") (qs, s, e, c)
+solve1 g (( q:qs ), s, e, c) | Set.member q s = _traceShow (q, "skipping") (qs, s, e, c)
 -- process '.' : just move down
 solve1 g (( q:qs ), s, e, c) | (gget g q) == Just '.' || (gget g q) == Just 'S' =
   let n = pdown q
-  in traceShow (q, "down", n:qs) (n : qs, Set.insert q s, e, c)
+  in _traceShow (q, "down", n:qs) (n : qs, Set.insert q s, e, c)
 -- process '^' : add beams to sides
 solve1 g (( q:qs ), s, e, c) | (gget g q) == Just '^' =
   let n1 = pleft q
       n2 = pright q
-  in traceShow ("sides") (n1 : n2 : qs, Set.insert q s, e, c+1)
+  in _traceShow ("sides") (n1 : n2 : qs, Set.insert q s, e, c+1)
 -- process off the edge: save an exit point
-solve1 g ((q:qs), s, e, c) | (gget g q) == Nothing = traceShow (q, "exit") (qs, s, Set.insert q e, c)
+solve1 g ((q:qs), s, e, c) | (gget g q) == Nothing = _traceShow (q, "exit") (qs, s, Set.insert q e, c)
 -- unhandled case?
 solve1 g (qs, s, e, c) = error (show (qs, s, e))
 
