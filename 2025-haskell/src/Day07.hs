@@ -8,6 +8,9 @@ import Data.HashMap.Strict (HashMap, empty)
 import qualified Data.HashMap.Strict as HashMap
 import Data.Hashable (Hashable, hash)
 import Data.List
+import Data.Maybe
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -17,9 +20,6 @@ import Debug.Trace
 import GHC.Generics (Generic)
 import InputFetcher (getInput)
 import Text.Printf
-import Data.Maybe
-import qualified Data.Set as Set
-import Data.Set (Set)
 
 data PointRC = PointRC {row :: Int, col :: Int} deriving (Eq, Ord, Generic, Hashable)
 
@@ -51,32 +51,35 @@ gget :: GridRC -> PointRC -> Maybe Char
 gget g p = HashMap.lookup p $ grid g
 
 gfind :: GridRC -> Char -> Maybe PointRC
-gfind g c = listToMaybe $ fmap fst $ filter ((== c) . snd) $ HashMap.toList $ grid g 
+gfind g c = listToMaybe $ fmap fst $ filter ((== c) . snd) $ HashMap.toList $ grid g
 
 _traceShow = seq
 
 type State1 = ([PointRC], Set PointRC, Set PointRC, Int)
+
 -- state: ([queue of points] [set of seen points] [set of exit points] [split count])
 solve1 :: GridRC -> State1 -> State1
 -- base case: no more points to search
 solve1 g ([], s, e, c) = _traceShow ("done", e) ([], s, e, c)
 -- optimization: skip a point if it's already seen
-solve1 g (( q:qs ), s, e, c) | Set.member q s = _traceShow (q, "skipping") (qs, s, e, c)
+solve1 g ((q : qs), s, e, c) | Set.member q s = _traceShow (q, "skipping") (qs, s, e, c)
 -- process '.' : just move down
-solve1 g (( q:qs ), s, e, c) | (gget g q) == Just '.' || (gget g q) == Just 'S' =
-  let n = pdown q
-  in _traceShow (q, "down", n:qs) (n : qs, Set.insert q s, e, c)
+solve1 g ((q : qs), s, e, c)
+  | (gget g q) == Just '.' || (gget g q) == Just 'S' =
+      let n = pdown q
+       in _traceShow (q, "down", n : qs) (n : qs, Set.insert q s, e, c)
 -- process '^' : add beams to sides
-solve1 g (( q:qs ), s, e, c) | (gget g q) == Just '^' =
-  let n1 = pleft q
-      n2 = pright q
-  in _traceShow ("sides") (n1 : n2 : qs, Set.insert q s, e, c+1)
+solve1 g ((q : qs), s, e, c)
+  | (gget g q) == Just '^' =
+      let n1 = pleft q
+          n2 = pright q
+       in _traceShow ("sides") (n1 : n2 : qs, Set.insert q s, e, c + 1)
 -- process off the edge: save an exit point
-solve1 g ((q:qs), s, e, c) | (gget g q) == Nothing = _traceShow (q, "exit") (qs, s, Set.insert q e, c)
+solve1 g ((q : qs), s, e, c) | (gget g q) == Nothing = _traceShow (q, "exit") (qs, s, Set.insert q e, c)
 -- unhandled case?
 solve1 g (qs, s, e, c) = error (show (qs, s, e))
 
-run :: Eq a => (a -> a) -> a -> a
+run :: (Eq a) => (a -> a) -> a -> a
 run f x
   | x == f x = x
   | otherwise = run f (f x)
