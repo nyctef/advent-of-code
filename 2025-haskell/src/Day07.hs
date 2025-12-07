@@ -61,23 +61,22 @@ type State1 = ([PointRC], Set PointRC, Set PointRC, Int)
 solve1 :: GridRC -> State1 -> State1
 -- base case: no more points to search
 solve1 g ([], s, e, c) = _traceShow ("done", e) ([], s, e, c)
--- optimization: skip a point if it's already seen
-solve1 g ((q : qs), s, e, c) | Set.member q s = _traceShow (q, "skipping") (qs, s, e, c)
--- process '.' : just move down
 solve1 g ((q : qs), s, e, c)
+  -- optimization: skip a point if it's already seen
+  | Set.member q s = _traceShow (q, "skipping") (qs, s, e, c)
+  -- process '.' : just move down
   | (gget g q) == Just '.' || (gget g q) == Just 'S' =
       let n = pdown q
        in _traceShow (q, "down", n : qs) (n : qs, Set.insert q s, e, c)
--- process '^' : add beams to sides
-solve1 g ((q : qs), s, e, c)
+  -- process '^' : add beams to sides
   | (gget g q) == Just '^' =
       let n1 = pleft q
           n2 = pright q
        in _traceShow ("sides") (n1 : n2 : qs, Set.insert q s, e, c + 1)
--- process off the edge: save an exit point
-solve1 g ((q : qs), s, e, c) | (gget g q) == Nothing = _traceShow (q, "exit") (qs, s, Set.insert q e, c)
--- unhandled case?
-solve1 g (qs, s, e, c) = error (show (qs, s, e))
+  -- process off the edge: save an exit point
+  | (gget g q) == Nothing = _traceShow (q, "exit") (qs, s, Set.insert q e, c)
+  -- unhandled case?
+  | otherwise = error (show (qs, s, e))
 
 run :: (Eq a) => (a -> a) -> a -> a
 run f x
