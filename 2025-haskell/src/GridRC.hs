@@ -16,10 +16,10 @@ get :: PointRC -> GridRC -> Maybe Char
 get p g = HashMap.lookup p $ grid g
 
 find :: Char -> GridRC -> Maybe PointRC
-find c g = listToMaybe $ fmap fst $ filter ((== c) . snd) $ HashMap.toList $ grid g
+find c g = listToMaybe $ findMany c g
 
 findMany :: Char -> GridRC -> [PointRC]
-findMany c g = fmap fst $ filter ((== c) . snd) $ HashMap.toList $ grid g
+findMany c g = mapMaybe (\(pt, ch) -> if ch == c then Just pt else Nothing) $ HashMap.toList $ grid g
 
 parse :: Text -> Either String GridRC
 parse i =
