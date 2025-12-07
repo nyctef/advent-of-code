@@ -25,6 +25,7 @@ library
         Day06
         Day07
         PointRC
+        GridRC
         InputFetcher
     build-depends:
         base >=4.18 && <5,
