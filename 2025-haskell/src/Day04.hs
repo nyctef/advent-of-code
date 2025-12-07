@@ -29,14 +29,14 @@ part1 input =
       length moveable
 
 part2 :: Input -> Int
-part2 input = go input
+part2 = go
   where
     go :: GridRC -> Int
     go currentMap =
       let rolls = G.findMany '@' currentMap
           counts = map (\r -> (r, countNeighbors currentMap r)) rolls
           moveable = map fst $ filter ((< 4) . snd) counts
-          nextMap = G.rewrite (\p c -> if elem p moveable then '.' else c) currentMap
+          nextMap = G.rewrite (\p c -> if p `elem` moveable then '.' else c) currentMap
           movedInRemainder = go nextMap
        in -- traceShow (rolls, currentMap)
           (if null moveable then 0 else movedInRemainder + length moveable)
