@@ -1,37 +1,17 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-
 module Day07 (solve, part1, part2, parseInput) where
 
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
-import Data.Hashable (Hashable )
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import GHC.Generics (Generic)
 import InputFetcher (getInput)
-import Text.Printf
+import qualified PointRC as P
+import PointRC(PointRC(..))
 
-data PointRC = PointRC {row :: Int, col :: Int} deriving (Eq, Ord, Generic, Hashable)
-
-pleft :: PointRC -> PointRC
-pleft p = PointRC (row p) (col p - 1)
-
-pright :: PointRC -> PointRC
-pright p = PointRC (row p) (col p + 1)
-
-pup :: PointRC -> PointRC
-pup p = PointRC (row p - 1) (col p)
-
-pdown :: PointRC -> PointRC
-pdown p = PointRC (row p + 1) (col p)
-
-instance Show PointRC where
-  show p = printf "(r%d c%d)" (row p) (col p)
 
 -- instance Hashable PointRC where
 -- hashWithSalt s (PointRC r c) = s + (hash r) + (hash c)
@@ -63,12 +43,12 @@ solve1 g (q : qs, s, e, c)
   | Set.member q s = _traceShow (q, "skipping" :: String) (qs, s, e, c)
   -- process '.' : just move down
   | gget g q == Just '.' || gget g q == Just 'S' =
-      let n = pdown q
+      let n = P.down q
        in _traceShow (q, "down" :: String, n : qs) (n : qs, Set.insert q s, e, c)
   -- process '^' : add beams to sides
   | gget g q == Just '^' =
-      let n1 = pleft q
-          n2 = pright q
+      let n1 = P.left q
+          n2 = P.right q
        in _traceShow ("sides" :: String) (n1 : n2 : qs, Set.insert q s, e, c + 1)
   -- process off the edge: save an exit point
   | isNothing (gget g q) = _traceShow (q, "exit" :: String) (qs, s, Set.insert q e, c)
@@ -97,11 +77,11 @@ solve2 :: GridRC -> State2 -> PointRC -> State2
 solve2 g s p =
     _traceShow (p, fromleft, fromup, fromright) HashMap.insert p (fromleft + fromup + fromright) s
   where
-    upleftP = (pup.pleft) p
+    upleftP = (P.up . P.left) p
     upleftC = gget g upleftP
-    upP = pup p
+    upP = P.up p
     upC = gget g upP
-    uprightP = (pup .pright) p
+    uprightP = (P.up . P.right) p
     uprightC = gget g uprightP
     fromleft = if upleftC == Just '^' then HashMap.findWithDefault 0 upleftP s else 0
     fromup = if upC == Just '.' || upC == Just 'S' then HashMap.findWithDefault 0 upP s else 0
@@ -113,7 +93,7 @@ part2 input = result
     start = fromJust $ gfind input 'S'
     seed :: HashMap PointRC Int
     seed = HashMap.fromList [(start, 1)]
-    points = filter (\p -> row p /= 0) (gpoints input)
+    points = filter (\p -> P.row p /= 0) (gpoints input)
     state = foldl (solve2 input) seed points
     bottomRow = map (PointRC (numRows input - 1)) [0..numCols input - 1]
     total = sum $ map (\p -> HashMap.findWithDefault 0 p state) bottomRow
