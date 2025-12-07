@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module PointRC (PointRC(..), row, col, left, right, up, down) where
+module PointRC (PointRC(..), left, right, up, down) where
 
 import GHC.Generics (Generic)
 import Data.Hashable (Hashable )
