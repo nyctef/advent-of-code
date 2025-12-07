@@ -3,20 +3,15 @@
 
 module Day07 (solve, part1, part2, parseInput) where
 
-import Data.Char (isDigit)
-import Data.HashMap.Strict (HashMap, empty)
+import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
-import Data.Hashable (Hashable, hash)
-import Data.List
+import Data.Hashable (Hashable )
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
 import GHC.Generics (Generic)
 import InputFetcher (getInput)
 import Text.Printf
@@ -53,6 +48,8 @@ gget g p = HashMap.lookup p $ grid g
 gfind :: GridRC -> Char -> Maybe PointRC
 gfind g c = listToMaybe $ fmap fst $ filter ((== c) . snd) $ HashMap.toList $ grid g
 
+-- like traceShow, except that it doesn't
+_traceShow :: a -> b -> b
 _traceShow = seq
 
 type State1 = ([PointRC], Set PointRC, Set PointRC, Int)
@@ -60,21 +57,21 @@ type State1 = ([PointRC], Set PointRC, Set PointRC, Int)
 -- state: ([queue of points] [set of seen points] [set of exit points] [split count])
 solve1 :: GridRC -> State1 -> State1
 -- base case: no more points to search
-solve1 g ([], s, e, c) = _traceShow ("done", e) ([], s, e, c)
-solve1 g ((q : qs), s, e, c)
+solve1 _ ([], s, e, c) = _traceShow ("done" :: String, e) ([], s, e, c)
+solve1 g (q : qs, s, e, c)
   -- optimization: skip a point if it's already seen
-  | Set.member q s = _traceShow (q, "skipping") (qs, s, e, c)
+  | Set.member q s = _traceShow (q, "skipping" :: String) (qs, s, e, c)
   -- process '.' : just move down
-  | (gget g q) == Just '.' || (gget g q) == Just 'S' =
+  | gget g q == Just '.' || gget g q == Just 'S' =
       let n = pdown q
-       in _traceShow (q, "down", n : qs) (n : qs, Set.insert q s, e, c)
+       in _traceShow (q, "down" :: String, n : qs) (n : qs, Set.insert q s, e, c)
   -- process '^' : add beams to sides
-  | (gget g q) == Just '^' =
+  | gget g q == Just '^' =
       let n1 = pleft q
           n2 = pright q
-       in _traceShow ("sides") (n1 : n2 : qs, Set.insert q s, e, c + 1)
+       in _traceShow ("sides" :: String) (n1 : n2 : qs, Set.insert q s, e, c + 1)
   -- process off the edge: save an exit point
-  | (gget g q) == Nothing = _traceShow (q, "exit") (qs, s, Set.insert q e, c)
+  | isNothing (gget g q) = _traceShow (q, "exit" :: String) (qs, s, Set.insert q e, c)
   -- unhandled case?
   | otherwise = error (show (qs, s, e))
 
@@ -89,22 +86,22 @@ part1 input = result
     start = fromJust $ gfind input 'S'
     step :: State1 -> State1
     step = solve1 input
-    init :: State1
-    init = ([start], Set.empty, Set.empty, 0)
-    state = run step init
+    seed :: State1
+    seed = ([start], Set.empty, Set.empty, 0)
+    state = run step seed
     (_, _, _, splitCount) = state
     result = splitCount
 
 type State2 = HashMap PointRC Int
 solve2 :: GridRC -> State2 -> PointRC -> State2
-solve2 g s p = 
+solve2 g s p =
     _traceShow (p, fromleft, fromup, fromright) HashMap.insert p (fromleft + fromup + fromright) s
   where
     upleftP = (pup.pleft) p
     upleftC = gget g upleftP
     upP = pup p
     upC = gget g upP
-    uprightP = ((pup .pright) p)
+    uprightP = (pup .pright) p
     uprightC = gget g uprightP
     fromleft = if upleftC == Just '^' then HashMap.findWithDefault 0 upleftP s else 0
     fromup = if upC == Just '.' || upC == Just 'S' then HashMap.findWithDefault 0 upP s else 0
@@ -114,11 +111,11 @@ part2 :: Input -> Int
 part2 input = result
   where
     start = fromJust $ gfind input 'S'
-    init :: HashMap PointRC Int
-    init = HashMap.fromList [(start, 1)]
+    seed :: HashMap PointRC Int
+    seed = HashMap.fromList [(start, 1)]
     points = filter (\p -> row p /= 0) (gpoints input)
-    state = foldl (solve2 input) init points
-    bottomRow = map (\c -> PointRC (numRows input - 1) c) [0..numCols input - 1]
+    state = foldl (solve2 input) seed points
+    bottomRow = map (PointRC (numRows input - 1)) [0..numCols input - 1]
     total = sum $ map (\p -> HashMap.findWithDefault 0 p state) bottomRow
 
     result = _traceShow state total
@@ -128,12 +125,12 @@ tshow = T.pack . show
 
 parseInput :: Text -> Either String Input
 parseInput i =
-  let lines = T.lines i
-      cols = map (zip [0 ..] . T.unpack) lines
+  let ls = T.lines i
+      cols = map (zip [0 ..] . T.unpack) ls
       rows = zip [0 ..] cols
       cells = [(PointRC r c, val) | (r, cs) <- rows, (c, val) <- cs]
       hashmap = HashMap.fromList cells
-   in Right $ GridRC hashmap (length $ head cols) (length cols)
+   in Right $ GridRC hashmap (length $ fromJust $ listToMaybe cols) (length cols)
 
 solve :: IO ()
 solve = do

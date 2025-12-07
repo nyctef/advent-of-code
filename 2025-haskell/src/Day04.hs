@@ -3,20 +3,14 @@
 
 module Day04 (solve, part1, part2, parseInput) where
 
-import Control.Arrow (left)
-import Data.HashMap.Strict (HashMap, empty)
+import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
-import Data.Hashable (Hashable, hash)
-import Data.List
-import Data.Maybe
+import Data.Hashable (Hashable)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import Debug.Trace
 import GHC.Generics (Generic)
 import InputFetcher (getInput)
-import Text.Parsec hiding (count, getInput)
-import Text.Parsec.Text (Parser)
 import Text.Printf
 
 data PointRC = PointRC {row :: Int, col :: Int} deriving (Eq, Generic, Hashable)
@@ -29,9 +23,6 @@ instance Show PointRC where
 data GridRC = GridRC {grid :: HashMap PointRC Char, numCols :: Int, numRows :: Int} deriving (Show)
 
 type Input = GridRC
-
-cells :: GridRC -> [PointRC]
-cells g = [PointRC r c | r <- [0 .. numRows g], c <- [0 .. numCols g]]
 
 neighbor8 :: PointRC -> [PointRC]
 neighbor8 (PointRC r c) =
@@ -56,7 +47,7 @@ neighbor8 (PointRC r c) =
 countNeighbors :: HashMap PointRC Char -> PointRC -> Int
 countNeighbors hashmap p =
   let neighborPoints = neighbor8 p
-      neighborValues = map (\p -> HashMap.findWithDefault '.' p hashmap) neighborPoints
+      neighborValues = map (\n -> HashMap.findWithDefault '.' n hashmap) neighborPoints
       boxes = filter (== '@') neighborValues
    in length boxes
 
@@ -79,7 +70,7 @@ part2 input = go (grid input)
           counts = map (\r -> (r, countNeighbors currentMap r)) rolls
           moveable = map fst $ filter ((< 4) . snd) counts
           notMoved :: PointRC -> Char -> Bool
-          notMoved k v = notElem k moveable
+          notMoved k _ = notElem k moveable
           nextMap :: HashMap PointRC Char
           nextMap = HashMap.filterWithKey notMoved currentMap
           movedInRemainder = go nextMap
@@ -91,8 +82,8 @@ tshow = T.pack . show
 
 parseInput :: Text -> Either String Input
 parseInput i =
-  let lines = T.lines i
-      cols = map (zip [0 ..] . T.unpack) lines
+  let ls = T.lines i
+      cols = map (zip [0 ..] . T.unpack) ls
       rows = zip [0 ..] cols
       cells = [(PointRC r c, val) | (r, cs) <- rows, (c, val) <- cs]
       hashmap = HashMap.fromList cells
