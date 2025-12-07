@@ -1,4 +1,4 @@
-module GridRC (GridRC(GridRC, numCols, numRows), points, get, find, parse) where
+module GridRC (GridRC(numCols, numRows), points, get, find, parse) where
 
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap

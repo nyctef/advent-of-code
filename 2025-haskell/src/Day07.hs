@@ -12,7 +12,7 @@ import InputFetcher (getInput)
 import qualified PointRC as P
 import PointRC(PointRC(..))
 import qualified GridRC as G
-import GridRC(GridRC(..))
+import GridRC(GridRC)
 
 type Input = GridRC
 
