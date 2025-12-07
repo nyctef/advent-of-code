@@ -71,7 +71,7 @@ part2 input = result
     rtl = rotateLeftVec {- traceShow input -} input
     withoutBlanks = V.filter isNotBlank rtl
     linesT = V.map (splitMaybeOp . T.span isDigit . T.strip . T.pack . V.toList) withoutBlanks
-    (total, _) = {- traceShow lines -} foldl{- traceAcc -} accu (0, []) linesT
+    (total, _) = {- traceShow lines -} foldl {- traceAcc -} accu (0, []) linesT
     result = total
 
 tshow :: (Show a) => a -> Text

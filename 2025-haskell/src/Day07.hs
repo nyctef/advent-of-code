@@ -8,11 +8,11 @@ import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import InputFetcher (getInput)
-import qualified PointRC as P
-import PointRC(PointRC(..))
+import GridRC (GridRC)
 import qualified GridRC as G
-import GridRC(GridRC)
+import InputFetcher (getInput)
+import PointRC (PointRC (..))
+import qualified PointRC as P
 
 type Input = GridRC
 
@@ -30,16 +30,16 @@ solve1 g (q : qs, s, e, c)
   -- optimization: skip a point if it's already seen
   | Set.member q s = _traceShow (q, "skipping" :: String) (qs, s, e, c)
   -- process '.' : just move down
-  | G.get g q == Just '.' || G.get g q == Just 'S' =
+  | G.get q g == Just '.' || G.get q g == Just 'S' =
       let n = P.down q
        in _traceShow (q, "down" :: String, n : qs) (n : qs, Set.insert q s, e, c)
   -- process '^' : add beams to sides
-  | G.get g q == Just '^' =
+  | G.get q g == Just '^' =
       let n1 = P.left q
           n2 = P.right q
        in _traceShow ("sides" :: String) (n1 : n2 : qs, Set.insert q s, e, c + 1)
   -- process off the edge: save an exit point
-  | isNothing (G.get g q) = _traceShow (q, "exit" :: String) (qs, s, Set.insert q e, c)
+  | isNothing (G.get q g) = _traceShow (q, "exit" :: String) (qs, s, Set.insert q e, c)
   -- unhandled case?
   | otherwise = error (show (qs, s, e))
 
@@ -51,7 +51,7 @@ run f x
 part1 :: Input -> Int
 part1 input = result
   where
-    start = fromJust $ G.find input 'S'
+    start = fromJust $ G.find 'S' input
     step :: State1 -> State1
     step = solve1 input
     seed :: State1
@@ -61,16 +61,17 @@ part1 input = result
     result = splitCount
 
 type State2 = HashMap PointRC Int
+
 solve2 :: GridRC -> State2 -> PointRC -> State2
 solve2 g s p =
-    _traceShow (p, fromleft, fromup, fromright) HashMap.insert p (fromleft + fromup + fromright) s
+  _traceShow (p, fromleft, fromup, fromright) HashMap.insert p (fromleft + fromup + fromright) s
   where
     upleftP = (P.up . P.left) p
-    upleftC = G.get g upleftP
+    upleftC = G.get upleftP g
     upP = P.up p
-    upC = G.get g upP
+    upC = G.get upP g
     uprightP = (P.up . P.right) p
-    uprightC = G.get g uprightP
+    uprightC = G.get uprightP g
     fromleft = if upleftC == Just '^' then HashMap.findWithDefault 0 upleftP s else 0
     fromup = if upC == Just '.' || upC == Just 'S' then HashMap.findWithDefault 0 upP s else 0
     fromright = if uprightC == Just '^' then HashMap.findWithDefault 0 uprightP s else 0
@@ -78,12 +79,12 @@ solve2 g s p =
 part2 :: Input -> Int
 part2 input = result
   where
-    start = fromJust $ G.find input 'S'
+    start = fromJust $ G.find 'S' input
     seed :: HashMap PointRC Int
     seed = HashMap.fromList [(start, 1)]
     points = filter (\p -> P.row p /= 0) (G.points input)
     state = foldl (solve2 input) seed points
-    bottomRow = map (PointRC (G.numRows input - 1)) [0..G.numCols input - 1]
+    bottomRow = map (PointRC (G.numRows input - 1)) [0 .. G.numCols input - 1]
     total = sum $ map (\p -> HashMap.findWithDefault 0 p state) bottomRow
 
     result = _traceShow state total
@@ -92,7 +93,7 @@ tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
 parseInput :: Text -> Either String Input
-parseInput = G.parse 
+parseInput = G.parse
 
 solve :: IO ()
 solve = do
