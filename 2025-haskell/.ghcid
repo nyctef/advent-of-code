@@ -1,2 +1,0 @@
---command "cabal repl aoc2025-test" --test main
-

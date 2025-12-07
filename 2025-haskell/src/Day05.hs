@@ -52,7 +52,7 @@ part2 :: Input -> Int
 part2 input =
   let (ranges, _) = input
       sorted = sort ranges
-      merged = foldl{- traceAcc -} mergeRanges zeroMS {- trace (show sorted) -} sorted
+      merged = foldl {- traceAcc -} mergeRanges zeroMS {- trace (show sorted) -} sorted
    in totalSum merged
 
 tshow :: (Show a) => a -> Text
