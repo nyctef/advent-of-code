@@ -95,10 +95,33 @@ part1 input = result
     (_, _, _, splitCount) = state
     result = splitCount
 
+type State2 = HashMap PointRC Int
+solve2 :: GridRC -> State2 -> PointRC -> State2
+solve2 g s p = 
+    _traceShow (p, fromleft, fromup, fromright) HashMap.insert p (fromleft + fromup + fromright) s
+  where
+    upleftP = (pup.pleft) p
+    upleftC = gget g upleftP
+    upP = pup p
+    upC = gget g upP
+    uprightP = ((pup .pright) p)
+    uprightC = gget g uprightP
+    fromleft = if upleftC == Just '^' then HashMap.findWithDefault 0 upleftP s else 0
+    fromup = if upC == Just '.' || upC == Just 'S' then HashMap.findWithDefault 0 upP s else 0
+    fromright = if uprightC == Just '^' then HashMap.findWithDefault 0 uprightP s else 0
+
 part2 :: Input -> Int
 part2 input = result
   where
-    result = 0
+    start = fromJust $ gfind input 'S'
+    init :: HashMap PointRC Int
+    init = HashMap.fromList [(start, 1)]
+    points = filter (\p -> row p /= 0) (gpoints input)
+    state = foldl (solve2 input) init points
+    bottomRow = map (\c -> PointRC (numRows input - 1) c) [0..numCols input - 1]
+    total = sum $ map (\p -> HashMap.findWithDefault 0 p state) bottomRow
+
+    result = _traceShow state total
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
@@ -110,7 +133,7 @@ parseInput i =
       rows = zip [0 ..] cols
       cells = [(PointRC r c, val) | (r, cs) <- rows, (c, val) <- cs]
       hashmap = HashMap.fromList cells
-   in Right $ GridRC hashmap (length cols) (length rows)
+   in Right $ GridRC hashmap (length $ head cols) (length cols)
 
 solve :: IO ()
 solve = do
