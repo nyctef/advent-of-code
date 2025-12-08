@@ -37,7 +37,7 @@ test_part1 :: TestTree
 test_part1 = testCase "Day 8 - Part 1" $ do
   let parsed = parseInput example1
   let parsed_ = either ignoreError id parsed
-  part1 parsed_ @?= 0
+  part1 10 parsed_ @?= 40
 
 testPart2 :: Text -> Int -> IO ()
 testPart2 input expected = do
