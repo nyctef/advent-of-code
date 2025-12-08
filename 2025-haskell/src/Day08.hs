@@ -1,4 +1,4 @@
-module Day07 (solve, part1, part2, parseInput) where
+module Day08 (solve, part1, part2, parseInput) where
 
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
@@ -13,8 +13,28 @@ import qualified GridRC as G
 import InputFetcher (getInput)
 import PointRC (PointRC (..))
 import qualified PointRC as P
+import Text.Parsec hiding (count, getInput)
+import Text.Parsec.Text (Parser)
+import Control.Arrow (left)
 
-type Input = GridRC
+data Box = Box { bx :: Int, by :: Int, bz :: Int } deriving (Show, Eq)
+
+boxP :: Parser Box
+boxP = do
+  x <- many1 digit
+  _ <- char ','
+  y <- many1 digit
+  _ <- char ','
+  z <- many1 digit
+  return $ Box (read x) (read y) (read z)
+
+boxesP :: Parser [Box]
+boxesP = boxP `sepBy` char '\n'
+
+
+
+
+type Input = [Box]
 
 -- like traceShow, except that it doesn't
 _traceShow :: a -> b -> b
@@ -34,11 +54,11 @@ tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
 parseInput :: Text -> Either String Input
-parseInput = G.parse
+parseInput i = left show $ parse boxesP "" $ T.strip i
 
 solve :: IO ()
 solve = do
-  input <- getInput 2025 7
+  input <- getInput 2025 8
   let parsed = parseInput input
   -- TIO.putStrLn $ "Input: " <> tshow parsed
   TIO.putStrLn $ "  Part 1: " <> tshow (part1 <$> parsed)
