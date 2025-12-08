@@ -24,7 +24,7 @@ import Text.Parsec.Text (Parser)
 import Debug.Trace
 import Data.Hashable (Hashable(..), hash)
 import GHC.Generics
-import Data.List (sort)
+import Data.List (sort, inits, scanl')
 import Text.Printf (printf)
 
 data Box = Box {bx :: Int, by :: Int, bz :: Int} deriving (Eq, Generic, Hashable)
@@ -76,11 +76,10 @@ type State1 = (HashSet Connection, HashSet Box, [Int])
 canConnect :: HashSet Connection -> HashSet Box -> Maybe Connection
 canConnect cs bs = listToMaybe $ filter (\c -> HashSet.member (b1 c) bs || HashSet.member (b2 c) bs) $ HashSet.toList cs
 
-
-solve1 :: State1 -> State1
-solve1 (p, c, d)
+getTrees :: State1 -> State1
+getTrees (p, c, d)
   -- done
-  | null p = (p, c, d)
+  | null p && null c = (p, c, d)
   -- no current set, so start one
   | null c = 
       let
@@ -116,14 +115,26 @@ part1 count input = result
   where
     conns = take count $ sort $ HashSet.toList $ HashSet.fromList $ allConnections input
     seed = (HashSet.fromList conns, HashSet.empty, [])
-    (_, _, sizes) = run solve1 seed
+    (_, _, sizes) = run getTrees seed
     top3 = take 3 $ reverse $ sort sizes
-    result = traceShow (sizes) (product top3)
+    result = (product top3)
+
+getTreeSizes :: [Connection] -> [Int]
+getTreeSizes cs = let
+    seed = (HashSet.fromList cs, HashSet.empty, [])
+    (_, _, sizes) = run getTrees seed
+  in sizes
+  
 
 part2 :: Input -> Int
 part2 input = result
   where
-    result = 0
+    attempts = inits $ sort $ HashSet.toList $ HashSet.fromList $ allConnections input
+    sizes = map (\a -> (a, getTreeSizes a)) attempts
+    complete = filter (\(_, s) -> (length s == 1) && (listToMaybe s == Just (length input))) sizes
+    (aconns, _)  = (head complete)
+    aconn = last aconns
+    result = _traceShow ( aconns) ((bx $ b1 aconn) * (bx $ b2 aconn))
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show

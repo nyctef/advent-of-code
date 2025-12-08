@@ -50,5 +50,5 @@ test_part2 =
   testGroup
     "Day 8 - Part 2"
     [ testCase "example1" $
-        testPart2 example1 0
+        testPart2 example1 25272
     ]
