@@ -7,6 +7,8 @@ import Control.Arrow (left)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 import Data.Hashable (Hashable (..), hash)
+import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict(HashMap(..)) 
 import Data.List (find, group, inits, sort, sortBy)
 import Data.Maybe
 import Data.Ord
@@ -131,6 +133,24 @@ traceLine boundaries row = result
 --     ydist = ymax - ymin
 --     filled = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
 
+sortLine :: (Tile, Tile) -> (Tile, Tile)
+sortLine (t1, t2) = (Tile (xmin) (ymin), Tile (xmax)( ymax))
+  where
+    xmin = min (tx t1) (tx t2)
+    xmax = max (tx t1) (tx t2)
+    ymin = min (ty t1) (ty t2)
+    ymax = max (ty t1) (ty t2)
+
+pointIsOnLine :: (Tile, Tile) -> Tile -> Bool
+pointIsOnLine (mint, maxt) t = result
+  where
+    inX = (tx mint) <= (tx t) && (tx t) <= (tx maxt)
+    inY = (ty mint) <= (ty t) && (ty t) <= (ty maxt)
+    result = inX && inY
+  
+pointIsOnLines :: [(Tile, Tile)] -> Tile -> Bool
+pointIsOnLines lines t = any (`pointIsOnLine` t) lines
+
 pointIsInsideLines :: HashSet Tile -> Tile -> Bool
 pointIsInsideLines lines t
   | t `elem` lines = False -- hoping we don't need to deal with this edge case if we shrink the rect first
@@ -155,21 +175,21 @@ shrunkRectIsInsideLines isOnLine rect = result
     rectLines = tlines corners
     rectPoints  :: [Tile]
     rectPoints = concatMap pointsOnLine rectLines
-    result = traceShow (length rectPoints) all (not . isOnLine) rectPoints
+    result = _traceShow (rect, length rectPoints) all (not . isOnLine) rectPoints
 
 part2 :: Input -> Int
 part2 input = result
   where
     -- redOrGreen = getAllPoints input
     allPairs = [(t1, t2) | t1 <- input, t2 <- input]
-    lines = tlines input
-    pointsOnLines = HashSet.fromList $ concatMap pointsOnLine lines
-    possibleLineXs = HashSet.fromList $ map tx input
-    possibleLineYs = HashSet.fromList $ map ty input
-    isOnLine p = (HashSet.member (tx p) possibleLineXs) && (HashSet.member (ty p) possibleLineYs) && (HashSet.member p pointsOnLines)
-    allPairs' = traceShow (length allPairs, length pointsOnLines) filter (shrunkRectIsInsideLines isOnLine) allPairs
-    sizes = map (\(t1, t2) -> area t1 t2) allPairs'
-    result = maximum sizes
+    lines = map sortLine $ tlines input
+    pairsWithSizes = map (\pair -> (pair, area (fst pair) (snd pair))) allPairs
+    biggestFirst = sortBy (comparing (Data.Ord.Down . snd)) pairsWithSizes
+    linesFromX = HashMap.fromListWith (++) $ concatMap (\(mint, maxt) -> [((tx mint), [(mint, maxt)]), ((tx maxt, [(mint, maxt)]))]) lines
+    linesFromY = HashMap.fromListWith (++) $ concatMap (\(mint, maxt) -> [((ty mint), [(mint, maxt)]), ((ty maxt, [(mint, maxt)]))]) lines
+    isOnLine p = pointIsOnLines ((HashMap.findWithDefault [] (tx p) linesFromX) ++ (HashMap.findWithDefault [] (ty p) linesFromY)) p
+    allPairs' = filter ((shrunkRectIsInsideLines isOnLine) . fst) biggestFirst
+    (_, result) = _traceShow allPairs' head allPairs'
     -- result = traceShow sizes (-1)
 
 tshow :: (Show a) => a -> Text
