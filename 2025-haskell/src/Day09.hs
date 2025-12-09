@@ -7,19 +7,20 @@ import Control.Arrow (left)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 import Data.Hashable (Hashable (..), hash)
-import Data.List (inits, find, sort, sortBy)
+import Data.List (find, group, inits, sort, sortBy)
 import Data.Maybe
+import Data.Ord
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import Debug.Trace
 import GHC.Generics
 import InputFetcher (getInput)
 import Text.Parsec hiding (count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
-import Data.Ord
 
-data Tile = Tile {tx :: Int, ty :: Int} deriving (Eq)
+data Tile = Tile {tx :: Int, ty :: Int} deriving (Eq, Generic, Hashable, Ord)
 
 instance Show Tile where
   show t = printf "[%d,%d]" (tx t) (ty t)
@@ -29,14 +30,12 @@ tileP = do
   x <- many1 digit
   _ <- char ','
   y <- many1 digit
-  return $ Tile (read x) (read y) 
+  return $ Tile (read x) (read y)
 
 tilesP :: Parser [Tile]
 tilesP = tileP `sepBy` char '\n'
 
-
 type Input = [Tile]
-
 
 -- like traceShow, except that it doesn't
 _traceShow :: a -> b -> b
@@ -64,11 +63,81 @@ part1 input = result
     sizes = map (\(t1, t2) -> area t1 t2) allPairs
     result = maximum sizes
 
+tlines :: [Tile] -> [(Tile, Tile)]
+tlines input = result
+  where
+    pairs = zip input $ tail input
+    lastPair = (last input, head input)
+    result = pairs ++ [lastPair]
+
+pointsOnLine :: (Tile, Tile) -> [Tile]
+pointsOnLine (t1, t2) = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
+  where
+    xmin = min (tx t1) (tx t2)
+    xmax = max (tx t1) (tx t2)
+    ymin = min (ty t1) (ty t2)
+    ymax = max (ty t1) (ty t2)
+
+dedup :: (Ord a) => [a] -> [a]
+dedup = map head . group . sort
+
+flipInOut :: HashSet Tile -> (Bool, [Tile]) -> Tile -> (Bool, [Tile])
+flipInOut boundaries (inside, collected) next
+  | HashSet.member next boundaries = (not inside, next : collected)
+  | inside = (inside, next : collected)
+  | otherwise = (inside, collected)
+
+traceLine :: HashSet Tile -> [Tile] -> HashSet Tile
+traceLine boundaries row = result
+  where
+    folder :: (Bool, [Tile]) -> Tile -> (Bool, [Tile])
+    folder = flipInOut boundaries
+    seed :: (Bool, [Tile])
+    seed = (False, [])
+    state = foldl' folder seed row
+    result = HashSet.fromList $ snd state
+
+getFilledPoints :: HashSet Tile -> HashSet Tile
+getFilledPoints linePoints = result
+  where
+    linePoints' = HashSet.toList linePoints
+    xmin = ((-) 1) $ minimum $ map tx linePoints'
+    ymin = ((-) 1) $ minimum $ map ty linePoints'
+    xmax = ((+) 1) $ maximum $ map tx linePoints'
+    ymax = ((+) 1) $ maximum $ map ty linePoints'
+    candidates :: [[Tile]]
+    candidates = [[Tile x y | y <- [ymin .. ymax]] | x <- [xmin .. xmax]]
+    insides = map (traceLine linePoints) candidates
+    result = HashSet.unions insides
+
+getAllPoints :: [Tile] -> HashSet Tile
+getAllPoints input = result
+  where
+    seed = HashSet.empty
+    lines = tlines input
+    pointsOnLines = HashSet.fromList $ concatMap pointsOnLine lines
+    result = getFilledPoints pointsOnLines
+
+allPointsIn :: HashSet Tile -> (Tile, Tile) -> Bool
+allPointsIn redOrGreen (t1, t2) = all (`HashSet.member` redOrGreen) filled
+  where
+    xmin = min (tx t1) (tx t2)
+    xmax = max (tx t1) (tx t2)
+    ymin = min (ty t1) (ty t2)
+    ymax = max (ty t1) (ty t2)
+    xdist = xmax - xmin
+    ydist = ymax - ymin
+    filled = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
 
 part2 :: Input -> Int
 part2 input = result
   where
-    result = 0
+    redOrGreen = getAllPoints input
+    allPairs = [(t1, t2) | t1 <- input, t2 <- input]
+    allPairs' = filter (allPointsIn redOrGreen) allPairs
+    sizes = map (\(t1, t2) -> area t1 t2) allPairs'
+    result = maximum sizes
+    -- result = traceShow redOrGreen (-1)
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show

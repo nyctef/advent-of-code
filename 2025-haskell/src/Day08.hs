@@ -7,8 +7,9 @@ import Control.Arrow (left)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 import Data.Hashable (Hashable (..), hash)
-import Data.List (inits, find, sort, sortBy)
+import Data.List (find, inits, sort, sortBy)
 import Data.Maybe
+import Data.Ord
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -17,7 +18,6 @@ import InputFetcher (getInput)
 import Text.Parsec hiding (count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
-import Data.Ord
 
 data Box = Box {bx :: Int, by :: Int, bz :: Int} deriving (Eq, Generic, Hashable)
 
