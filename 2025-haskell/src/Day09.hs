@@ -147,15 +147,15 @@ shrink1 (t1, t2) = (Tile (xmin + 1) (ymin + 1), Tile (xmax -1)( ymax - 1))
     ymin = min (ty t1) (ty t2)
     ymax = max (ty t1) (ty t2)
 
-shrunkRectIsInsideLines :: HashSet Tile -> (Tile, Tile) -> Bool
-shrunkRectIsInsideLines lines rect = result
+shrunkRectIsInsideLines :: (Tile -> Bool) -> (Tile, Tile) -> Bool
+shrunkRectIsInsideLines isOnLine rect = result
   where
     (mint, maxt) = shrink1 rect
     corners = [mint, Tile (tx mint) (ty maxt), maxt, Tile (tx maxt) (ty mint)]
     rectLines = tlines corners
     rectPoints  :: [Tile]
     rectPoints = concatMap pointsOnLine rectLines
-    result = _traceShow (length lines, length rectPoints) all (\p -> not (HashSet.member p lines)) rectPoints
+    result = traceShow (length rectPoints) all (not . isOnLine) rectPoints
 
 part2 :: Input -> Int
 part2 input = result
@@ -164,7 +164,10 @@ part2 input = result
     allPairs = [(t1, t2) | t1 <- input, t2 <- input]
     lines = tlines input
     pointsOnLines = HashSet.fromList $ concatMap pointsOnLine lines
-    allPairs' = traceShow (length allPairs, length pointsOnLines) filter (shrunkRectIsInsideLines pointsOnLines) allPairs
+    possibleLineXs = HashSet.fromList $ map tx input
+    possibleLineYs = HashSet.fromList $ map ty input
+    isOnLine p = (HashSet.member (tx p) possibleLineXs) && (HashSet.member (ty p) possibleLineYs) && (HashSet.member p pointsOnLines)
+    allPairs' = traceShow (length allPairs, length pointsOnLines) filter (shrunkRectIsInsideLines isOnLine) allPairs
     sizes = map (\(t1, t2) -> area t1 t2) allPairs'
     result = maximum sizes
     -- result = traceShow sizes (-1)
