@@ -6,6 +6,7 @@ module Day09 (solve, part1, part2, parseInput) where
 import Control.Arrow (left)
 import Data.Hashable (Hashable (..))
 import Data.List (sortBy)
+import Data.Maybe
 import Data.Ord
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -64,8 +65,8 @@ part1 input = result
 tlines :: [Tile] -> [Line]
 tlines input = result
   where
-    pairs = map Line $ zip input $ tail input
-    lastPair = Line (last input, head input)
+    pairs = zipWith (curry Line) input (drop 1 input)
+    lastPair = Line (last input, fromJust $ listToMaybe input)
     result = pairs ++ [lastPair]
 
 sortLine :: Line -> Line
@@ -85,7 +86,7 @@ shrink1 (Rect (t1, t2)) = Rect (Tile (xmin + 1) (ymin + 1), Tile (xmax - 1) (yma
     ymax = max (ty t1) (ty t2)
 
 lineIntersects :: Line -> Line -> Bool
-lineIntersects (Line (tmin1, tmax1)) (Line (tmin2, tmax2)) = (not separatedInX) && (not separatedInY)
+lineIntersects (Line (tmin1, tmax1)) (Line (tmin2, tmax2)) = not separatedInX && not separatedInY
   where
     -- assuming both lines are sorted
     separatedInX = (tx tmin1 >= tx tmax2) || (tx tmin2 >= tx tmax1)
@@ -99,10 +100,10 @@ rectEdges rect = rectLines
     rectLines = map sortLine $ tlines corners
 
 shrunkRectIsInsideLines :: [Line] -> Rect -> Bool
-shrunkRectIsInsideLines lines rect = result
+shrunkRectIsInsideLines ls rect = result
   where
     rectLines = rectEdges $ shrink1 rect
-    checks = [(rl, il) | rl <- rectLines, il <- lines]
+    checks = [(rl, il) | rl <- rectLines, il <- ls]
     result = all (\(rl, il) -> not (lineIntersects rl il)) checks
 
 part2 :: Input -> Int
@@ -114,7 +115,7 @@ part2 input = result
     rectsWithSizes = map (\rect -> (rect, area rect)) allRects
     biggestFirst = sortBy (comparing (Data.Ord.Down . snd)) rectsWithSizes
     allPairs' = filter (shrunkRectIsInsideLines ls . fst) biggestFirst
-    (_, result) = _traceShow allPairs' head allPairs'
+    (_, result) = fromJust $ listToMaybe allPairs'
 
 -- result = traceShow sizes (-1)
 
