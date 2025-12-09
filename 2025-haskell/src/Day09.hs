@@ -97,47 +97,72 @@ traceLine boundaries row = result
     state = foldl' folder seed row
     result = HashSet.fromList $ snd state
 
-getFilledPoints :: HashSet Tile -> HashSet Tile
-getFilledPoints linePoints = result
-  where
-    linePoints' = HashSet.toList linePoints
-    xmin = ((-) 1) $ minimum $ map tx linePoints'
-    ymin = ((-) 1) $ minimum $ map ty linePoints'
-    xmax = ((+) 1) $ maximum $ map tx linePoints'
-    ymax = ((+) 1) $ maximum $ map ty linePoints'
-    candidates :: [[Tile]]
-    candidates = [[Tile x y | y <- [ymin .. ymax]] | x <- [xmin .. xmax]]
-    insides = map (traceLine linePoints) candidates
-    result = HashSet.unions insides
+-- getFilledPoints :: HashSet Tile -> HashSet Tile
+-- getFilledPoints linePoints = result
+--   where
+--     linePoints' = HashSet.toList linePoints
+--     xmin = ((-) 1) $ minimum $ map tx linePoints'
+--     ymin = ((-) 1) $ minimum $ map ty linePoints'
+--     xmax = ((+) 1) $ maximum $ map tx linePoints'
+--     ymax = ((+) 1) $ maximum $ map ty linePoints'
+--     candidates :: [[Tile]]
+--     candidates = [[Tile x y | y <- [ymin .. ymax]] | x <- [xmin .. xmax]]
+--     insides = map (traceLine linePoints) candidates
+--     result = HashSet.unions insides
 
-getAllPoints :: [Tile] -> HashSet Tile
-getAllPoints input = result
-  where
-    seed = HashSet.empty
-    lines = tlines input
-    pointsOnLines = HashSet.fromList $ concatMap pointsOnLine lines
-    result = getFilledPoints pointsOnLines
+-- getAllPoints :: [Tile] -> HashSet Tile
+-- getAllPoints input = result
+--   where
+--     seed = HashSet.empty
+--     lines = tlines input
+--     pointsOnLines = HashSet.fromList $ concatMap pointsOnLine lines
+--     result = getFilledPoints pointsOnLines
 
-allPointsIn :: HashSet Tile -> (Tile, Tile) -> Bool
-allPointsIn redOrGreen (t1, t2) = all (`HashSet.member` redOrGreen) filled
+-- allPointsIn :: HashSet Tile -> (Tile, Tile) -> Bool
+-- allPointsIn redOrGreen (t1, t2) = all (`HashSet.member` redOrGreen) filled
+--   where
+--     xmin = min (tx t1) (tx t2)
+--     xmax = max (tx t1) (tx t2)
+--     ymin = min (ty t1) (ty t2)
+--     ymax = max (ty t1) (ty t2)
+--     xdist = xmax - xmin
+--     ydist = ymax - ymin
+--     filled = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
+
+pointIsInsideLines :: HashSet Tile -> Tile -> Bool
+pointIsInsideLines lines t
+  | t `elem` lines = False -- hoping we don't need to deal with this edge case if we shrink the rect first
+  | otherwise = let
+        path = [Tile x (ty t) | x <- [tx t..100000]]
+        count = foldl' (\c n -> if (n `HashSet.member` lines) then c + 1 else c) 0 path
+      in odd count
+
+shrink1 :: (Tile, Tile) -> (Tile, Tile)
+shrink1 (t1, t2) = (Tile (xmin + 1) (ymin + 1), Tile (xmax -1)( ymax - 1))
   where
     xmin = min (tx t1) (tx t2)
     xmax = max (tx t1) (tx t2)
     ymin = min (ty t1) (ty t2)
     ymax = max (ty t1) (ty t2)
-    xdist = xmax - xmin
-    ydist = ymax - ymin
-    filled = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
+
+shrunkRectIsInsideLines :: HashSet Tile -> (Tile, Tile) -> Bool
+shrunkRectIsInsideLines lines rect = result
+  where
+    (mint, maxt) = shrink1 rect
+    rectPoints = [Tile x y | x <- [tx mint..tx maxt], y<-[ty mint, ty maxt]]
+    result = all (pointIsInsideLines lines) rectPoints
 
 part2 :: Input -> Int
 part2 input = result
   where
-    redOrGreen = getAllPoints input
+    -- redOrGreen = getAllPoints input
     allPairs = [(t1, t2) | t1 <- input, t2 <- input]
-    allPairs' = filter (allPointsIn redOrGreen) allPairs
+    lines = tlines input
+    pointsOnLines = HashSet.fromList $ concatMap pointsOnLine lines
+    allPairs' = filter (shrunkRectIsInsideLines pointsOnLines) allPairs
     sizes = map (\(t1, t2) -> area t1 t2) allPairs'
     result = maximum sizes
-    -- result = traceShow redOrGreen (-1)
+    -- result = traceShow sizes (-1)
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
