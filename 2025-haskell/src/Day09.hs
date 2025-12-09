@@ -98,15 +98,22 @@ shrink1 (t1, t2) = (Tile (xmin + 1) (ymin + 1), Tile (xmax - 1) (ymax - 1))
     ymin = min (ty t1) (ty t2)
     ymax = max (ty t1) (ty t2)
 
-shrunkRectIsInsideLines :: (Tile -> Bool) -> (Tile, Tile) -> Bool
-shrunkRectIsInsideLines isOnLine rect = result
+lineIntersects :: (Tile, Tile) -> (Tile, Tile) -> Bool
+lineIntersects (tmin1, tmax1) (tmin2, tmax2) = (not separatedInX) && (not separatedInY)
+  where
+    -- assuming both lines are sorted
+    separatedInX = (tx tmin1 >= tx tmax2) || (tx tmin2 >= tx tmax1)
+    separatedInY = (ty tmin1 >= ty tmax2) || (ty tmin2 >= ty tmax1)
+    
+
+shrunkRectIsInsideLines :: [(Tile, Tile)] -> (Tile, Tile) -> Bool
+shrunkRectIsInsideLines lines rect = result
   where
     (mint, maxt) = shrink1 rect
     corners = [mint, Tile (tx mint) (ty maxt), maxt, Tile (tx maxt) (ty mint)]
-    rectLines = tlines corners
-    rectPoints :: [Tile]
-    rectPoints = concatMap pointsOnLine rectLines
-    result = _traceShow (rect, length rectPoints) all (not . isOnLine) rectPoints
+    rectLines = map sortLine $ tlines corners
+    checks = [(rl, il) | rl <- rectLines, il <- lines]
+    result = all (\(rl, il) -> not (lineIntersects rl il)) checks
 
 part2 :: Input -> Int
 part2 input = result
@@ -116,10 +123,7 @@ part2 input = result
     ls = map sortLine $ tlines input
     pairsWithSizes = map (\pair -> (pair, uncurry area pair)) allPairs
     biggestFirst = sortBy (comparing (Data.Ord.Down . snd)) pairsWithSizes
-    linesFromX = HashMap.fromListWith (++) $ concatMap (\(mint, maxt) -> [(tx mint, [(mint, maxt)]), (tx maxt, [(mint, maxt)])]) ls
-    linesFromY = HashMap.fromListWith (++) $ concatMap (\(mint, maxt) -> [(ty mint, [(mint, maxt)]), (ty maxt, [(mint, maxt)])]) ls
-    isOnLine p = pointIsOnLines (HashMap.findWithDefault [] (tx p) linesFromX ++ HashMap.findWithDefault [] (ty p) linesFromY) p
-    allPairs' = filter (shrunkRectIsInsideLines isOnLine . fst) biggestFirst
+    allPairs' = filter (shrunkRectIsInsideLines ls . fst) biggestFirst
     (_, result) = _traceShow allPairs' head allPairs'
 
 -- result = traceShow sizes (-1)
