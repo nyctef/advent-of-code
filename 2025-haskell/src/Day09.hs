@@ -149,8 +149,11 @@ shrunkRectIsInsideLines :: HashSet Tile -> (Tile, Tile) -> Bool
 shrunkRectIsInsideLines lines rect = result
   where
     (mint, maxt) = shrink1 rect
-    rectPoints = [Tile x y | x <- [tx mint..tx maxt], y<-[ty mint, ty maxt]]
-    result = all (pointIsInsideLines lines) rectPoints
+    corners = [mint, Tile (tx mint) (ty maxt), maxt, Tile (tx maxt) (ty mint)]
+    rectLines = tlines corners
+    rectPoints  :: [Tile]
+    rectPoints = concatMap pointsOnLine rectLines
+    result = all (`notElem` lines) rectPoints
 
 part2 :: Input -> Int
 part2 input = result
