@@ -14,11 +14,13 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import GHC.Generics
 import InputFetcher (getInput)
-import Text.Parsec hiding (count, getInput)
+import Text.Parsec hiding (count, getInput, Line)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
 
 data Tile = Tile {tx :: Int, ty :: Int} deriving (Eq, Generic, Hashable, Ord)
+
+newtype Line = Line (Tile, Tile)
 
 instance Show Tile where
   show t = printf "[%d,%d]" (tx t) (ty t)
@@ -56,24 +58,15 @@ part1 input = result
     sizes = map (uncurry area) allPairs
     result = maximum sizes
 
-tlines :: [Tile] -> [(Tile, Tile)]
+tlines :: [Tile] -> [Line]
 tlines input = result
   where
-    pairs = zip input $ tail input
-    lastPair = (last input, head input)
+    pairs = map Line $ zip  input $ tail input
+    lastPair = Line (last input, head input)
     result = pairs ++ [lastPair]
 
-pointsOnLine :: (Tile, Tile) -> [Tile]
-pointsOnLine (t1, t2) = assert (tx t1 == tx t2 || ty t1 == ty t2) result
-  where
-    xmin = min (tx t1) (tx t2)
-    xmax = max (tx t1) (tx t2)
-    ymin = min (ty t1) (ty t2)
-    ymax = max (ty t1) (ty t2)
-    result = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
-
-sortLine :: (Tile, Tile) -> (Tile, Tile)
-sortLine (t1, t2) = (Tile xmin ymin, Tile xmax ymax)
+sortLine :: Line -> Line
+sortLine (Line (t1, t2)) = Line (Tile xmin ymin, Tile xmax ymax)
   where
     xmin = min (tx t1) (tx t2)
     xmax = max (tx t1) (tx t2)
@@ -98,15 +91,15 @@ shrink1 (t1, t2) = (Tile (xmin + 1) (ymin + 1), Tile (xmax - 1) (ymax - 1))
     ymin = min (ty t1) (ty t2)
     ymax = max (ty t1) (ty t2)
 
-lineIntersects :: (Tile, Tile) -> (Tile, Tile) -> Bool
-lineIntersects (tmin1, tmax1) (tmin2, tmax2) = (not separatedInX) && (not separatedInY)
+lineIntersects :: Line -> Line -> Bool
+lineIntersects (Line (tmin1, tmax1)) (Line (tmin2, tmax2)) = (not separatedInX) && (not separatedInY)
   where
     -- assuming both lines are sorted
     separatedInX = (tx tmin1 >= tx tmax2) || (tx tmin2 >= tx tmax1)
     separatedInY = (ty tmin1 >= ty tmax2) || (ty tmin2 >= ty tmax1)
     
 
-shrunkRectIsInsideLines :: [(Tile, Tile)] -> (Tile, Tile) -> Bool
+shrunkRectIsInsideLines :: [Line] -> (Tile, Tile) -> Bool
 shrunkRectIsInsideLines lines rect = result
   where
     (mint, maxt) = shrink1 rect
