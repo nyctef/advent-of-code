@@ -33,10 +33,32 @@ testPart2 input expected = do
   let parsed_ = either ignoreError id parsed
   part2 parsed_ @?= expected
 
+{-
+  0123456789
+0 ...........
+1 .#--##--#.
+2 .|..||..|
+3 .|..##..|.
+4 .|......|.
+5 .#------#.
+6 .......... -}
+example2 :: Text
+example2 =
+  """
+  1,1
+  4,1
+  4,3
+  5,3
+  5,1
+  8,1
+  8,5
+  1,5
+  """
+
 test_part2 :: TestTree
 test_part2 =
   testGroup
     "Day 9 - Part 2"
-    [ testCase "example1" $
-        testPart2 example1 24
+    [ testCase "example1" $ testPart2 example1 24,
+      testCase "example2 (incorrect, should be 40)" $ testPart2 example2 25
     ]
