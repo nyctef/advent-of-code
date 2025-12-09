@@ -14,13 +14,18 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import GHC.Generics
 import InputFetcher (getInput)
-import Text.Parsec hiding (count, getInput, Line)
+import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
 
 data Tile = Tile {tx :: Int, ty :: Int} deriving (Eq, Generic, Hashable, Ord)
 
+-- a line defined by two endpoints.
+-- we assume that lines are vertical or horizontal, and have been passed through `sortLine`
 newtype Line = Line (Tile, Tile)
+
+-- a rectangle defined by two opposite corners
+newtype Rect = Rect (Tile, Tile)
 
 instance Show Tile where
   show t = printf "[%d,%d]" (tx t) (ty t)
@@ -41,8 +46,8 @@ type Input = [Tile]
 _traceShow :: a -> b -> b
 _traceShow = seq
 
-area :: Tile -> Tile -> Int
-area t1 t2 = (xdist + 1) * (ydist + 1)
+area :: Rect -> Int
+area (Rect (t1, t2)) = (xdist + 1) * (ydist + 1)
   where
     xmin = min (tx t1) (tx t2)
     xmax = max (tx t1) (tx t2)
@@ -54,14 +59,14 @@ area t1 t2 = (xdist + 1) * (ydist + 1)
 part1 :: Input -> Int
 part1 input = result
   where
-    allPairs = [(t1, t2) | t1 <- input, t2 <- input]
-    sizes = map (uncurry area) allPairs
+    allPairs = [Rect (t1, t2) | t1 <- input, t2 <- input]
+    sizes = map area allPairs
     result = maximum sizes
 
 tlines :: [Tile] -> [Line]
 tlines input = result
   where
-    pairs = map Line $ zip  input $ tail input
+    pairs = map Line $ zip input $ tail input
     lastPair = Line (last input, head input)
     result = pairs ++ [lastPair]
 
@@ -83,8 +88,8 @@ pointIsOnLine (mint, maxt) t = result
 pointIsOnLines :: [(Tile, Tile)] -> Tile -> Bool
 pointIsOnLines ls t = any (`pointIsOnLine` t) ls
 
-shrink1 :: (Tile, Tile) -> (Tile, Tile)
-shrink1 (t1, t2) = (Tile (xmin + 1) (ymin + 1), Tile (xmax - 1) (ymax - 1))
+shrink1 :: Rect -> Rect
+shrink1 (Rect (t1, t2)) = Rect (Tile (xmin + 1) (ymin + 1), Tile (xmax - 1) (ymax - 1))
   where
     xmin = min (tx t1) (tx t2)
     xmax = max (tx t1) (tx t2)
@@ -97,14 +102,18 @@ lineIntersects (Line (tmin1, tmax1)) (Line (tmin2, tmax2)) = (not separatedInX) 
     -- assuming both lines are sorted
     separatedInX = (tx tmin1 >= tx tmax2) || (tx tmin2 >= tx tmax1)
     separatedInY = (ty tmin1 >= ty tmax2) || (ty tmin2 >= ty tmax1)
-    
 
-shrunkRectIsInsideLines :: [Line] -> (Tile, Tile) -> Bool
-shrunkRectIsInsideLines lines rect = result
+rectEdges :: Rect -> [Line]
+rectEdges rect = rectLines
   where
-    (mint, maxt) = shrink1 rect
+    Rect (mint, maxt) = rect
     corners = [mint, Tile (tx mint) (ty maxt), maxt, Tile (tx maxt) (ty mint)]
     rectLines = map sortLine $ tlines corners
+
+shrunkRectIsInsideLines :: [Line] -> Rect -> Bool
+shrunkRectIsInsideLines lines rect = result
+  where
+    rectLines = rectEdges $ shrink1 rect
     checks = [(rl, il) | rl <- rectLines, il <- lines]
     result = all (\(rl, il) -> not (lineIntersects rl il)) checks
 
@@ -112,10 +121,10 @@ part2 :: Input -> Int
 part2 input = result
   where
     -- redOrGreen = getAllPoints input
-    allPairs = [(t1, t2) | t1 <- input, t2 <- input]
+    allRects = [Rect (t1, t2) | t1 <- input, t2 <- input]
     ls = map sortLine $ tlines input
-    pairsWithSizes = map (\pair -> (pair, uncurry area pair)) allPairs
-    biggestFirst = sortBy (comparing (Data.Ord.Down . snd)) pairsWithSizes
+    rectsWithSizes = map (\rect -> (rect, area rect)) allRects
+    biggestFirst = sortBy (comparing (Data.Ord.Down . snd)) rectsWithSizes
     allPairs' = filter (shrunkRectIsInsideLines ls . fst) biggestFirst
     (_, result) = _traceShow allPairs' head allPairs'
 
