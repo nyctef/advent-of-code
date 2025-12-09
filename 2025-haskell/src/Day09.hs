@@ -19,6 +19,7 @@ import InputFetcher (getInput)
 import Text.Parsec hiding (count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
+import Control.Exception (assert)
 
 data Tile = Tile {tx :: Int, ty :: Int} deriving (Eq, Generic, Hashable, Ord)
 
@@ -71,12 +72,13 @@ tlines input = result
     result = pairs ++ [lastPair]
 
 pointsOnLine :: (Tile, Tile) -> [Tile]
-pointsOnLine (t1, t2) = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
+pointsOnLine (t1, t2) = assert (tx t1 == tx t2 || ty t1 == ty t2) result
   where
     xmin = min (tx t1) (tx t2)
     xmax = max (tx t1) (tx t2)
     ymin = min (ty t1) (ty t2)
     ymax = max (ty t1) (ty t2)
+    result = [Tile x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
 
 dedup :: (Ord a) => [a] -> [a]
 dedup = map head . group . sort
@@ -153,7 +155,7 @@ shrunkRectIsInsideLines lines rect = result
     rectLines = tlines corners
     rectPoints  :: [Tile]
     rectPoints = concatMap pointsOnLine rectLines
-    result = all (`notElem` lines) rectPoints
+    result = _traceShow (length lines, length rectPoints) all (\p -> not (HashSet.member p lines)) rectPoints
 
 part2 :: Input -> Int
 part2 input = result
@@ -162,7 +164,7 @@ part2 input = result
     allPairs = [(t1, t2) | t1 <- input, t2 <- input]
     lines = tlines input
     pointsOnLines = HashSet.fromList $ concatMap pointsOnLine lines
-    allPairs' = filter (shrunkRectIsInsideLines pointsOnLines) allPairs
+    allPairs' = traceShow (length allPairs, length pointsOnLines) filter (shrunkRectIsInsideLines pointsOnLines) allPairs
     sizes = map (\(t1, t2) -> area t1 t2) allPairs'
     result = maximum sizes
     -- result = traceShow sizes (-1)
