@@ -4,8 +4,6 @@
 module Day09 (solve, part1, part2, parseInput) where
 
 import Control.Arrow (left)
-import Control.Exception (assert)
-import qualified Data.HashMap.Strict as HashMap
 import Data.Hashable (Hashable (..))
 import Data.List (sortBy)
 import Data.Ord
@@ -77,16 +75,6 @@ sortLine (Line (t1, t2)) = Line (Tile xmin ymin, Tile xmax ymax)
     xmax = max (tx t1) (tx t2)
     ymin = min (ty t1) (ty t2)
     ymax = max (ty t1) (ty t2)
-
-pointIsOnLine :: (Tile, Tile) -> Tile -> Bool
-pointIsOnLine (mint, maxt) t = result
-  where
-    inX = tx mint <= tx t && tx t <= tx maxt
-    inY = ty mint <= ty t && ty t <= ty maxt
-    result = inX && inY
-
-pointIsOnLines :: [(Tile, Tile)] -> Tile -> Bool
-pointIsOnLines ls t = any (`pointIsOnLine` t) ls
 
 shrink1 :: Rect -> Rect
 shrink1 (Rect (t1, t2)) = Rect (Tile (xmin + 1) (ymin + 1), Tile (xmax - 1) (ymax - 1))
