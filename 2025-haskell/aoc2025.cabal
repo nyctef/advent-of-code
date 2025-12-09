@@ -25,6 +25,7 @@ library
         Day06
         Day07
         Day08
+        Day09
         PointRC
         GridRC
         InputFetcher
@@ -70,6 +71,7 @@ test-suite aoc2025-test
         Day06Test
         Day07Test
         Day08Test
+        Day09Test
     build-depends:
         base >=4.18 && <5,
         aoc2025,
