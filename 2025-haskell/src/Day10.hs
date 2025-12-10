@@ -52,7 +52,7 @@ foundSolution (x:xs) = lights == targets
     targets = mLightTargets m
 
 countSteps1 :: Machine -> Int
-countSteps1 m = _traceShow result result
+countSteps1 m = traceShow result result
   where
     seed = [(m, 0, Set.empty)]
     step :: [State1] -> [State1]
@@ -62,7 +62,7 @@ countSteps1 m = _traceShow result result
         nextMachines = filter (not . (`Set.member` s) . mLights) $ map (\b -> pressButton b m') [0..(length $ mButtonWirings m') - 1]
         nextSeen = Set.insert (mLights m') s
         nexts = map (\m -> (m, c+1, nextSeen)) nextMachines
-      in traceShow (length xs, length nextSeen) xs ++ nexts
+      in _traceShow (length xs, length nextSeen) (if Set.member (mLights m') s then xs else xs ++ nexts)
     steps = iterate step seed
     final = dropWhile (not . foundSolution) steps
     result = (\(_,x,_) -> x) $ head $ head final
