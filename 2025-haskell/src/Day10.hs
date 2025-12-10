@@ -21,6 +21,7 @@ import qualified Data.Set as Set
 import Data.Set(Set(..))
 import qualified Data.Sequence as Seq
 import Data.Sequence(Seq(..))
+import Control.Monad (replicateM)
 
 data Machine = Machine { mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
 
@@ -35,6 +36,14 @@ pressButton b m = Machine newLights (mLightTargets m) (mButtonWirings m) (mJolta
     newLights = map (\(i, l) -> if i `elem` wiring then not l else l) $ zip [0..] oldLights
 
 
+pressButtons :: [Bool] -> Machine -> Machine
+pressButtons bs m = newMachine
+  where
+    indexes = [0..] `zip` bs
+    lights = mapMaybe (\(i, b) -> if b then Just i else Nothing) indexes
+    newMachine = foldl' (\m' l -> pressButton l m') m lights
+
+
 -- apparently this isn't built in? https://stackoverflow.com/questions/5852722
 -- replaceNth :: Int -> (a -> a) -> [a] -> [a]
 -- replaceNth _ _ [] = []
@@ -43,15 +52,22 @@ pressButton b m = Machine newLights (mLightTargets m) (mButtonWirings m) (mJolta
   -- | otherwise = x : replaceNth (n-1) mutate xs
 
 
+allCombinations :: Int -> [[Bool]]
+allCombinations n = replicateM n [True, False]
+
 -- machine, step count, already-seen light configurations
 type State1 = (Machine, Int, Set [Bool])
 
-foundSolution :: Seq State1 -> Bool
-foundSolution (x:<| xs) = lights == targets
+isSolved :: Machine -> Bool
+isSolved m = lights == targets
   where
-    (m, _, _) = x
     lights = mLights m
     targets = mLightTargets m
+
+foundSolution :: Seq State1 -> Bool
+foundSolution (x:<| xs) = isSolved m
+  where
+    (m, _, _) = x
 
 -- because laziness
 seqHead :: Seq a -> a
@@ -73,6 +89,17 @@ countSteps1 m = traceShow result result
     steps = iterate step seed
     final = dropWhile (not . foundSolution) steps
     result = (\(_,x,_) -> x) $ seqHead $ head final
+
+countSteps1a :: Machine -> Int
+countSteps1a m = traceShow result result 
+  where
+    candidates = allCombinations $ length $ mButtonWirings m
+    attempts = map (\c -> (length $ filter (==True) c, pressButtons c m)) candidates
+    solved :: [(Int, Machine)]
+    solved = filter (\(_, m) -> isSolved m) attempts
+    best = sortBy (comparing fst) solved
+    result = fst . head $ best
+
 
 intP :: Parser Int
 intP = read <$> many1 digit
@@ -136,7 +163,7 @@ _traceShow = seq
 part1 :: Input -> Int
 part1 input = result
   where
-    stepCounts = map countSteps1 input
+    stepCounts = map countSteps1a input
     result = _traceShow stepCounts (sum stepCounts)
 
 part2 :: Input -> Int
