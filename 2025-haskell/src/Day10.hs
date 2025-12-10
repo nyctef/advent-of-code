@@ -79,7 +79,7 @@ seqHead (x :<| xs) = x
 seqHead _ = undefined
 
 countSteps1 :: Machine -> Int
-countSteps1 m = traceShow result result
+countSteps1 m = _traceShow result result
   where
     seed = Seq.singleton (m, 0, Set.empty)
     step :: Seq State1 -> Seq State1
@@ -95,7 +95,7 @@ countSteps1 m = traceShow result result
     result = (\(_,x,_) -> x) $ seqHead $ head final
 
 countSteps1a :: Machine -> Int
-countSteps1a m = traceShow result result 
+countSteps1a m = _traceShow result result 
   where
     candidates = allCombinations $ length $ mButtonWirings m
     attempts = map (\c -> (length $ filter (==True) c, pressButtons c m)) candidates
@@ -147,7 +147,7 @@ solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
   zero <- mkInteger 0
   mapM_ (\v -> optimizeAssert =<< mkGe v zero) vars
 
-  liftIO $ putStrLn "constraints"
+  -- liftIO $ putStrLn "constraints"
   forM_ coefficients $ \(coeffs, rhs) -> do
     terms <- forM (zip coeffs [0..]) $ \(c, i) -> do
       let var = vars !! i
@@ -159,36 +159,36 @@ solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
     rhsvar <- mkInteger (toInteger rhs)
 
     constraint <- mkEq expr rhsvar
-    constraintStr <- astToString constraint
-    liftIO $ putStrLn $ constraintStr
+    -- constraintStr <- astToString constraint
+    -- liftIO $ putStrLn $ constraintStr
     optimizeAssert constraint 
 
 
   objective <- mkAdd vars
 
-  objStr <- astToString objective
-  liftIO $ putStrLn "objective"
-  liftIO $ putStrLn objStr
+  -- objStr <- astToString objective
+  -- liftIO $ putStrLn "objective"
+  -- liftIO $ putStrLn objStr
   optimizeMinimize  objective
 
-  liftIO $ putStrLn "assertions"
+  -- liftIO $ putStrLn "assertions"
   assertions <- optimizeGetAssertions
-  forM_ assertions $ \ast -> do
-    s <- astToString ast
-    liftIO $ putStrLn $ "  " ++ s
+  -- forM_ assertions $ \ast -> do
+    -- s <- astToString ast
+    -- liftIO $ putStrLn $ "  " ++ s
 
   result <- optimizeCheck []
   case result of
     Sat -> do
       model <- optimizeGetModel
-      modelstr <- modelToString model
-      liftIO $ putStrLn "model"
-      liftIO $ putStrLn modelstr
+      -- modelstr <- modelToString model
+      -- liftIO $ putStrLn "model"
+      -- liftIO $ putStrLn modelstr
 
       objVal <- evalInt model objective
       return $ fromJust objVal
 
-countSteps2 m = traceShow result result
+countSteps2 m = _traceShow result result
   where
     constraints = [([if (fst j) `elem` bw then 1 else 0 | bw <- mButtonWirings m ], snd j) | 
       j <- zip [0..] (mJoltages m) ]
