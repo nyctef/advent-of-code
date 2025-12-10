@@ -17,113 +17,82 @@ import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
 
-data Tile = Tile {tx :: Int, ty :: Int} deriving (Eq, Generic, Hashable, Ord)
+data Machine = Machine { mButtons :: [Bool], mButtonTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
 
--- a line defined by two endpoints.
--- we assume that lines are vertical or horizontal, and have been passed through `sortLine`
-newtype Line = Line (Tile, Tile)
+intP :: Parser Int
+intP = read <$> many1 digit
 
--- a rectangle defined by two opposite corners
-newtype Rect = Rect (Tile, Tile)
+onP :: Parser Bool
+onP = return True <$> char '#'
 
-instance Show Tile where
-  show t = printf "[%d,%d]" (tx t) (ty t)
+offP :: Parser Bool
+offP = return False <$> char '.'
 
-tileP :: Parser Tile
-tileP = do
-  x <- many1 digit
-  _ <- char ','
-  y <- many1 digit
-  return $ Tile (read x) (read y)
+buttonP :: Parser Bool
+buttonP = choice [onP, offP]
 
-tilesP :: Parser [Tile]
-tilesP = tileP `sepBy` char '\n'
+buttonTargetsP :: Parser [Bool]
+buttonTargetsP = do
+  _ <- char '['
+  targets <- many1 buttonP
+  _ <- char ']'
+  return targets
 
-type Input = [Tile]
+buttonWiringP :: Parser [Int]
+buttonWiringP = do
+  _ <- char '('
+  wiring <- intP `sepBy` char ','
+  _ <- char ')'
+  _ <- char ' '
+  return wiring
+
+buttonWiringsP :: Parser [[Int]]
+-- we want to use sepBy ' ' here, but then it's ambiguous whether
+-- to parse another button wiring or start joltages so we instead
+-- stash the trailing space into buttonWiringP and use the ( vs {
+-- character to disambiguate
+buttonWiringsP = many1 buttonWiringP
+
+joltagesP :: Parser [Int]
+joltagesP = do
+  _ <- char '{'
+  wiring <- intP `sepBy` char ','
+  _ <- char '}'
+  return wiring
+
+machineP :: Parser Machine
+machineP = do
+  targets <- buttonTargetsP
+  _ <- char ' '
+  wirings <- buttonWiringsP
+  joltages <- joltagesP
+  return $ Machine (replicate (length targets) False) targets wirings joltages
+
+machinesP :: Parser [Machine]
+machinesP = machineP `sepBy` char '\n'
+
+
+type Input = [Machine]
 
 -- like traceShow, except that it doesn't
 _traceShow :: a -> b -> b
 _traceShow = seq
 
-area :: Rect -> Int
-area (Rect (t1, t2)) = (xdist + 1) * (ydist + 1)
-  where
-    xmin = min (tx t1) (tx t2)
-    xmax = max (tx t1) (tx t2)
-    ymin = min (ty t1) (ty t2)
-    ymax = max (ty t1) (ty t2)
-    xdist = xmax - xmin
-    ydist = ymax - ymin
-
 part1 :: Input -> Int
 part1 input = result
   where
-    allPairs = [Rect (t1, t2) | t1 <- input, t2 <- input]
-    sizes = map area allPairs
-    result = maximum sizes
-
-tlines :: [Tile] -> [Line]
-tlines input = result
-  where
-    pairs = zipWith (curry Line) input (drop 1 input)
-    lastPair = Line (last input, fromJust $ listToMaybe input)
-    result = pairs ++ [lastPair]
-
-sortLine :: Line -> Line
-sortLine (Line (t1, t2)) = Line (Tile xmin ymin, Tile xmax ymax)
-  where
-    xmin = min (tx t1) (tx t2)
-    xmax = max (tx t1) (tx t2)
-    ymin = min (ty t1) (ty t2)
-    ymax = max (ty t1) (ty t2)
-
-shrink1 :: Rect -> Rect
-shrink1 (Rect (t1, t2)) = Rect (Tile (xmin + 1) (ymin + 1), Tile (xmax - 1) (ymax - 1))
-  where
-    xmin = min (tx t1) (tx t2)
-    xmax = max (tx t1) (tx t2)
-    ymin = min (ty t1) (ty t2)
-    ymax = max (ty t1) (ty t2)
-
-lineIntersects :: Line -> Line -> Bool
-lineIntersects (Line (tmin1, tmax1)) (Line (tmin2, tmax2)) = not separatedInX && not separatedInY
-  where
-    -- assuming both lines are sorted
-    separatedInX = (tx tmin1 >= tx tmax2) || (tx tmin2 >= tx tmax1)
-    separatedInY = (ty tmin1 >= ty tmax2) || (ty tmin2 >= ty tmax1)
-
-rectEdges :: Rect -> [Line]
-rectEdges rect = rectLines
-  where
-    Rect (mint, maxt) = rect
-    corners = [mint, Tile (tx mint) (ty maxt), maxt, Tile (tx maxt) (ty mint)]
-    rectLines = map sortLine $ tlines corners
-
-shrunkRectIsInsideLines :: [Line] -> Rect -> Bool
-shrunkRectIsInsideLines ls rect = result
-  where
-    rectLines = rectEdges $ shrink1 rect
-    checks = [(rl, il) | rl <- rectLines, il <- ls]
-    result = all (\(rl, il) -> not (lineIntersects rl il)) checks
+    result = 0
 
 part2 :: Input -> Int
 part2 input = result
   where
-    -- redOrGreen = getAllPoints input
-    allRects = [Rect (t1, t2) | t1 <- input, t2 <- input]
-    ls = map sortLine $ tlines input
-    rectsWithSizes = map (\rect -> (rect, area rect)) allRects
-    biggestFirst = sortBy (comparing (Data.Ord.Down . snd)) rectsWithSizes
-    allPairs' = filter (shrunkRectIsInsideLines ls . fst) biggestFirst
-    (_, result) = fromJust $ listToMaybe allPairs'
-
--- result = traceShow sizes (-1)
+    result = 0
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
 parseInput :: Text -> Either String Input
-parseInput i = left show $ parse tilesP "" $ T.strip i
+parseInput i = left show $ parse machinesP "" $ T.strip i
 
 solve :: IO ()
 solve = do
