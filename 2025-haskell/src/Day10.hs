@@ -17,6 +17,8 @@ import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
 import Debug.Trace
+import qualified Data.Set as Set
+import Data.Set(Set(..))
 
 data Machine = Machine { mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
 
@@ -39,30 +41,31 @@ pressButton b m = Machine newLights (mLightTargets m) (mButtonWirings m) (mJolta
   -- | otherwise = x : replaceNth (n-1) mutate xs
 
 
--- machine, step count
-type State1 = (Machine, Int)
+-- machine, step count, already-seen light configurations
+type State1 = (Machine, Int, Set [Bool])
 
 foundSolution :: [State1] -> Bool
 foundSolution (x:xs) = lights == targets
   where
-    (m, c) = x
+    (m, _, _) = x
     lights = mLights m
     targets = mLightTargets m
 
 countSteps1 :: Machine -> Int
-countSteps1 m = result
+countSteps1 m = _traceShow result result
   where
-    seed = [(m, 0)]
+    seed = [(m, 0, Set.empty)]
     step :: [State1] -> [State1]
     step (x:xs) = 
       let
-        (m', c) = x
-        nextMachines = map (\b -> pressButton b m') [0..(length $ mButtonWirings m') - 1]
-        nexts = map (\m -> (m, c+1)) nextMachines
-      in xs ++ nexts
+        (m', c, s) = x
+        nextMachines = filter (not . (`Set.member` s) . mLights) $ map (\b -> pressButton b m') [0..(length $ mButtonWirings m') - 1]
+        nextSeen = Set.insert (mLights m') s
+        nexts = map (\m -> (m, c+1, nextSeen)) nextMachines
+      in traceShow (length xs, length nextSeen) xs ++ nexts
     steps = iterate step seed
     final = dropWhile (not . foundSolution) steps
-    result = snd $ head $ head final
+    result = (\(_,x,_) -> x) $ head $ head final
 
 intP :: Parser Int
 intP = read <$> many1 digit
