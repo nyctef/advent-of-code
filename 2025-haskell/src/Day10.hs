@@ -1,33 +1,33 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
+
+
 
 module Day10 (solve, part1, part2, parseInput) where
 
 import Control.Arrow (left)
+import Control.Monad (forM, forM_, replicateM)
+import Control.Monad.IO.Class (liftIO)
 import Data.Hashable (Hashable (..))
 import Data.List (sortBy)
 import Data.Maybe
 import Data.Ord
+import Data.Sequence (Seq (..))
+import qualified Data.Sequence as Seq
+import Data.Set (Set (..))
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import Debug.Trace
+import GHC.Float
 import GHC.Generics
 import InputFetcher (getInput)
+import System.IO.Unsafe (unsafePerformIO)
 import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
-import Debug.Trace
-import qualified Data.Set as Set
-import Data.Set(Set(..))
-import qualified Data.Sequence as Seq
-import Data.Sequence(Seq(..))
-import Control.Monad (replicateM, forM_, forM)
-import GHC.Float
 import Z3.Monad
-import System.IO.Unsafe (unsafePerformIO)
-import Control.Monad.IO.Class (liftIO)
 
-data Machine = Machine { mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
+data Machine = Machine {mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int]} deriving (Show)
 
 numButtons :: Machine -> Int
 numButtons = length . mButtonWirings
@@ -35,26 +35,23 @@ numButtons = length . mButtonWirings
 pressButton :: Int -> Machine -> Machine
 pressButton b m = Machine newLights (mLightTargets m) (mButtonWirings m) (mJoltages m)
   where
-    wiring = (mButtonWirings m) !! b
-    oldLights = (mLights m)
-    newLights = map (\(i, l) -> if i `elem` wiring then not l else l) $ zip [0..] oldLights
-
+    wiring = mButtonWirings m !! b
+    oldLights = mLights m
+    newLights = zipWith (curry (\(i, l) -> if i `elem` wiring then not l else l)) [0 ..] oldLights
 
 pressButtons :: [Bool] -> Machine -> Machine
 pressButtons bs m = newMachine
   where
-    indexes = [0..] `zip` bs
+    indexes = [0 ..] `zip` bs
     lights = mapMaybe (\(i, b) -> if b then Just i else Nothing) indexes
-    newMachine = foldl' (\m' l -> pressButton l m') m lights
-
+    newMachine = foldl' (flip pressButton) m lights
 
 -- apparently this isn't built in? https://stackoverflow.com/questions/5852722
 -- replaceNth :: Int -> (a -> a) -> [a] -> [a]
 -- replaceNth _ _ [] = []
 -- replaceNth n mutate (x:xs)
-  -- | n == 0 = (mutate x) : xs
-  -- | otherwise = x : replaceNth (n-1) mutate xs
-
+-- \| n == 0 = (mutate x) : xs
+-- \| otherwise = x : replaceNth (n-1) mutate xs
 
 allCombinations :: Int -> [[Bool]]
 allCombinations n = replicateM n [True, False]
@@ -69,7 +66,7 @@ isSolved m = lights == targets
     targets = mLightTargets m
 
 foundSolution :: Seq State1 -> Bool
-foundSolution (x:<| xs) = isSolved m
+foundSolution (x :<| xs) = isSolved m
   where
     (m, _, _) = x
 
@@ -83,22 +80,21 @@ countSteps1 m = _traceShow result result
   where
     seed = Seq.singleton (m, 0, Set.empty)
     step :: Seq State1 -> Seq State1
-    step (x :<| xs) = 
-      let
-        (m', c, s) = x
-        nextMachines = filter (not . (`Set.member` s) . mLights) $ map (\b -> pressButton b m') [0..(length $ mButtonWirings m') - 1]
-        nextSeen = Set.insert (mLights m') s
-        nexts = Seq.fromList $ map (\m -> (m, c+1, nextSeen)) nextMachines
-      in _traceShow (length xs, length nextSeen) (if Set.member (mLights m') s then xs else xs Seq.>< nexts)
+    step (x :<| xs) =
+      let (m', c, s) = x
+          nextMachines = filter (not . (`Set.member` s) . mLights) $ map (`pressButton` m') [0 .. length (mButtonWirings m') - 1]
+          nextSeen = Set.insert (mLights m') s
+          nexts = Seq.fromList $ map (\m -> (m, c + 1, nextSeen)) nextMachines
+       in _traceShow (length xs, length nextSeen) (if Set.member (mLights m') s then xs else xs Seq.>< nexts)
     steps = iterate step seed
     final = dropWhile (not . foundSolution) steps
-    result = (\(_,x,_) -> x) $ seqHead $ head final
+    result = (\(_, x, _) -> x) $ seqHead $ head final
 
 countSteps1a :: Machine -> Int
-countSteps1a m = _traceShow result result 
+countSteps1a m = _traceShow result result
   where
     candidates = allCombinations $ length $ mButtonWirings m
-    attempts = map (\c -> (length $ filter (==True) c, pressButtons c m)) candidates
+    attempts = map (\c -> (length $ filter id c, pressButtons c m)) candidates
     solved :: [(Int, Machine)]
     solved = filter (\(_, m) -> isSolved m) attempts
     best = sortBy (comparing fst) solved
@@ -111,23 +107,23 @@ getMaxButtonPresses m = result
     -- since we can't press a button more often than that
     ws = mButtonWirings m
     js = mJoltages m
-    result = map (\w -> minimum $ map (\x -> js !! x) w) ws
+    result = map (minimum . map (\x -> js !! x)) ws
 
 candidates2 :: Machine -> [[Int]]
-candidates2 m = sequence (map (\x -> [0..x]) $ getMaxButtonPresses m)
+candidates2 m = mapM (\x -> [0 .. x]) (getMaxButtonPresses m)
 
 pressN :: (Int, [Int]) -> [Int] -> [Int]
 pressN (c, wirings) prev = result
   where
-    indexed = [0..] `zip` prev
+    indexed = [0 ..] `zip` prev
     result = map (\(i, p) -> if i `elem` wirings then p + c else p) indexed
 
 isSolved2 :: Machine -> [Int] -> Bool
 isSolved2 m presses = result
   where
     target = mJoltages m
-    presses' = presses `zip` (mButtonWirings m)
-    totals = foldr (\press counts -> pressN press counts) (replicate (length target) 0) presses'
+    presses' = presses `zip` mButtonWirings m
+    totals = foldr pressN (replicate (length target) 0) presses'
     result = totals == target
 
 -- countSteps2 m = traceShow result result
@@ -141,18 +137,17 @@ isSolved2 m presses = result
 --
 solveIntegerLP :: Int -> [([Int], Int)] -> Integer
 solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
-
-  vars <- mapM (\i-> mkFreshIntVar("x" ++ show i)) [0 .. numVars-1]
+  vars <- mapM (\i -> mkFreshIntVar ("x" ++ show i)) [0 .. numVars - 1]
   -- assert all vars > 0
   zero <- mkInteger 0
   mapM_ (\v -> optimizeAssert =<< mkGe v zero) vars
 
   -- liftIO $ putStrLn "constraints"
   forM_ coefficients $ \(coeffs, rhs) -> do
-    terms <- forM (zip coeffs [0..]) $ \(c, i) -> do
+    terms <- forM (zip coeffs [0 ..]) $ \(c, i) -> do
       let var = vars !! i
       coeff <- mkInteger (toInteger c)
-      mkMul [ coeff, var ]
+      mkMul [coeff, var]
 
     expr <- mkAdd terms
 
@@ -161,21 +156,20 @@ solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
     constraint <- mkEq expr rhsvar
     -- constraintStr <- astToString constraint
     -- liftIO $ putStrLn $ constraintStr
-    optimizeAssert constraint 
-
+    optimizeAssert constraint
 
   objective <- mkAdd vars
 
   -- objStr <- astToString objective
   -- liftIO $ putStrLn "objective"
   -- liftIO $ putStrLn objStr
-  optimizeMinimize  objective
+  optimizeMinimize objective
 
   -- liftIO $ putStrLn "assertions"
   assertions <- optimizeGetAssertions
   -- forM_ assertions $ \ast -> do
-    -- s <- astToString ast
-    -- liftIO $ putStrLn $ "  " ++ s
+  -- s <- astToString ast
+  -- liftIO $ putStrLn $ "  " ++ s
 
   result <- optimizeCheck []
   case result of
@@ -190,18 +184,20 @@ solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
 
 countSteps2 m = _traceShow result result
   where
-    constraints = [([if (fst j) `elem` bw then 1 else 0 | bw <- mButtonWirings m ], snd j) | 
-      j <- zip [0..] (mJoltages m) ]
+    constraints =
+      [ ([if fst j `elem` bw then 1 else 0 | bw <- mButtonWirings m], snd j)
+      | j <- zip [0 ..] (mJoltages m)
+      ]
     result = fromInteger $ solveIntegerLP (length $ mButtonWirings m) constraints
 
 intP :: Parser Int
 intP = read <$> many1 digit
 
 onP :: Parser Bool
-onP = return True <$> char '#'
+onP = True <$ char '#'
 
 offP :: Parser Bool
-offP = return False <$> char '.'
+offP = False <$ char '.'
 
 buttonP :: Parser Bool
 buttonP = choice [onP, offP]
@@ -240,12 +236,10 @@ machineP = do
   targets <- buttonTargetsP
   _ <- char ' '
   wirings <- buttonWiringsP
-  joltages <- joltagesP
-  return $ Machine (replicate (length targets) False) targets wirings joltages
+  Machine (replicate (length targets) False) targets wirings <$> joltagesP
 
 machinesP :: Parser [Machine]
 machinesP = machineP `sepBy` char '\n'
-
 
 type Input = [Machine]
 
