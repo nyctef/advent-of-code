@@ -32,5 +32,5 @@ test_part2 :: TestTree
 test_part2 =
   testGroup
     "Day 10 - Part 2"
-    [ testCase "example1" $ testPart2 example1 0,
+    [ testCase "example1" $ testPart2 example1 0
     ]

@@ -16,8 +16,53 @@ import InputFetcher (getInput)
 import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
+import Debug.Trace
 
-data Machine = Machine { mButtons :: [Bool], mButtonTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
+data Machine = Machine { mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
+
+numButtons :: Machine -> Int
+numButtons = length . mButtonWirings
+
+pressButton :: Int -> Machine -> Machine
+pressButton b m = Machine newLights (mLightTargets m) (mButtonWirings m) (mJoltages m)
+  where
+    wiring = (mButtonWirings m) !! b
+    oldLights = (mLights m)
+    newLights = map (\(i, l) -> if i `elem` wiring then not l else l) $ zip [0..] oldLights
+
+
+-- apparently this isn't built in? https://stackoverflow.com/questions/5852722
+-- replaceNth :: Int -> (a -> a) -> [a] -> [a]
+-- replaceNth _ _ [] = []
+-- replaceNth n mutate (x:xs)
+  -- | n == 0 = (mutate x) : xs
+  -- | otherwise = x : replaceNth (n-1) mutate xs
+
+
+-- machine, step count
+type State1 = (Machine, Int)
+
+foundSolution :: [State1] -> Bool
+foundSolution (x:xs) = lights == targets
+  where
+    (m, c) = x
+    lights = mLights m
+    targets = mLightTargets m
+
+countSteps1 :: Machine -> Int
+countSteps1 m = result
+  where
+    seed = [(m, 0)]
+    step :: [State1] -> [State1]
+    step (x:xs) = 
+      let
+        (m', c) = x
+        nextMachines = map (\b -> pressButton b m') [0..(length $ mButtonWirings m') - 1]
+        nexts = map (\m -> (m, c+1)) nextMachines
+      in xs ++ nexts
+    steps = iterate step seed
+    final = dropWhile (not . foundSolution) steps
+    result = snd $ head $ head final
 
 intP :: Parser Int
 intP = read <$> many1 digit
@@ -81,7 +126,8 @@ _traceShow = seq
 part1 :: Input -> Int
 part1 input = result
   where
-    result = 0
+    stepCounts = map countSteps1 input
+    result = _traceShow stepCounts (sum stepCounts)
 
 part2 :: Input -> Int
 part2 input = result
