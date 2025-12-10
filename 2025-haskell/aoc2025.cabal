@@ -44,7 +44,7 @@ library
         filepath,
         parsec,
         regex-pcre,
-        hmatrix-glpk
+        z3
     hs-source-dirs:   src
 
 executable aoc2025

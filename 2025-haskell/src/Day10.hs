@@ -21,9 +21,11 @@ import qualified Data.Set as Set
 import Data.Set(Set(..))
 import qualified Data.Sequence as Seq
 import Data.Sequence(Seq(..))
-import Control.Monad (replicateM)
-import Numeric.LinearProgramming
+import Control.Monad (replicateM, forM_, forM)
 import GHC.Float
+import Z3.Monad
+import System.IO.Unsafe (unsafePerformIO)
+import Control.Monad.IO.Class (liftIO)
 
 data Machine = Machine { mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
 
@@ -128,17 +130,69 @@ isSolved2 m presses = result
     totals = foldr (\press counts -> pressN press counts) (replicate (length target) 0) presses'
     result = totals == target
 
-readSolution :: Solution -> Int
-readSolution (Optimal (x, _)) = round x
+-- countSteps2 m = traceShow result result
+--   where
+--     minimize = map int2Double $ replicate (length $ mButtonWirings m) 1
+--     constraints = [[if (fst j) `elem` bw then 1.0 else 0.0 | bw <- mButtonWirings m ] :==: (int2Double (snd j))|
+--       j <- zip [0..] (mJoltages m) ]
+--     bounds = []
+--     solution = simplex (Minimize minimize) (Dense constraints) bounds
+--     result = traceShow (minimize, constraints) traceShow (solution) (readSolution solution)
+--
+solveIntegerLP :: Int -> [([Int], Int)] -> Integer
+solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
+
+  vars <- mapM (\i-> mkFreshIntVar("x" ++ show i)) [0 .. numVars-1]
+  -- assert all vars > 0
+  zero <- mkInteger 0
+  mapM_ (\v -> optimizeAssert =<< mkGe v zero) vars
+
+  liftIO $ putStrLn "constraints"
+  forM_ coefficients $ \(coeffs, rhs) -> do
+    terms <- forM (zip coeffs [0..]) $ \(c, i) -> do
+      let var = vars !! i
+      coeff <- mkInteger (toInteger c)
+      mkMul [ coeff, var ]
+
+    expr <- mkAdd terms
+
+    rhsvar <- mkInteger (toInteger rhs)
+
+    constraint <- mkEq expr rhsvar
+    constraintStr <- astToString constraint
+    liftIO $ putStrLn $ constraintStr
+    optimizeAssert constraint 
+
+
+  objective <- mkAdd vars
+
+  objStr <- astToString objective
+  liftIO $ putStrLn "objective"
+  liftIO $ putStrLn objStr
+  optimizeMinimize  objective
+
+  liftIO $ putStrLn "assertions"
+  assertions <- optimizeGetAssertions
+  forM_ assertions $ \ast -> do
+    s <- astToString ast
+    liftIO $ putStrLn $ "  " ++ s
+
+  result <- optimizeCheck []
+  case result of
+    Sat -> do
+      model <- optimizeGetModel
+      modelstr <- modelToString model
+      liftIO $ putStrLn "model"
+      liftIO $ putStrLn modelstr
+
+      objVal <- evalInt model objective
+      return $ fromJust objVal
 
 countSteps2 m = traceShow result result
   where
-    minimize = map int2Double $ replicate (length $ mButtonWirings m) 1
-    constraints = [[if (fst j) `elem` bw then 1.0 else 0.0 | bw <- mButtonWirings m ] :==: (int2Double (snd j))|
+    constraints = [([if (fst j) `elem` bw then 1 else 0 | bw <- mButtonWirings m ], snd j) | 
       j <- zip [0..] (mJoltages m) ]
-    bounds = []
-    solution = simplex (Minimize minimize) (Dense constraints) bounds
-    result = traceShow (minimize, constraints) traceShow (solution) (readSolution solution)
+    result = fromInteger $ solveIntegerLP (length $ mButtonWirings m) constraints
 
 intP :: Parser Int
 intP = read <$> many1 digit
