@@ -110,7 +110,7 @@ getMaxButtonPresses m = result
     result = map (\w -> minimum $ map (\x -> js !! x) w) ws
 
 candidates2 :: Machine -> [[Int]]
-candidates2 m = map (\x -> [0..x]) $ getMaxButtonPresses m
+candidates2 m = sequence (map (\x -> [0..x]) $ getMaxButtonPresses m)
 
 pressN :: (Int, [Int]) -> [Int] -> [Int]
 pressN (c, wirings) prev = result
@@ -130,7 +130,7 @@ countSteps2 m = traceShow result result
   where
     candidates = candidates2 m
     attempts = map (\c -> (sum c, isSolved2 m c)) candidates
-    solved = filter ((==True) . snd) attempts
+    solved = _traceShow candidates filter ((==True) . snd) attempts
     best = sortBy (comparing fst) solved
     result = fst . head $ best
 
