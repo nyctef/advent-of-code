@@ -1,36 +1,22 @@
-
-
-
 module Day10 (solve, part1, part2, parseInput) where
 
 import Control.Arrow (left)
 import Control.Monad (forM, forM_, replicateM)
-import Control.Monad.IO.Class (liftIO)
-import Data.Hashable (Hashable (..))
+-- import Control.Monad.IO.Class (liftIO)
 import Data.List (sortBy)
 import Data.Maybe
 import Data.Ord
-import Data.Sequence (Seq (..))
-import qualified Data.Sequence as Seq
-import Data.Set (Set (..))
-import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import Debug.Trace
-import GHC.Float
-import GHC.Generics
+-- import Debug.Trace
 import InputFetcher (getInput)
 import System.IO.Unsafe (unsafePerformIO)
 import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
-import Text.Printf (printf)
 import Z3.Monad
 
 data Machine = Machine {mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int]} deriving (Show)
-
-numButtons :: Machine -> Int
-numButtons = length . mButtonWirings
 
 pressButton :: Int -> Machine -> Machine
 pressButton b m = Machine newLights (mLightTargets m) (mButtonWirings m) (mJoltages m)
@@ -46,18 +32,8 @@ pressButtons bs m = newMachine
     lights = mapMaybe (\(i, b) -> if b then Just i else Nothing) indexes
     newMachine = foldl' (flip pressButton) m lights
 
--- apparently this isn't built in? https://stackoverflow.com/questions/5852722
--- replaceNth :: Int -> (a -> a) -> [a] -> [a]
--- replaceNth _ _ [] = []
--- replaceNth n mutate (x:xs)
--- \| n == 0 = (mutate x) : xs
--- \| otherwise = x : replaceNth (n-1) mutate xs
-
 allCombinations :: Int -> [[Bool]]
 allCombinations n = replicateM n [True, False]
-
--- machine, step count, already-seen light configurations
-type State1 = (Machine, Int, Set [Bool])
 
 isSolved :: Machine -> Bool
 isSolved m = lights == targets
@@ -65,76 +41,16 @@ isSolved m = lights == targets
     lights = mLights m
     targets = mLightTargets m
 
-foundSolution :: Seq State1 -> Bool
-foundSolution (x :<| xs) = isSolved m
-  where
-    (m, _, _) = x
-
--- because laziness
-seqHead :: Seq a -> a
-seqHead (x :<| xs) = x
-seqHead _ = undefined
-
-countSteps1 :: Machine -> Int
-countSteps1 m = _traceShow result result
-  where
-    seed = Seq.singleton (m, 0, Set.empty)
-    step :: Seq State1 -> Seq State1
-    step (x :<| xs) =
-      let (m', c, s) = x
-          nextMachines = filter (not . (`Set.member` s) . mLights) $ map (`pressButton` m') [0 .. length (mButtonWirings m') - 1]
-          nextSeen = Set.insert (mLights m') s
-          nexts = Seq.fromList $ map (\m -> (m, c + 1, nextSeen)) nextMachines
-       in _traceShow (length xs, length nextSeen) (if Set.member (mLights m') s then xs else xs Seq.>< nexts)
-    steps = iterate step seed
-    final = dropWhile (not . foundSolution) steps
-    result = (\(_, x, _) -> x) $ seqHead $ head final
-
 countSteps1a :: Machine -> Int
 countSteps1a m = _traceShow result result
   where
     candidates = allCombinations $ length $ mButtonWirings m
     attempts = map (\c -> (length $ filter id c, pressButtons c m)) candidates
     solved :: [(Int, Machine)]
-    solved = filter (\(_, m) -> isSolved m) attempts
+    solved = filter (\(_, x) -> isSolved x) attempts
     best = sortBy (comparing fst) solved
-    result = fst . head $ best
+    result = fst . fromJust $ listToMaybe $ best
 
-getMaxButtonPresses :: Machine -> [Int]
-getMaxButtonPresses m = result
-  where
-    -- for each button wiring: find the minimum joltage that it corresponds to
-    -- since we can't press a button more often than that
-    ws = mButtonWirings m
-    js = mJoltages m
-    result = map (minimum . map (\x -> js !! x)) ws
-
-candidates2 :: Machine -> [[Int]]
-candidates2 m = mapM (\x -> [0 .. x]) (getMaxButtonPresses m)
-
-pressN :: (Int, [Int]) -> [Int] -> [Int]
-pressN (c, wirings) prev = result
-  where
-    indexed = [0 ..] `zip` prev
-    result = map (\(i, p) -> if i `elem` wirings then p + c else p) indexed
-
-isSolved2 :: Machine -> [Int] -> Bool
-isSolved2 m presses = result
-  where
-    target = mJoltages m
-    presses' = presses `zip` mButtonWirings m
-    totals = foldr pressN (replicate (length target) 0) presses'
-    result = totals == target
-
--- countSteps2 m = traceShow result result
---   where
---     minimize = map int2Double $ replicate (length $ mButtonWirings m) 1
---     constraints = [[if (fst j) `elem` bw then 1.0 else 0.0 | bw <- mButtonWirings m ] :==: (int2Double (snd j))|
---       j <- zip [0..] (mJoltages m) ]
---     bounds = []
---     solution = simplex (Minimize minimize) (Dense constraints) bounds
---     result = traceShow (minimize, constraints) traceShow (solution) (readSolution solution)
---
 solveIntegerLP :: Int -> [([Int], Int)] -> Integer
 solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
   vars <- mapM (\i -> mkFreshIntVar ("x" ++ show i)) [0 .. numVars - 1]
@@ -158,15 +74,18 @@ solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
     -- liftIO $ putStrLn $ constraintStr
     optimizeAssert constraint
 
+  -- shortcut: just assume we're minimizing sum(vars)
+  -- if copy/pasting this code later, this would need to be parameterized
   objective <- mkAdd vars
 
   -- objStr <- astToString objective
   -- liftIO $ putStrLn "objective"
   -- liftIO $ putStrLn objStr
-  optimizeMinimize objective
+  -- TODO: what is the value returned from this function?
+  _ <- optimizeMinimize objective
 
   -- liftIO $ putStrLn "assertions"
-  assertions <- optimizeGetAssertions
+  -- assertions <- optimizeGetAssertions
   -- forM_ assertions $ \ast -> do
   -- s <- astToString ast
   -- liftIO $ putStrLn $ "  " ++ s
@@ -181,7 +100,9 @@ solveIntegerLP numVars coefficients = unsafePerformIO $ evalZ3 $ do
 
       objVal <- evalInt model objective
       return $ fromJust objVal
+    _ -> error "unsat"
 
+countSteps2 :: Machine -> Int
 countSteps2 m = _traceShow result result
   where
     constraints =
