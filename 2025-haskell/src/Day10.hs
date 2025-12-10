@@ -100,6 +100,39 @@ countSteps1a m = traceShow result result
     best = sortBy (comparing fst) solved
     result = fst . head $ best
 
+getMaxButtonPresses :: Machine -> [Int]
+getMaxButtonPresses m = result
+  where
+    -- for each button wiring: find the minimum joltage that it corresponds to
+    -- since we can't press a button more often than that
+    ws = mButtonWirings m
+    js = mJoltages m
+    result = map (\w -> minimum $ map (\x -> js !! x) w) ws
+
+candidates2 :: Machine -> [[Int]]
+candidates2 m = map (\x -> [0..x]) $ getMaxButtonPresses m
+
+pressN :: (Int, [Int]) -> [Int] -> [Int]
+pressN (c, wirings) prev = result
+  where
+    indexed = [0..] `zip` prev
+    result = map (\(i, p) -> if i `elem` wirings then p + c else p) indexed
+
+isSolved2 :: Machine -> [Int] -> Bool
+isSolved2 m presses = result
+  where
+    target = mJoltages m
+    presses' = presses `zip` (mButtonWirings m)
+    totals = foldl' (\counts press -> pressN press counts) (replicate (length target) 0) presses'
+    result = totals == target
+
+countSteps2 m = traceShow result result
+  where
+    candidates = candidates2 m
+    attempts = map (\c -> (sum c, isSolved2 m c)) candidates
+    solved = filter ((==True) . snd) attempts
+    best = sortBy (comparing fst) solved
+    result = fst . head $ best
 
 intP :: Parser Int
 intP = read <$> many1 digit
@@ -169,7 +202,8 @@ part1 input = result
 part2 :: Input -> Int
 part2 input = result
   where
-    result = 0
+    stepCounts = map countSteps2 input
+    result = sum stepCounts
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
