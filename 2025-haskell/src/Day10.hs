@@ -22,6 +22,8 @@ import Data.Set(Set(..))
 import qualified Data.Sequence as Seq
 import Data.Sequence(Seq(..))
 import Control.Monad (replicateM)
+import Numeric.LinearProgramming
+import GHC.Float
 
 data Machine = Machine { mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
 
@@ -123,16 +125,20 @@ isSolved2 m presses = result
   where
     target = mJoltages m
     presses' = presses `zip` (mButtonWirings m)
-    totals = foldl' (\counts press -> pressN press counts) (replicate (length target) 0) presses'
+    totals = foldr (\press counts -> pressN press counts) (replicate (length target) 0) presses'
     result = totals == target
+
+readSolution :: Solution -> Int
+readSolution (Optimal (x, _)) = round x
 
 countSteps2 m = traceShow result result
   where
-    candidates = candidates2 m
-    attempts = map (\c -> (sum c, isSolved2 m c)) candidates
-    solved = _traceShow candidates filter ((==True) . snd) attempts
-    best = sortBy (comparing fst) solved
-    result = fst . head $ best
+    minimize = map int2Double $ replicate (length $ mButtonWirings m) 1
+    constraints = [[if (fst j) `elem` bw then 1.0 else 0.0 | bw <- mButtonWirings m ] :==: (int2Double (snd j))|
+      j <- zip [0..] (mJoltages m) ]
+    bounds = []
+    solution = simplex (Minimize minimize) (Dense constraints) bounds
+    result = traceShow (minimize, constraints) traceShow (solution) (readSolution solution)
 
 intP :: Parser Int
 intP = read <$> many1 digit
