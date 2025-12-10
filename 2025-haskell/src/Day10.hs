@@ -19,6 +19,8 @@ import Text.Printf (printf)
 import Debug.Trace
 import qualified Data.Set as Set
 import Data.Set(Set(..))
+import qualified Data.Sequence as Seq
+import Data.Sequence(Seq(..))
 
 data Machine = Machine { mLights :: [Bool], mLightTargets :: [Bool], mButtonWirings :: [[Int]], mJoltages :: [Int] } deriving (Show)
 
@@ -44,28 +46,33 @@ pressButton b m = Machine newLights (mLightTargets m) (mButtonWirings m) (mJolta
 -- machine, step count, already-seen light configurations
 type State1 = (Machine, Int, Set [Bool])
 
-foundSolution :: [State1] -> Bool
-foundSolution (x:xs) = lights == targets
+foundSolution :: Seq State1 -> Bool
+foundSolution (x:<| xs) = lights == targets
   where
     (m, _, _) = x
     lights = mLights m
     targets = mLightTargets m
 
+-- because laziness
+seqHead :: Seq a -> a
+seqHead (x :<| xs) = x
+seqHead _ = undefined
+
 countSteps1 :: Machine -> Int
 countSteps1 m = traceShow result result
   where
-    seed = [(m, 0, Set.empty)]
-    step :: [State1] -> [State1]
-    step (x:xs) = 
+    seed = Seq.singleton (m, 0, Set.empty)
+    step :: Seq State1 -> Seq State1
+    step (x :<| xs) = 
       let
         (m', c, s) = x
         nextMachines = filter (not . (`Set.member` s) . mLights) $ map (\b -> pressButton b m') [0..(length $ mButtonWirings m') - 1]
         nextSeen = Set.insert (mLights m') s
-        nexts = map (\m -> (m, c+1, nextSeen)) nextMachines
-      in _traceShow (length xs, length nextSeen) (if Set.member (mLights m') s then xs else xs ++ nexts)
+        nexts = Seq.fromList $ map (\m -> (m, c+1, nextSeen)) nextMachines
+      in _traceShow (length xs, length nextSeen) (if Set.member (mLights m') s then xs else xs Seq.>< nexts)
     steps = iterate step seed
     final = dropWhile (not . foundSolution) steps
-    result = (\(_,x,_) -> x) $ head $ head final
+    result = (\(_,x,_) -> x) $ seqHead $ head final
 
 intP :: Parser Int
 intP = read <$> many1 digit
