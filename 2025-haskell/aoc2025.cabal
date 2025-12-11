@@ -36,6 +36,7 @@ library
         text,
         containers,
         unordered-containers,
+        heap,
         hashable,
         vector,
         split,

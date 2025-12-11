@@ -14,6 +14,9 @@ import Data.HashMap.Strict(HashMap(..), (!))
 import qualified Data.HashMap.Strict as HashMap
 import Data.Either (fromRight)
 import System.IO (hFlush, stdout)
+import Data.Heap(MinPrioHeap(..))
+import qualified Data.Heap as H
+import Control.Monad(replicateM)
 
 data Connection = Connection { getFrom :: Text , getTo :: [Text] }
 instance Show Connection where
@@ -46,11 +49,45 @@ countPaths map start end
   | start == "out" = 0
   | otherwise = sum $ fmap (\n -> countPaths map n end) (map ! _traceShow (start, end) start)
 
-countPaths2 :: HashMap Text [Text] -> Text -> Text -> Bool -> Bool -> Int
-countPaths2 map start end seenDac seenFft
-  | start == end && seenDac && seenFft = _traceShow ("end", seenDac, seenFft) 1
-  | start == end = _traceShow ("end", seenDac, seenFft) 0
-  | otherwise = sum $ fmap (\n -> countPaths2 map n end (seenDac || n == "dac") (seenFft || n == "fft")) (map ! start)
+-- counts of paths to each node, queue of nodes to process next
+type State2 = (HashMap Text Int, MinPrioHeap Int Text)
+
+{-
+countPaths2 :: HashMap Text [Text] -> Text -> Text -> Int
+countPaths2 conns start end = result
+  where
+    go :: State2 -> Int
+    go (counts, queue) =
+      case Heap.view queue of
+        Nothing -> counts ! end
+        Just ((prio, current), queue') -> go (newCounts, newQueue)
+          where
+            -- we assume that once we've reached a node, we've fully processed all nodes
+            -- leading into this one (TODO: verify)
+            -- for nodes we can reach from current:
+            -- - we add this node's count to each of them
+            -- - 
+          
+          
+
+    result = go (HashMap.empty, H.singleton (0, start))
+-}
+
+getDistances :: Input -> HashMap (Text, Text) Int
+getDistances i = result
+  where
+    conns = [((getFrom f, t), 1) | f <- i, t <- (getTo f)]
+    seed = HashMap.fromList conns
+    nodes = "out" : map getFrom i
+    iterations :: [(Text,Text,Text)]
+    iterations = [(i,j,k) | i<-nodes, j<-nodes, k<-nodes]
+    get = HashMap.findWithDefault 0 
+    result = foldr
+      (\(i,j,k) m -> HashMap.insertWith (+) (i, j) ((get (i, k) m) * (get (k, j) m)) m)
+      seed iterations
+
+
+countPaths2 = undefined
 
 part1 :: Input -> Int
 part1 input = result
@@ -61,21 +98,23 @@ part1 input = result
 part2 :: Input -> Int
 part2 input = result
   where
-    map = toMap input
-    a = countPaths map "svr" "fft" 
-    b = countPaths map "fft" "dac" 
-    c = countPaths map "dac" "out" 
-    d = countPaths map "svr" "dac" 
-    e = countPaths map "dac" "fft" 
-    f = countPaths map "fft" "out" 
-    result = (a*b*c) + (d*e*f)
+    dists = getDistances input
+    a = dists !  ("svr","fft" )
+    b =  dists ! ("fft", "dac" )
+    c =  dists ! ("dac", "out" )
+    -- d = countPaths2 map "svr" "dac" 
+    -- e = countPaths2 map "dac" "fft" 
+    -- f = countPaths2 map "fft" "out" 
+    result = traceShow (filter (\(_, x) -> x /= 0) $ HashMap.toList  dists, a, b, c) (a*b*c)-- + (d*e*f)
 
+{-
 toDot :: Input -> String
 toDot i = printf "digraph { \n %s \n }" nodeStr
   where
     nodes = concatMap (\c -> [(getFrom c, t) | t<-getTo c]) i
     nodeStrs = map (\(f, t) -> printf "%s -> %s" f t) nodes
     nodeStr = intercalate "\n" nodeStrs
+-}
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
@@ -87,8 +126,8 @@ solve :: IO ()
 solve = do
   input <- getInput 2025 11
   let parsed = parseInput input
-  putStrLn $ toDot $ (fromRight [] parsed)
-  hFlush stdout
+  -- putStrLn $ toDot $ (fromRight [] parsed)
+  -- hFlush stdout
   -- TIO.putStrLn $ "Input: " <> tshow parsed
   TIO.putStrLn $ "  Part 1: " <> tshow (part1 <$> parsed)
   TIO.putStrLn $ "  Part 2: " <> tshow (part2 <$> parsed)
