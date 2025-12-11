@@ -47,6 +47,33 @@ example2 =
   hhh: out
   """
 
+example3 :: Text
+example3 = 
+  """
+  svr: fft
+  fft: dac
+  dac: out
+  """
+example4 :: Text
+example4 = 
+  """
+  svr: fft
+  fft: dac
+  dac: aaa bbb
+  aaa: out
+  bbb: out
+  """
+example5 :: Text
+example5 = 
+  """
+  svr: fft
+  fft: dac
+  dac: aaa
+  aaa: bbb ccc
+  bbb: out
+  ccc: out
+  """
+
 testPart2 :: Text -> Int -> IO ()
 testPart2 input expected = do
   let parsed = parseInput input
@@ -57,5 +84,8 @@ test_part2 :: TestTree
 test_part2 =
   testGroup
     "Day 11 - Part 2"
-    [ testCase "example2" $ testPart2 example2 2
+    [ testCase "example2" $ testPart2 example2 2,
+     testCase "example3" $ testPart2 example3 1,
+     testCase "example4" $ testPart2 example4 2,
+     testCase "example5" $ testPart2 example5 2
     ]
