@@ -12,6 +12,8 @@ import Text.Parsec.Text (Parser)
 import Text.Printf(printf)
 import Data.HashMap.Strict(HashMap(..), (!))
 import qualified Data.HashMap.Strict as HashMap
+import Data.HashSet(HashSet(..))
+import qualified Data.HashSet as HashSet
 import Data.Either (fromRight)
 import System.IO (hFlush, stdout)
 import Data.Heap(MinPrioHeap(..))
@@ -86,8 +88,28 @@ getDistances i = result
       (\(i,j,k) m -> HashMap.insertWith (+) (i, j) ((get (i, k) m) * (get (k, j) m)) m)
       seed iterations
 
+topologicalSort :: Text -> HashMap Text [Text] -> [Text]
+topologicalSort start graph = dfs HashSet.empty start []
+  where
+    dfs visited next acc
+      | HashSet.member next visited = acc
+      | otherwise =
+          let nextVisited = HashSet.insert next visited
+              children = HashMap.findWithDefault [] next graph
+              successors = foldl' (\a c -> dfs nextVisited c a) acc children
+          in next : successors
 
-countPaths2 = undefined
+
+countPaths2 :: Text -> Text -> HashMap Text [Text] -> Int
+countPaths2 start end map = result
+  where
+    sorted = traceShowId $ topologicalSort start map
+    counts = traceShowId $ foldl' updateCounts (HashMap.singleton start 1) sorted
+    result = traceShowId $ HashMap.findWithDefault 0 end counts
+    updateCounts counts node =
+      let children = HashMap.findWithDefault [] node map
+          nodeCount = HashMap.findWithDefault 0 node counts
+      in foldl' (\cs child -> HashMap.insertWith (+) child nodeCount cs) counts children
 
 part1 :: Input -> Int
 part1 input = result
@@ -98,14 +120,15 @@ part1 input = result
 part2 :: Input -> Int
 part2 input = result
   where
-    dists = getDistances input
-    a = dists !  ("svr","fft" )
-    b =  dists ! ("fft", "dac" )
-    c =  dists ! ("dac", "out" )
+    map = toMap input
+    a = countPaths2 "svr" "fft" map
+    b = countPaths2 "fft" "dac" map
+    c = countPaths2 "dac" "out" map
     -- d = countPaths2 map "svr" "dac" 
     -- e = countPaths2 map "dac" "fft" 
     -- f = countPaths2 map "fft" "out" 
-    result = traceShow (filter (\(_, x) -> x /= 0) $ HashMap.toList  dists, a, b, c) (a*b*c)-- + (d*e*f)
+    -- result = traceShow (filter (\(_, x) -> x /= 0) $ HashMap.toList  dists, a, b, c) (a*b*c)-- + (d*e*f)
+    result = (a*b*c)
 
 {-
 toDot :: Input -> String
