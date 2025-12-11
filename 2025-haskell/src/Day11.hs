@@ -1,21 +1,16 @@
 module Day11 (solve, part1, part2, parseInput) where
 
 import Control.Arrow (left)
-import Control.Monad (forM, forM_, replicateM)
--- import Control.Monad.IO.Class (liftIO)
-import Data.List (sortBy)
-import Data.Maybe
-import Data.Ord
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
--- import Debug.Trace
+import Debug.Trace
 import InputFetcher (getInput)
-import System.IO.Unsafe (unsafePerformIO)
 import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
-import Z3.Monad
 import Text.Printf(printf)
+import Data.HashMap.Strict(HashMap(..), (!))
+import qualified Data.HashMap.Strict as HashMap
 
 data Connection = Connection { getFrom :: Text , getTo :: [Text] }
 instance Show Connection where
@@ -39,10 +34,22 @@ connectionsP = connectionP `sepBy` char '\n'
 _traceShow :: a -> b -> b
 _traceShow = seq
 
+toMap :: [Connection] -> HashMap Text [Text]
+toMap cs = HashMap.fromList $ map (\c -> (getFrom c, getTo c)) cs
+
+countPaths :: HashMap Text [Text] -> Text -> Text -> Int
+countPaths map start end
+  | start == end = 1
+  | otherwise = sum $ fmap (\n -> countPaths map n end) (map ! start)
+
+    
+
 part1 :: Input -> Int
 part1 input = result
   where
-    result = 0
+    map = toMap input
+    start = map ! "you"
+    result = countPaths map "you" "out"
 
 part2 :: Input -> Int
 part2 input = result
