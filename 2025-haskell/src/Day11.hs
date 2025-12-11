@@ -42,7 +42,11 @@ countPaths map start end
   | start == end = 1
   | otherwise = sum $ fmap (\n -> countPaths map n end) (map ! start)
 
-    
+countPaths2 :: HashMap Text [Text] -> Text -> Text -> Bool -> Bool -> Int
+countPaths2 map start end seenDac seenFft
+  | start == end && seenDac && seenFft = _traceShow ("end", seenDac, seenFft) 1
+  | start == end = _traceShow ("end", seenDac, seenFft) 0
+  | otherwise = sum $ fmap (\n -> countPaths2 map n end (seenDac || n == "dac") (seenFft || n == "fft")) (map ! start)
 
 part1 :: Input -> Int
 part1 input = result
@@ -54,7 +58,8 @@ part1 input = result
 part2 :: Input -> Int
 part2 input = result
   where
-    result = 0
+    map = toMap input
+    result = countPaths2 map "svr" "out" False False
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show

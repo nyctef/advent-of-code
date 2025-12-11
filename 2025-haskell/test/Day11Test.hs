@@ -29,6 +29,24 @@ test_part1 = testCase "Day 11 - Part 1" $ do
   let parsed_ = either ignoreError id parsed
   part1 parsed_ @?= 5
 
+example2 :: Text
+example2 = 
+  """
+  svr: aaa bbb
+  aaa: fft
+  fft: ccc
+  bbb: tty
+  tty: ccc
+  ccc: ddd eee
+  ddd: hub
+  hub: fff
+  eee: dac
+  dac: fff
+  fff: ggg hhh
+  ggg: out
+  hhh: out
+  """
+
 testPart2 :: Text -> Int -> IO ()
 testPart2 input expected = do
   let parsed = parseInput input
@@ -39,5 +57,5 @@ test_part2 :: TestTree
 test_part2 =
   testGroup
     "Day 11 - Part 2"
-    [ testCase "example1" $ testPart2 example1 0
+    [ testCase "example2" $ testPart2 example2 2
     ]
