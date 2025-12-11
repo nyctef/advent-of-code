@@ -5,12 +5,15 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Debug.Trace
+import Data.List (intercalate)
 import InputFetcher (getInput)
 import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
 import Text.Printf(printf)
 import Data.HashMap.Strict(HashMap(..), (!))
 import qualified Data.HashMap.Strict as HashMap
+import Data.Either (fromRight)
+import System.IO (hFlush, stdout)
 
 data Connection = Connection { getFrom :: Text , getTo :: [Text] }
 instance Show Connection where
@@ -67,6 +70,13 @@ part2 input = result
     f = countPaths map "fft" "out" 
     result = (a*b*c) + (d*e*f)
 
+toDot :: Input -> String
+toDot i = printf "digraph { \n %s \n }" nodeStr
+  where
+    nodes = concatMap (\c -> [(getFrom c, t) | t<-getTo c]) i
+    nodeStrs = map (\(f, t) -> printf "%s -> %s" f t) nodes
+    nodeStr = intercalate "\n" nodeStrs
+
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
 
@@ -77,6 +87,8 @@ solve :: IO ()
 solve = do
   input <- getInput 2025 11
   let parsed = parseInput input
+  putStrLn $ toDot $ (fromRight [] parsed)
+  hFlush stdout
   -- TIO.putStrLn $ "Input: " <> tshow parsed
   TIO.putStrLn $ "  Part 1: " <> tshow (part1 <$> parsed)
   TIO.putStrLn $ "  Part 2: " <> tshow (part2 <$> parsed)
