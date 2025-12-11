@@ -9,7 +9,7 @@ import Data.HashSet (HashSet (..))
 import qualified Data.HashSet as HashSet
 import Data.Heap (MinPrioHeap (..))
 import qualified Data.Heap as H
-import Data.List (intercalate)
+import Data.List (intercalate, mapAccumL, elemIndex)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -90,21 +90,21 @@ getDistances i = result
         iterations
 
 topologicalSort :: Text -> HashMap Text [Text] -> [Text]
-topologicalSort start graph = snd $ dfs HashSet.empty start []
+topologicalSort start graph = traceShow (length graph)reverse $ snd $ dfs HashSet.empty start
   where
-    dfs visited next acc
+    dfs visited next
       | HashSet.member next visited = (visited, [])
       | otherwise =
           let visited2 = HashSet.insert next visited
               children = HashMap.findWithDefault [] next graph
-              (visited3, successors) = foldl' (\(v, a) c -> let (v', a') = dfs v c a in (v', a ++ a')) (visited2, []) children
-           in (visited3, next : successors)
+              (visited3, successors) = mapAccumL dfs visited2 children
+           in (visited3, concat successors ++ [next])
 
 countPaths2 :: Text -> Text -> HashMap Text [Text] -> Int
 countPaths2 start end map = result
   where
     sorted = topologicalSort start map
-    counts = traceShow (length sorted) foldl' updateCounts (HashMap.singleton start 1) sorted
+    counts = traceShow (length sorted, elemIndex "out" sorted) foldl' updateCounts (HashMap.singleton start 1) sorted
     result = HashMap.findWithDefault 0 end counts
     updateCounts counts node =
       let children = HashMap.findWithDefault [] node map
@@ -120,6 +120,7 @@ part1 input = result
 part2 :: Input -> Int
 part2 input = result
   where
+    
     map = toMap input
     a = countPaths2 "svr" "fft" map
     b = countPaths2 "fft" "dac" map
@@ -128,7 +129,7 @@ part2 input = result
     -- e = countPaths2 map "dac" "fft"
     -- f = countPaths2 map "fft" "out"
     -- result = traceShow (filter (\(_, x) -> x /= 0) $ HashMap.toList  dists, a, b, c) (a*b*c)-- + (d*e*f)
-    result = (a * b * c)
+    result = traceShow (length input, length map) (a * b * c)
 
 {-
 toDot :: Input -> String
