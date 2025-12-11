@@ -40,7 +40,8 @@ toMap cs = HashMap.fromList $ map (\c -> (getFrom c, getTo c)) cs
 countPaths :: HashMap Text [Text] -> Text -> Text -> Int
 countPaths map start end
   | start == end = 1
-  | otherwise = sum $ fmap (\n -> countPaths map n end) (map ! start)
+  | start == "out" = 0
+  | otherwise = sum $ fmap (\n -> countPaths map n end) (map ! _traceShow (start, end) start)
 
 countPaths2 :: HashMap Text [Text] -> Text -> Text -> Bool -> Bool -> Int
 countPaths2 map start end seenDac seenFft
@@ -52,14 +53,19 @@ part1 :: Input -> Int
 part1 input = result
   where
     map = toMap input
-    start = map ! "you"
     result = countPaths map "you" "out"
 
 part2 :: Input -> Int
 part2 input = result
   where
     map = toMap input
-    result = countPaths2 map "svr" "out" False False
+    a = countPaths map "svr" "fft" 
+    b = countPaths map "fft" "dac" 
+    c = countPaths map "dac" "out" 
+    d = countPaths map "svr" "dac" 
+    e = countPaths map "dac" "fft" 
+    f = countPaths map "fft" "out" 
+    result = (a*b*c) + (d*e*f)
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
