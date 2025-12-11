@@ -30,7 +30,7 @@ test_part1 = testCase "Day 11 - Part 1" $ do
   part1 parsed_ @?= 5
 
 example2 :: Text
-example2 = 
+example2 =
   """
   svr: aaa bbb
   aaa: fft
@@ -48,14 +48,15 @@ example2 =
   """
 
 example3 :: Text
-example3 = 
+example3 =
   """
   svr: fft
   fft: dac
   dac: out
   """
+
 example4 :: Text
-example4 = 
+example4 =
   """
   svr: fft
   fft: dac
@@ -63,8 +64,9 @@ example4 =
   aaa: out
   bbb: out
   """
+
 example5 :: Text
-example5 = 
+example5 =
   """
   svr: fft
   fft: dac
@@ -85,7 +87,7 @@ test_part2 =
   testGroup
     "Day 11 - Part 2"
     [ testCase "example2" $ testPart2 example2 2,
-     testCase "example3" $ testPart2 example3 1,
-     testCase "example4" $ testPart2 example4 2,
-     testCase "example5" $ testPart2 example5 2
+      testCase "example3" $ testPart2 example3 1,
+      testCase "example4" $ testPart2 example4 2,
+      testCase "example5" $ testPart2 example5 2
     ]

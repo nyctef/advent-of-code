@@ -1,26 +1,27 @@
 module Day11 (solve, part1, part2, parseInput) where
 
 import Control.Arrow (left)
+import Control.Monad (replicateM)
+import Data.Either (fromRight)
+import Data.HashMap.Strict (HashMap (..), (!))
+import qualified Data.HashMap.Strict as HashMap
+import Data.HashSet (HashSet (..))
+import qualified Data.HashSet as HashSet
+import Data.Heap (MinPrioHeap (..))
+import qualified Data.Heap as H
+import Data.List (intercalate)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Debug.Trace
-import Data.List (intercalate)
 import InputFetcher (getInput)
+import System.IO (hFlush, stdout)
 import Text.Parsec hiding (Line, count, getInput)
 import Text.Parsec.Text (Parser)
-import Text.Printf(printf)
-import Data.HashMap.Strict(HashMap(..), (!))
-import qualified Data.HashMap.Strict as HashMap
-import Data.HashSet(HashSet(..))
-import qualified Data.HashSet as HashSet
-import Data.Either (fromRight)
-import System.IO (hFlush, stdout)
-import Data.Heap(MinPrioHeap(..))
-import qualified Data.Heap as H
-import Control.Monad(replicateM)
+import Text.Printf (printf)
 
-data Connection = Connection { getFrom :: Text , getTo :: [Text] }
+data Connection = Connection {getFrom :: Text, getTo :: [Text]}
+
 instance Show Connection where
   show (Connection from to) = printf "%s -> %s" from ("," `T.intercalate` to)
 
@@ -68,9 +69,7 @@ countPaths2 conns start end = result
             -- leading into this one (TODO: verify)
             -- for nodes we can reach from current:
             -- - we add this node's count to each of them
-            -- - 
-          
-          
+            -- -
 
     result = go (HashMap.empty, H.singleton (0, start))
 -}
@@ -81,35 +80,36 @@ getDistances i = result
     conns = [((getFrom f, t), 1) | f <- i, t <- (getTo f)]
     seed = HashMap.fromList conns
     nodes = "out" : map getFrom i
-    iterations :: [(Text,Text,Text)]
-    iterations = [(i,j,k) | i<-nodes, j<-nodes, k<-nodes]
-    get = HashMap.findWithDefault 0 
-    result = foldr
-      (\(i,j,k) m -> HashMap.insertWith (+) (i, j) ((get (i, k) m) * (get (k, j) m)) m)
-      seed iterations
+    iterations :: [(Text, Text, Text)]
+    iterations = [(i, j, k) | i <- nodes, j <- nodes, k <- nodes]
+    get = HashMap.findWithDefault 0
+    result =
+      foldr
+        (\(i, j, k) m -> HashMap.insertWith (+) (i, j) ((get (i, k) m) * (get (k, j) m)) m)
+        seed
+        iterations
 
 topologicalSort :: Text -> HashMap Text [Text] -> [Text]
-topologicalSort start graph = dfs HashSet.empty start []
+topologicalSort start graph = snd $ dfs HashSet.empty start []
   where
     dfs visited next acc
-      | HashSet.member next visited = acc
+      | HashSet.member next visited = (visited, [])
       | otherwise =
-          let nextVisited = HashSet.insert next visited
+          let visited2 = HashSet.insert next visited
               children = HashMap.findWithDefault [] next graph
-              successors = foldl' (\a c -> dfs nextVisited c a) acc children
-          in next : successors
-
+              (visited3, successors) = foldl' (\(v, a) c -> let (v', a') = dfs v c a in (v', a ++ a')) (visited2, []) children
+           in (visited3, next : successors)
 
 countPaths2 :: Text -> Text -> HashMap Text [Text] -> Int
 countPaths2 start end map = result
   where
-    sorted = traceShowId $ topologicalSort start map
-    counts = traceShowId $ foldl' updateCounts (HashMap.singleton start 1) sorted
-    result = traceShowId $ HashMap.findWithDefault 0 end counts
+    sorted = topologicalSort start map
+    counts = traceShow (length sorted) foldl' updateCounts (HashMap.singleton start 1) sorted
+    result = HashMap.findWithDefault 0 end counts
     updateCounts counts node =
       let children = HashMap.findWithDefault [] node map
           nodeCount = HashMap.findWithDefault 0 node counts
-      in foldl' (\cs child -> HashMap.insertWith (+) child nodeCount cs) counts children
+       in foldl' (\cs child -> HashMap.insertWith (+) child nodeCount cs) counts children
 
 part1 :: Input -> Int
 part1 input = result
@@ -124,11 +124,11 @@ part2 input = result
     a = countPaths2 "svr" "fft" map
     b = countPaths2 "fft" "dac" map
     c = countPaths2 "dac" "out" map
-    -- d = countPaths2 map "svr" "dac" 
-    -- e = countPaths2 map "dac" "fft" 
-    -- f = countPaths2 map "fft" "out" 
+    -- d = countPaths2 map "svr" "dac"
+    -- e = countPaths2 map "dac" "fft"
+    -- f = countPaths2 map "fft" "out"
     -- result = traceShow (filter (\(_, x) -> x /= 0) $ HashMap.toList  dists, a, b, c) (a*b*c)-- + (d*e*f)
-    result = (a*b*c)
+    result = (a * b * c)
 
 {-
 toDot :: Input -> String
